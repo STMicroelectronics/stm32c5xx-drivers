@@ -1,0 +1,141 @@
+{{!--
+  ******************************************************************************
+  * @file           : mx_dma_template.h.hbs
+  * @brief          : Header for mx_dma_template.c.cbs file.
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  ~--}}
+{{#helper_common_beautifier}}
+{{#get_myctx~}}
+{{#with _myctx~}}
+{{#if (eq @root.strategy "SW")}}
+{{assign 'current_resource' 'DMA'~}}
+{{else}}
+{{assign 'current_resource' this.resource~}}
+{{/if}}
+/**
+  ******************************************************************************
+  * @file           : mx_{{lowercase @root.current_resource}}.h
+  * @brief          : Header for mx_{{lowercase @root.current_resource}}.c file.
+{{> LICENSE}}
+
+
+/* Define to prevent recursive inclusion ----------------------------------------------------------------------------*/
+#ifndef MX_{{@root.current_resource}}_H
+#define MX_{{@root.current_resource}}_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+/* Includes ---------------------------------------------------------------------------------------------------------*/
+{{assign 'only_ll' true~}}
+{{#each @root.instances~}}
+{{#if (eq @root.strategy "HW")}}
+{{assign 'current_layer' info.layer~}}
+{{else}}
+{{assign 'dac_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'current_layer' @root.dac_cxt.info.layer~}}
+{{/if}}
+{{#if (eq @root.current_layer 'HAL')}}
+{{assign 'only_ll' false~}}
+{{/if}}
+{{/each}}
+{{#if @root.only_ll}}
+#include "stm32_ll.h"
+{{else}}
+#include "stm32_hal.h"
+{{/if}}
+
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+{{#each @root.instances}}
+{{#if (eq @root.strategy "SW")}}
+{{~assign 'dma_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+{{~assign 'current_resource' (@root.DmaAPI.getResourceBoundToStandalone this)~}}
+{{~assign 'current_resource' @root.current_resource.resourceId~}}
+{{~assign 'current_layer' @root.dma_cxt.info.layer~}}
+{{else}}
+{{~assign 'current_layer' info.layer~}}
+{{/if}}
+{{#if (eq @root.current_layer 'LL')}}
+#define USE_{{uppercase @root.current_resource}}
+{{/if}}
+{{/each}}
+/* Exported macros -----------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Exported functions ---------------------------------------------------------------------------------------------- */
+{{assign 'current_index' 0~}}
+{{#each @root.instances}}
+{{#if (eq @root.strategy "SW")}}
+{{assign 'dma_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+{{assign 'current_layer' @root.dma_cxt.info.layer~}}
+{{~assign 'current_resource' (@root.DmaAPI.getResourceBoundToStandalone this)~}}
+{{~assign 'current_resource' @root.current_resource.resourceId~}}
+{{else}}
+{{assign 'current_layer' info.layer~}}
+{{/if}}
+/******************************************************************************/
+/* Exported functions for DMA in {{@root.current_layer}} layer */
+/******************************************************************************/
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
+{{assign 'current_index' (add @root.current_index 1)~}}
+/**
+  * @brief {{@root.fct_name}} init function
+  * This function configures the hardware resources used in this example
+  * @retval pointer to handle or NULL in case of failure
+  */
+{{#if (eq @root.current_layer 'HAL')}}
+hal_dma_handle_t *{{@root.fct_name}}_init(void);
+
+{{else}}
+DMA_Channel_TypeDef *{{@root.fct_name}}_init(void);
+
+{{/if}}
+/**
+  * @brief  De-initialize {{lowercase @root.current_resource}} instance and return it.
+  */
+void {{@root.fct_name}}_deinit(void);
+
+{{#if (eq @root.current_layer 'HAL')}}
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
+/**
+  * @brief  Get the {{@root.current_resource}} object.
+  * @retval Pointer on the {{@root.current_resource}} Handle
+  */
+hal_dma_handle_t *{{@root.fct_name}}_gethandle(void);
+
+{{/if}}
+{{/each}}
+
+{{#each @root.irq_info_list}}
+{{#if generate_handler}}
+/******************************************************************************/
+/* {{description}} */
+/******************************************************************************/
+void {{line}}_IRQHandler(void);
+{{else}}
+/******************************************************************************/
+/* {{description}} */
+/******************************************************************************/
+/* void {{line}}_IRQHandler(void); */
+{{/if}}
+{{/each}}
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* MX_{{resource}}_H */
+{{/with~}}
+{{/get_myctx~}}
+{{/helper_common_beautifier}}

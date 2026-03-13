@@ -1,0 +1,1909 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "version": "0.0.1",
+  "componentid": "::Device:STM32CubeMX2 Config:FDCAN",
+  "grammarVersion": "3.7",
+  "type": "object",
+  "functions": [
+    {
+      "path": ".config/template/helpers/fdcan_helpers.js",
+      "accessor": "common_fdcan"
+    },
+    {
+      "path": ".config/template/helpers/rcc_helpers.js",
+      "accessor": "common_rcc"
+    }
+  ],
+  "properties": {
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "type": "object",
+          "title": "General information",
+          "properties": {
+            "labels": {
+              "type": "array",
+              "title": "Add a label",
+              "description": "Labels allow to create aliases inside mx_hal_def.h file like '<label>_init', '<label>_deinit' and '<label>_gethandle'. These aliases can be used on application side.",
+              "items": {
+                "type": "string",
+                "actions": [
+                  {
+                    "type": "error",
+                    "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                    "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                  }
+                ],
+                "minLength": 0,
+                "maxLength": 32,
+                "unique": "project",
+                "default": ""
+              }
+            },
+            "layer": {
+              "type": "string",
+              "title": "Software layer",
+              "oneOf": [
+                {
+                  "title": "HAL",
+                  "const": "HAL"
+                }
+              ],
+              "actions": [
+                {
+                  "type": "disable",
+                  "condition": "true"
+                }
+              ],
+              "variables": [
+                {
+                  "on": "update-value",
+                  "name": "HAL_FDCAN_PROJECT_USE_HAL",
+                  "condition": "$value === 'HAL'",
+                  "semaphore": true
+                }
+              ],
+              "default": "HAL"
+            },
+            "init_type": {
+              "type": "string",
+              "title": "Resource initialization code generation",
+              "description": "Pick whether the initialization code should be generated and automatically called at startup.",
+              "oneOf": [
+                {
+                  "title": "Callable",
+                  "const": "called",
+                  "description": "Initialization code is generated and called in peripheral initialization."
+                },
+                {
+                  "title": "Generated",
+                  "const": "enabled",
+                  "description": "Initialization code is generated but not called in peripheral initialization."
+                },
+                {
+                  "title": "Not generated",
+                  "const": "disabled",
+                  "description": "Initialization code is not generated."
+                }
+              ],
+              "default": "called"
+            }
+          }
+        },
+        "basic": {
+          "type": "object",
+          "title": "Main features",
+          "properties": {
+            "fdcan_kernel_clock": {
+              "type": "string",
+              "title": "FDCAN kernel clock frequency",
+              "description": "Input clock frequency can be modified in clock tree.",
+              "readOnly": true,
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source')) < 1000000",
+                  "computed": {
+                    "const": "$get('clock.frequency',$resource.parentDescription.name + '_Clock_Source') / 1000 + ' kHz'"
+                  }
+                },
+                {
+                  "type": "set",
+                  "condition": "($get('clock.frequency',$resource.parentDescription.name + '_Clock_Source')) >= 1000000",
+                  "computed": {
+                    "const": "$get('clock.frequency',$resource.parentDescription.name + '_Clock_Source') / 1000000 + ' MHz'"
+                  }
+                }
+              ],
+              "default": ""
+            },
+            "mode": {
+              "type": "string",
+              "title": "Operating mode",
+              "default": "NORMAL",
+              "oneOf": [
+                {
+                  "title": "Normal",
+                  "const": "NORMAL"
+                },
+                {
+                  "title": "Restricted operation",
+                  "const": "RESTRICTED_OPERATION"
+                },
+                {
+                  "title": "Bus monitoring",
+                  "const": "BUS_MONITORING"
+                },
+                {
+                  "title": "Internal loopback",
+                  "const": "INTERNAL_LOOPBACK"
+                },
+                {
+                  "title": "External loopback",
+                  "const": "EXTERNAL_LOOPBACK"
+                }
+              ]
+            },
+            "frame_format": {
+              "type": "string",
+              "title": "Frame format",
+              "default": "CLASSIC_CAN",
+              "oneOf": [
+                {
+                  "title": "Classic mode",
+                  "const": "CLASSIC_CAN"
+                },
+                {
+                  "title": "FD mode without bitrate switching",
+                  "const": "FD_NO_BRS"
+                },
+                {
+                  "title": "FD mode with bitrate switching",
+                  "const": "FD_BRS"
+                }
+              ]
+            },
+            "auto_retransmission": {
+              "type": "boolean",
+              "title": "Automatic retransmission",
+              "description": "Automatic retransmission of frames that have lost arbitration or been disturbed by errors during transmission.",
+              "default": false
+            },
+            "transmit_pause": {
+              "type": "boolean",
+              "title": "Transmit pause",
+              "description": "When enabled, the peripheral pauses for two CAN bit times after successfully transmitting a message before starting the next transmission.",
+              "default": false
+            },
+            "protocol_exception": {
+              "type": "boolean",
+              "title": "Protocol exception",
+              "description": "When enabled, this causes the operation state to change from Receiver state to Sync state at the next sample point.\nWhen disabled, a recessive \"res.\" bit is treated as a form error, and the FDCAN responds with an error frame.",
+              "default": false
+            },
+            "tx_fifo_queue_mode": {
+              "type": "string",
+              "title": "Transmission mode",
+              "default": "FIFO",
+              "oneOf": [
+                {
+                  "title": "FIFO",
+                  "const": "FIFO"
+                },
+                {
+                  "title": "Queue",
+                  "const": "QUEUE"
+                }
+              ]
+            },
+            "frame_filters": {
+              "title": "Frame filters",
+              "type": "object",
+              "properties": {
+                "std_filters_nbr": {
+                  "title": "Standard filter number",
+                  "type": "integer",
+                  "description": "Number of standard message ID filters.",
+                  "maximum": 28,
+                  "minimum": 0,
+                  "default": 0,
+                  "display_format": [
+                    "dec"
+                  ]
+                },
+                "ext_filters_nbr": {
+                  "title": "Extended filter number",
+                  "type": "integer",
+                  "description": "Number of extended message ID filters.",
+                  "maximum": 8,
+                  "minimum": 0,
+                  "default": 0,
+                  "display_format": [
+                    "dec"
+                  ]
+                },
+                "filter_standard": {
+                  "title": "Standard frame filters",
+                  "type": "array",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$basic.frame_filters.std_filters_nbr > 0"
+                    }
+                  ],
+                  "source": "Array.from({ length: $basic.frame_filters.std_filters_nbr}, (_, i) => ({ id: ('Standard Filter' + i ) }))",
+                  "itemId": "id",
+                  "itemVar": "std_filter",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "configure": {
+                        "type": "boolean",
+                        "title": "Configure the standard filter",
+                        "default": false
+                      },
+                      "filter_type": {
+                        "type": "string",
+                        "title": "Filter type",
+                        "default": "CLASSIC",
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ],
+                        "oneOf": [
+                          {
+                            "title": "Classic filter: ID1 = filter, ID2 = mask",
+                            "const": "CLASSIC"
+                          },
+                          {
+                            "title": "Dual ID filter. Matches only ID1 or ID2",
+                            "const": "DUAL"
+                          },
+                          {
+                            "title": "Range filter from ID1 to ID2",
+                            "const": "RANGE"
+                          }
+                        ]
+                      },
+                      "filter_config": {
+                        "type": "string",
+                        "title": "Filter",
+                        "description": "Filter frame-matching.",
+                        "default": "TO_RX_FIFO_0",
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ],
+                        "oneOf": [
+                          {
+                            "title": "Disable filter element",
+                            "const": "DISABLE"
+                          },
+                          {
+                            "title": "Store in Rx FIFO 0 if filter matches",
+                            "const": "TO_RX_FIFO_0"
+                          },
+                          {
+                            "title": "Store in Rx FIFO 1 if filter matches",
+                            "const": "TO_RX_FIFO_1"
+                          },
+                          {
+                            "title": "Reject ID if filter matches",
+                            "const": "REJECT"
+                          },
+                          {
+                            "title": "Set high priority if filter matches",
+                            "const": "HP"
+                          },
+                          {
+                            "title": "Set high priority and store in FIFO 0 if filter matches",
+                            "const": "TO_RX_FIFO_0_HP"
+                          },
+                          {
+                            "title": "Set high priority and store in FIFO 1 if filter matches",
+                            "const": "TO_RX_FIFO_1_HP"
+                          }
+                        ]
+                      },
+                      "filter_id1": {
+                        "type": "integer",
+                        "title": "Filter ID1",
+                        "description": "Filter ID1.\nThis parameter must be a number between 0 and 0x7FF.",
+                        "minimum": 0,
+                        "default": 0,
+                        "maximum": 2047,
+                        "display_format": [
+                          "hex"
+                        ],
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ]
+                      },
+                      "filter_id2": {
+                        "type": "integer",
+                        "title": "Filter ID2",
+                        "description": "Filter ID2.\nThis parameter must be a number between 0 and 0x7FF.",
+                        "minimum": 0,
+                        "default": 0,
+                        "maximum": 2047,
+                        "display_format": [
+                          "hex"
+                        ],
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          },
+                          {
+                            "type": "error",
+                            "condition": "(($item.filter_id2 < $item.filter_id1) && ($item.filter_type == 'RANGE'))",
+                            "message": "The filter ID2 must be higher or equal to filter ID1."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "filter_extended": {
+                  "title": "Extended frame filters",
+                  "type": "array",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$basic.frame_filters.ext_filters_nbr > 0"
+                    }
+                  ],
+                  "source": "Array.from({ length: $basic.frame_filters.ext_filters_nbr}, (_, i) => ({ id: ('Extended filter' + i ) }))",
+                  "itemId": "id",
+                  "itemVar": "ext_filter",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "configure": {
+                        "type": "boolean",
+                        "title": "Configure the extended filter",
+                        "default": false
+                      },
+                      "filter_type": {
+                        "type": "string",
+                        "title": "Filter type",
+                        "default": "CLASSIC",
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ],
+                        "oneOf": [
+                          {
+                            "title": "Classic filter: ID1 = filter, ID2 = mask",
+                            "const": "CLASSIC"
+                          },
+                          {
+                            "title": "Dual ID filter. Matches only ID1 or ID2",
+                            "const": "DUAL"
+                          },
+                          {
+                            "title": "Range filter from ID1 to ID2, extended ID AND mask (XIDAM) is applied",
+                            "const": "RANGE"
+                          },
+                          {
+                            "title": "Range filter from ID1 to ID2, extended ID AND mask (XIDAM) not applied",
+                            "const": "RANGE_NO_EIDM"
+                          }
+                        ]
+                      },
+                      "filter_config": {
+                        "type": "string",
+                        "title": "Filter",
+                        "description": "Filter frame-matching.",
+                        "default": "TO_RX_FIFO_0",
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ],
+                        "oneOf": [
+                          {
+                            "title": "Disable filter element",
+                            "const": "DISABLE"
+                          },
+                          {
+                            "title": "Store in Rx FIFO 0 if filter matches",
+                            "const": "TO_RX_FIFO_0"
+                          },
+                          {
+                            "title": "Store in Rx FIFO 1 if filter matches",
+                            "const": "TO_RX_FIFO_1"
+                          },
+                          {
+                            "title": "Reject ID if filter matches",
+                            "const": "REJECT"
+                          },
+                          {
+                            "title": "Set high priority if filter matches",
+                            "const": "HP"
+                          },
+                          {
+                            "title": "Set high priority and store in FIFO 0 if filter matches",
+                            "const": "TO_RX_FIFO_0_HP"
+                          },
+                          {
+                            "title": "Set high priority and store in FIFO 1 if filter matches",
+                            "const": "TO_RX_FIFO_1_HP"
+                          }
+                        ]
+                      },
+                      "filter_id1": {
+                        "type": "integer",
+                        "title": "Filter ID1",
+                        "description": "Filter ID1.\nThis parameter must be a number between 0 and 0x1FFFFFF.",
+                        "minimum": 0,
+                        "default": 0,
+                        "maximum": 536870911,
+                        "display_format": [
+                          "hex"
+                        ],
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          }
+                        ]
+                      },
+                      "filter_id2": {
+                        "type": "integer",
+                        "title": "Filter ID2",
+                        "description": "Filter ID2.\nThis parameter must be a number between 0 and 0x1FFFFFF.",
+                        "minimum": 0,
+                        "default": 0,
+                        "maximum": 536870911,
+                        "display_format": [
+                          "hex"
+                        ],
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "$item.configure"
+                          },
+                          {
+                            "type": "error",
+                            "condition": "(($item.filter_id2 < $item.filter_id1) && ($item.filter_type == 'RANGE' || $item.filter_type == 'RANGE_NO_EIDM'))",
+                            "message": "The filter ID2 must be higher or equal to filter ID1."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "global_filter_config": {
+                  "type": "object",
+                  "title": "Acceptance or rejection rules for filters",
+                  "description": "Frame acceptance or rejection rules for the defined filters.",
+                  "properties": {
+                    "acceptance_non_matching_std": {
+                      "type": "string",
+                      "title": "Acceptance for non-matching standard frames",
+                      "description": "Acceptance or rejection rules for the standard frames that did not match the defined filters.",
+                      "default": "TO_RX_FIFO_0",
+                      "oneOf": [
+                        {
+                          "title": "Accept non-matching frames in Rx FIFO 0",
+                          "const": "TO_RX_FIFO_0"
+                        },
+                        {
+                          "title": "Accept non-matching frames in Rx FIFO 1",
+                          "const": "TO_RX_FIFO_1"
+                        },
+                        {
+                          "title": "Reject non-matching frames",
+                          "const": "REJECT"
+                        }
+                      ],
+                      "actions": [
+                        {
+                          "type": "warning",
+                          "condition": "($basic.frame_filters.std_filters_nbr === 0) && ($basic.frame_filters.global_filter_config.acceptance_non_matching_std === 'REJECT')",
+                          "message": "No standard filters configured and non-matching frames acceptance is set to REJECT. This will reject all standard frames."
+                        }
+                      ]
+                    },
+                    "acceptance_non_matching_ext": {
+                      "type": "string",
+                      "title": "Acceptance for non-matching extended frames",
+                      "description": "Acceptance or rejection rules for the extended frames that did not match the defined filters.",
+                      "default": "TO_RX_FIFO_0",
+                      "oneOf": [
+                        {
+                          "title": "Accept non-matching frames in Rx FIFO 0",
+                          "const": "TO_RX_FIFO_0"
+                        },
+                        {
+                          "title": "Accept non-matching frames in Rx FIFO 1",
+                          "const": "TO_RX_FIFO_1"
+                        },
+                        {
+                          "title": "Reject non-matching frames",
+                          "const": "REJECT"
+                        }
+                      ],
+                      "actions": [
+                        {
+                          "type": "warning",
+                          "condition": "($basic.frame_filters.ext_filters_nbr === 0) && ($basic.frame_filters.global_filter_config.acceptance_non_matching_ext === 'REJECT')",
+                          "message": "No extended filters configured and non-matching frames acceptance is set to REJECT. This will reject all extended frames."
+                        }
+                      ]
+                    },
+                    "acceptance_remote_std": {
+                      "type": "string",
+                      "title": "Acceptance for standard remote frames",
+                      "description": "Acceptance or rejection rules for all standard remote frames.",
+                      "default": "REJECT",
+                      "oneOf": [
+                        {
+                          "title": "Accept all standard remote frames",
+                          "const": "ACCEPT"
+                        },
+                        {
+                          "title": "Reject all standard remote frames",
+                          "const": "REJECT"
+                        }
+                      ]
+                    },
+                    "acceptance_remote_ext": {
+                      "type": "string",
+                      "title": "Acceptance for extended remote frames",
+                      "description": "Acceptance or rejection rules for all extended remote frames.",
+                      "default": "REJECT",
+                      "oneOf": [
+                        {
+                          "title": "Accept all extended remote frames",
+                          "const": "ACCEPT"
+                        },
+                        {
+                          "title": "Reject all extended remote frames",
+                          "const": "REJECT"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "timings": {
+              "title": "Clock and timing parameters",
+              "type": "object",
+              "properties": {
+                "clock_divider": {
+                  "type": "integer",
+                  "title": "Kernel clock divider",
+                  "description": "It can only be modified by the first FDCAN instance.",
+                  "default": 1,
+                  "oneOf": [
+                    {
+                      "title": "1",
+                      "const": 1
+                    },
+                    {
+                      "title": "2",
+                      "const": 2
+                    },
+                    {
+                      "title": "4",
+                      "const": 4
+                    },
+                    {
+                      "title": "6",
+                      "const": 6
+                    },
+                    {
+                      "title": "8",
+                      "const": 8
+                    },
+                    {
+                      "title": "10",
+                      "const": 10
+                    },
+                    {
+                      "title": "12",
+                      "const": 12
+                    },
+                    {
+                      "title": "14",
+                      "const": 14
+                    },
+                    {
+                      "title": "16",
+                      "const": 16
+                    },
+                    {
+                      "title": "18",
+                      "const": 18
+                    },
+                    {
+                      "title": "20",
+                      "const": 20
+                    },
+                    {
+                      "title": "22",
+                      "const": 22
+                    },
+                    {
+                      "title": "24",
+                      "const": 24
+                    },
+                    {
+                      "title": "26",
+                      "const": 26
+                    },
+                    {
+                      "title": "28",
+                      "const": 28
+                    },
+                    {
+                      "title": "30",
+                      "const": 30
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "($resource.id == 'FDCAN1')"
+                    }
+                  ],
+                  "synchronize": true
+                },
+                "fdcan_clk": {
+                  "title": "FDCAN clock",
+                  "type": "string",
+                  "description": "The FDCAN clock frequency after the clock divider.",
+                  "readOnly": true,
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / $basic.timings.clock_divider) < 1000000",
+                      "computed": {
+                        "const": "($get('clock.frequency',$resource.parentDescription.name + '_Clock_Source')/ (1000 * $basic.timings.clock_divider)).toFixed(3) + ' kHz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($get('clock.frequency',$resource.parentDescription.name + '_Clock_Source') / $basic.timings.clock_divider) >= 1000000",
+                      "computed": {
+                        "const": "($get('clock.frequency',$resource.parentDescription.name + '_Clock_Source') / (1000000 * $basic.timings.clock_divider)).toFixed(3) + ' MHz'"
+                      }
+                    }
+                  ],
+                  "default": "Not available"
+                },
+                "bit_timing_mode": {
+                  "title": "Bit timing mode",
+                  "type": "string",
+                  "description": "Choose how to configure bit timing: manual (edit timing fields) or bitrate (enter bitrate, timing is computed).",
+                  "oneOf": [
+                    {
+                      "const": "bitrate",
+                      "title": "Bitrate mode (auto-compute bit timings)"
+                    },
+                    {
+                      "const": "manual",
+                      "title": "Manual bit timing mode (expert)"
+                    }
+                  ],
+                  "default": "bitrate"
+                },
+                "bit_timing": {
+                  "title": "Bit timing parameters",
+                  "type": "object",
+                  "properties": {
+                    "nominal_bit_timing": {
+                      "title": "Nominal bit timing",
+                      "type": "object",
+                      "properties": {
+                        "desired_bitrate_kbps": {
+                          "type": "integer",
+                          "title": "Desired bitrate (kbps)",
+                          "default": 500,
+                          "maximum": 1000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "desired_sample_point_per_mille": {
+                          "type": "integer",
+                          "title": "Desired sample point (per mille)",
+                          "default": 800,
+                          "maximum": 1000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "bitrate_tolerance_per_mille": {
+                          "type": "integer",
+                          "title": "Bitrate tolerance (per mille)",
+                          "default": 5,
+                          "maximum": 1000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "nominal_prescaler": {
+                          "type": "integer",
+                          "title": "Prescaler",
+                          "description": "The value by which the kernel clock is divided for generating the nominal bit time quanta.\nThis parameter must be a number between 1 and 512.",
+                          "maximum": 512,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').bit_timing.prescaler"
+                              }
+                            }
+                          ]
+                        },
+                        "nominal_time_quantum": {
+                          "title": "Time quanta (Ntq)",
+                          "type": "string",
+                          "description": "Nominal time quanta in ns.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_time_quantum($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.nominal_bit_timing.nominal_prescaler, $basic.timings.clock_divider)).toFixed(2) + ' ns'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "nominal_time_seg1": {
+                          "type": "integer",
+                          "unit": "Ntq",
+                          "title": "Time segment 1",
+                          "description": "The number of nominal time quanta in Bit Segment 1.\nThis parameter must be a number between 1 and 256.",
+                          "maximum": 256,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').bit_timing.time_seg1"
+                              }
+                            }
+                          ]
+                        },
+                        "nominal_time_seg2": {
+                          "type": "integer",
+                          "unit": "Ntq",
+                          "title": "Time segment 2",
+                          "description": "The number of nominal time quanta in Bit Segment 2.\nThis parameter must be a number between 1 and 128.",
+                          "maximum": 128,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.nominal_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.nominal_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.nominal_bit_timing.bitrate_tolerance_per_mille }, 'nominal').bit_timing.time_seg2"
+                              }
+                            }
+                          ]
+                        },
+                        "nominal_jump_width": {
+                          "title": "Sync jump width",
+                          "unit": "Ntq",
+                          "type": "integer",
+                          "description": "Maximum number of nominal time quanta the FDCAN hardware is allowed to lengthen or shorten a data bit to perform resynchronization.\nThis parameter must be a number between 1 and 128 and can be manually changed if needed.",
+                          "maximum": 128,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"]
+                        },
+                        "nominal_bit_time": {
+                          "title": "Obtained bit time",
+                          "type": "string",
+                          "description": "Nominal bit time in ns with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_bit_time($basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg1, $basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg2, ($common_fdcan.helper_fdcan_calculate_time_quantum($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.nominal_bit_timing.nominal_prescaler, $basic.timings.clock_divider)))).toFixed(2) + ' ns'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "nominal_bitrate": {
+                          "title": "Obtained bitrate",
+                          "type": "string",
+                          "description": "Output bitrate for the nominal phase in kbps with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "(($common_fdcan.helper_fdcan_calculate_bitrate($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.nominal_bit_timing.nominal_prescaler, $basic.timings.clock_divider, $basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg1, $basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg2)) / 1000).toFixed(3) + ' kbps'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "nominal_sample_point": {
+                          "title": "Obtained sample point",
+                          "type": "string",
+                          "description": "Location of the sample point in the nominal bit time segment with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_sampling_point($basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg1, $basic.timings.bit_timing.nominal_bit_timing.nominal_time_seg2) / 10).toFixed(2) + ' %'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        }
+                      }
+                    },
+                    "data_bit_timing": {
+                      "title": "Data bit timing",
+                      "type": "object",
+                      "actions": [
+                        {
+                          "type": "enable",
+                          "condition": "$basic.frame_format == 'FD_BRS'"
+                        }
+                      ],
+                      "properties": {
+                        "desired_bitrate_kbps": {
+                          "type": "integer",
+                          "title": "Desired bitrate (kbps)",
+                          "default": 1000,
+                          "maximum": 8000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "desired_sample_point_per_mille": {
+                          "type": "integer",
+                          "title": "Desired sample point (per mille)",
+                          "default": 800,
+                          "maximum": 1000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "bitrate_tolerance_per_mille": {
+                          "type": "integer",
+                          "title": "Bitrate tolerance (per mille)",
+                          "default": 5,
+                          "maximum": 1000,
+                          "actions": [
+                            {
+                              "type": "include",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'"
+                            },
+                            {
+                              "type": "error",
+                              "condition": "false === $common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').found_status",
+                              "message": "Cannot find a valid bit timing configuration for the given parameters."
+                            }
+                          ]
+                        },
+                        "data_prescaler": {
+                          "type": "integer",
+                          "title": "Prescaler",
+                          "description": "Value by which the oscillator frequency is divided for generating the data bit time quanta.\nThis parameter must be a number between 1 and 32.",
+                          "maximum": 32,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').bit_timing.prescaler"
+                              }
+                            }
+                          ]
+                        },
+                        "data_time_quantum": {
+                          "title": "Time quanta (Dtq) in ns",
+                          "type": "string",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_time_quantum($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.data_bit_timing.data_prescaler, $basic.timings.clock_divider)).toFixed(2) + ' ns'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "data_time_seg1": {
+                          "type": "integer",
+                          "unit": "Dtq",
+                          "title": "Time segment 1",
+                          "description": "Number of data time quanta in Bit Segment 1.\nThis parameter must be a number between 1 and 32.",
+                          "maximum": 32,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').bit_timing.time_seg1"
+                              }
+                            }
+                          ]
+                        },
+                        "data_time_seg2": {
+                          "type": "integer",
+                          "unit": "Dtq",
+                          "title": "Time segment 2",
+                          "description": "Number of data time quanta in Bit Segment 2.\nThis parameter must be a number between 1 and 16.",
+                          "maximum": 16,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"],
+                          "actions": [
+                            {
+                              "type": "enable",
+                              "condition": "$basic.timings.bit_timing_mode == 'manual'"
+                            },
+                            {
+                              "type": "set",
+                              "condition": "$basic.timings.bit_timing_mode == 'bitrate'",
+                              "computed": {
+                                "const": "$common_fdcan.helper_fdcan_compute_bit_timing({ fdcan_ker_clk_khz: Math.floor($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source') / 1000), desired_bitrate_kbps: $basic.timings.bit_timing.data_bit_timing.desired_bitrate_kbps, sample_point_per_mille: $basic.timings.bit_timing.data_bit_timing.desired_sample_point_per_mille, bitrate_tolerance_per_mille: $basic.timings.bit_timing.data_bit_timing.bitrate_tolerance_per_mille }, 'data').bit_timing.time_seg2"
+                              }
+                            }
+                          ]
+                        },
+                        "data_jump_width": {
+                          "type": "integer",
+                          "unit": "Dtq",
+                          "title": "Sync jump width",
+                          "description": "Maximum number of data time quanta the FDCAN hardware is allowed to lengthen or shorten a data bit to perform resynchronization.\nThis parameter must be a number between 1 and 16 and can be manually changed if needed.",
+                          "maximum": 16,
+                          "minimum": 1,
+                          "default": 1,
+                          "display_format": ["dec"]
+                        },
+                        "data_bit_time": {
+                          "title": "Obtained bit time",
+                          "type": "string",
+                          "description": "Data bit time in ns with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_bit_time($basic.timings.bit_timing.data_bit_timing.data_time_seg1, $basic.timings.bit_timing.data_bit_timing.data_time_seg2, ($common_fdcan.helper_fdcan_calculate_time_quantum($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.data_bit_timing.data_prescaler, $basic.timings.clock_divider)))).toFixed(2) + ' ns'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "data_bitrate": {
+                          "title": "Obtained bitrate",
+                          "type": "string",
+                          "description": "Output bitrate for the data phase in kbps with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "(($common_fdcan.helper_fdcan_calculate_bitrate($get('clock.frequency', $resource.parentDescription.name + '_Clock_Source'), $basic.timings.bit_timing.data_bit_timing.data_prescaler, $basic.timings.clock_divider, $basic.timings.bit_timing.data_bit_timing.data_time_seg1, $basic.timings.bit_timing.data_bit_timing.data_time_seg2)) / 1000).toFixed(3) + ' kbps'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        },
+                        "data_sample_point": {
+                          "title": "Obtained sample point",
+                          "type": "string",
+                          "description": "Location of the sample point in the data bit time segment with current configuration.",
+                          "readOnly": true,
+                          "actions": [
+                            {
+                              "type": "set",
+                              "condition": "true",
+                              "computed": {
+                                "const": "($common_fdcan.helper_fdcan_calculate_sampling_point($basic.timings.bit_timing.data_bit_timing.data_time_seg1, $basic.timings.bit_timing.data_bit_timing.data_time_seg2) / 10).toFixed(2) + ' %'"
+                              }
+                            }
+                          ],
+                          "default": "Not available"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "additional": {
+          "type": "object",
+          "title": "Advanced features",
+          "properties": {
+            "enable_tx_delay_compensation": {
+              "type": "boolean",
+              "title": "Transmitter delay compensation",
+              "default": false
+            },
+            "tx_delay_compensation_config": {
+              "type": "object",
+              "title": "Transmitter delay compensation",
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_tx_delay_compensation"
+                }
+              ],
+              "properties": {
+                "tx_delay_comp_offset": {
+                  "type": "integer",
+                  "title": "Offset",
+                  "description": "Offset value defining the distance between the measured delay from FDCAN_TX to FDCAN_RX and the secondary sample point.\nThis parameter must be a number between 0 and 127 mtq (minimum time quantum).",
+                  "maximum": 127,
+                  "minimum": 0,
+                  "default": 0
+                },
+                "tx_delay_comp_win_length": {
+                  "type": "integer",
+                  "title": "Window length",
+                  "description": "Maximum number of time quanta the FDCAN hardware is allowed to lengthen or shorten a bit to perform resynchronization.\nThis parameter must be a number between 1 and 128 mtq.",
+                  "maximum": 127,
+                  "minimum": 0,
+                  "default": 0
+                }
+              }
+            },
+            "enable_timeout_counter": {
+              "type": "boolean",
+              "title": "Timeout counter",
+              "description": "16-bit timeout counter to signal timeout conditions for Rx FIFO 0, Rx FIFO 1, and the Tx event FIFO.",
+              "default": false
+            },
+            "timeout_config": {
+              "type": "object",
+              "title": "Timeout counter",
+              "properties": {
+                "timeout_operation": {
+                  "type": "string",
+                  "title": "Operation mode",
+                  "description": "Timeout counter operation mode.",
+                  "default": "CONTINUOUS",
+                  "oneOf": [
+                    {
+                      "title": "Timeout continuous operation",
+                      "const": "CONTINUOUS"
+                    },
+                    {
+                      "title": "Timeout controlled by Tx Event FIFO",
+                      "const": "TX_EVENT_FIFO"
+                    },
+                    {
+                      "title": "Timeout controlled by Rx FIFO 0",
+                      "const": "RX_FIFO_0"
+                    },
+                    {
+                      "title": "Timeout controlled by Rx FIFO 1",
+                      "const": "RX_FIFO_1"
+                    }
+                  ]
+                },
+                "timeout_period": {
+                  "type": "integer",
+                  "title": "Timeout period",
+                  "description": "Start value of the timeout counter (down-counter). Set the timeout period.",
+                  "minimum": 0,
+                  "maximum": 65535,
+                  "default": 0,
+                  "display_format": [
+                    "dec"
+                  ]
+                }
+              },
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_timeout_counter"
+                }
+              ]
+            },
+            "enable_timestamp_counter": {
+              "type": "boolean",
+              "title": "Timestamp counter",
+              "default": false
+            },
+            "timestamp_config": {
+              "type": "object",
+              "title": "Timestamp counter",
+              "properties": {
+                "timestamp_source": {
+                  "type": "string",
+                  "title": "Timestamp source",
+                  "description": "Timestamp counter source.",
+                  "default": "INTERNAL",
+                  "oneOf": [
+                    {
+                      "title": "Counter disabled (value always 0)",
+                      "const": "ZERO"
+                    },
+                    {
+                      "title": "Internal counter",
+                      "const": "INTERNAL"
+                    },
+                    {
+                      "title": "External counter from TIM",
+                      "const": "EXTERNAL"
+                    }
+                  ]
+                },
+                "timestamp_prescaler": {
+                  "type": "integer",
+                  "title": "Timestamp prescaler",
+                  "description": "Timestamp counter time unit in multiples of CAN bit times.",
+                  "default": 1,
+                  "oneOf": [
+                    {
+                      "title": "1",
+                      "const": 1
+                    },
+                    {
+                      "title": "2",
+                      "const": 2
+                    },
+                    {
+                      "title": "3",
+                      "const": 3
+                    },
+                    {
+                      "title": "4",
+                      "const": 4
+                    },
+                    {
+                      "title": "5",
+                      "const": 5
+                    },
+                    {
+                      "title": "6",
+                      "const": 6
+                    },
+                    {
+                      "title": "7",
+                      "const": 7
+                    },
+                    {
+                      "title": "8",
+                      "const": 8
+                    },
+                    {
+                      "title": "9",
+                      "const": 9
+                    },
+                    {
+                      "title": "10",
+                      "const": 10
+                    },
+                    {
+                      "title": "11",
+                      "const": 11
+                    },
+                    {
+                      "title": "12",
+                      "const": 12
+                    },
+                    {
+                      "title": "13",
+                      "const": 13
+                    },
+                    {
+                      "title": "14",
+                      "const": 14
+                    },
+                    {
+                      "title": "15",
+                      "const": 15
+                    },
+                    {
+                      "title": "16",
+                      "const": 16
+                    }
+                  ]
+                }
+              },
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_timestamp_counter"
+                }
+              ]
+            },
+            "enable_iso_mode": {
+              "title": "ISO Mode",
+              "type": "boolean",
+              "description": "ISO 11898-1 protocol mode.",
+              "default": false
+            },
+            "enable_edge_filtering": {
+              "title": "Edge Filtering",
+              "type": "boolean",
+              "description": "Edge filtering for hard synchronization.",
+              "default": false
+            },
+            "enable_rx_fifo_operation_mode": {
+              "title": "Set Rx FIFO operation mode",
+              "type": "boolean",
+              "description": "Modify the default Rx FIFO operation mode.",
+              "default": false
+            },
+            "rx_fifo_operation_mode": {
+              "type": "object",
+              "title": "Rx FIFO operation mode",
+              "properties": {
+                "rx_fifo_0_operation_mode": {
+                  "title": "Rx FIFO 0 operation mode",
+                  "type": "string",
+                  "default": "BLOCKING",
+                  "oneOf": [
+                    {
+                      "title": "Rx FIFO 0 blocking mode",
+                      "const": "BLOCKING"
+                    },
+                    {
+                      "title": "Rx FIFO 0 overwrite mode",
+                      "const": "OVERWRITE"
+                    }
+                  ]
+                },
+                "rx_fifo_1_operation_mode": {
+                  "title": "Rx FIFO 1 operation mode",
+                  "type": "string",
+                  "default": "BLOCKING",
+                  "oneOf": [
+                    {
+                      "title": "Rx FIFO 1 blocking mode",
+                      "const": "BLOCKING"
+                    },
+                    {
+                      "title": "Rx FIFO 1 overwrite mode",
+                      "const": "OVERWRITE"
+                    }
+                  ]
+                }
+              },
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_rx_fifo_operation_mode"
+                }
+              ]
+            },
+            "enable_set_extended_id_mask": {
+              "type": "boolean",
+              "title": "Extended ID mask value",
+              "default": false
+            },
+            "set_extended_id_mask": {
+              "type": "integer",
+              "title": "Extended ID mask",
+              "maximum": 536870911,
+              "minimum": 0,
+              "default": 0,
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_set_extended_id_mask"
+                }
+              ]
+            },
+            "enable_set_ram_watchdog": {
+              "type": "boolean",
+              "title": "RAM Watchdog",
+              "default": false
+            },
+            "set_ram_watchdog": {
+              "type": "integer",
+              "title": "RAM watchdog",
+              "maximum": 255,
+              "minimum": 1,
+              "default": 1,
+              "actions": [
+                {
+                  "type": "enable",
+                  "condition": "$additional.enable_set_ram_watchdog"
+                }
+              ]
+            },
+            "interrupts": {
+              "type": "object",
+              "title": "Interrupt groups",
+              "properties": {
+                "rx_fifo_0_interrupts": {
+                  "type": "object",
+                  "title": "Rx FIFO 0 group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_rx_fifo_0_new_msg": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 0 new message",
+                      "default": false
+                    },
+                    "it_rx_fifo_0_full": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 0 full",
+                      "default": false
+                    },
+                    "it_rx_fifo_0_msg_lost": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 0 message lost",
+                      "default": false
+                    }
+                  }
+                },
+                "rx_fifo_1_interrupts": {
+                  "type": "object",
+                  "title": "Rx FIFO 1 group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_rx_fifo_1_new_msg": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 1 new message",
+                      "default": false
+                    },
+                    "it_rx_fifo_1_full": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 1 full",
+                      "default": false
+                    },
+                    "it_rx_fifo_1_msg_lost": {
+                      "type": "boolean",
+                      "title": "Rx FIFO 1 message lost",
+                      "default": false
+                    }
+                  }
+                },
+                "status_msg_interrupts": {
+                  "type": "object",
+                  "title": "Status message group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_rx_high_priority_msg": {
+                      "type": "boolean",
+                      "title": "High priority message received",
+                      "default": false
+                    },
+                    "it_tx_complete": {
+                      "type": "boolean",
+                      "title": "Transmission completed",
+                      "default": false
+                    },
+                    "tx_complete_buffer": {
+                      "type": "object",
+                      "title": "Tx complete IT buffer(s)",
+                      "description": "Select the buffer(s) concerned by the Tx complete interrupt.",
+                      "properties": {
+                        "buffer_0": {
+                          "type": "boolean",
+                          "title": "Buffer 0",
+                          "default": true
+                        },
+                        "buffer_1": {
+                          "type": "boolean",
+                          "title": "Buffer 1",
+                          "default": true
+                        },
+                        "buffer_2": {
+                          "type": "boolean",
+                          "title": "Buffer 2",
+                          "default": true
+                        }
+                      },
+                      "actions": [
+                        {
+                          "type": "enable",
+                          "condition": "$additional.interrupts.status_msg_interrupts.it_tx_complete"
+                        }
+                      ]
+                    },
+                    "it_tx_abort_complete": {
+                      "type": "boolean",
+                      "title": "Transmission cancellation completed",
+                      "default": false
+                    },
+                    "tx_abort_complete_buffer": {
+                      "type": "object",
+                      "title": "Tx abort complete IT buffer(s)",
+                      "description": "Select the buffer(s) concerned by the Tx cancellation complete interrupt.",
+                      "properties": {
+                        "buffer_0": {
+                          "type": "boolean",
+                          "title": "Buffer 0",
+                          "default": true
+                        },
+                        "buffer_1": {
+                          "type": "boolean",
+                          "title": "Buffer 1",
+                          "default": true
+                        },
+                        "buffer_2": {
+                          "type": "boolean",
+                          "title": "Buffer 2",
+                          "default": true
+                        }
+                      },
+                      "actions": [
+                        {
+                          "type": "enable",
+                          "condition": "$additional.interrupts.status_msg_interrupts.it_tx_abort_complete"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "tx_fifo_error_interrupts": {
+                  "type": "object",
+                  "title": "Tx FIFO error group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_tx_fifo_empty": {
+                      "type": "boolean",
+                      "title": "Tx FIFO Empty",
+                      "default": false
+                    },
+                    "it_tx_evt_fifo_new_data": {
+                      "type": "boolean",
+                      "title": "Tx Event FIFO new data",
+                      "default": false
+                    },
+                    "it_tx_evt_fifo_full": {
+                      "type": "boolean",
+                      "title": "Tx Event FIFO full",
+                      "default": false
+                    },
+                    "it_tx_evt_fifo_elem_lost": {
+                      "type": "boolean",
+                      "title": "Tx Event FIFO element lost",
+                      "default": false
+                    }
+                  }
+                },
+                "misc_interrupts": {
+                  "type": "object",
+                  "title": "MISC group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_timestamp_wraparound": {
+                      "type": "boolean",
+                      "title": "Timestamp wraparound",
+                      "default": false
+                    },
+                    "it_ram_access_failure": {
+                      "type": "boolean",
+                      "title": "RAM access failure",
+                      "default": false
+                    },
+                    "it_timeout_occurred": {
+                      "type": "boolean",
+                      "title": "Timeout occurred",
+                      "default": false
+                    }
+                  }
+                },
+                "bit_line_error_interrupts": {
+                  "type": "object",
+                  "title": "Bit and line error group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_error_logging_overflow": {
+                      "type": "boolean",
+                      "title": "Overflow of FDCAN error logging counter occurred",
+                      "default": false
+                    },
+                    "it_error_passive": {
+                      "type": "boolean",
+                      "title": "Error passive status changed",
+                      "default": false
+                    }
+                  }
+                },
+                "protocol_error_interrupts": {
+                  "type": "object",
+                  "title": "Protocol error group",
+                  "properties": {
+                    "interrupt_lines": {
+                      "type": "string",
+                      "title": "Group mapped to interrupt line",
+                      "default": "LINE_0",
+                      "oneOf": [
+                        {
+                          "const": "LINE_0",
+                          "title": "Line 0"
+                        },
+                        {
+                          "const": "LINE_1",
+                          "title": "Line 1"
+                        }
+                      ]
+                    },
+                    "it_error_warning": {
+                      "type": "boolean",
+                      "title": "Error warning status changed",
+                      "default": false
+                    },
+                    "it_bus_off": {
+                      "type": "boolean",
+                      "title": "Bus off status changed",
+                      "default": false
+                    },
+                    "it_ram_watchdog": {
+                      "type": "boolean",
+                      "title": "Message RAM Watchdog event due to missing READY",
+                      "default": false
+                    },
+                    "it_arb_protocol_error": {
+                      "type": "boolean",
+                      "title": "Protocol error in arbitration phase detected",
+                      "default": false
+                    },
+                    "it_data_protocol_error": {
+                      "type": "boolean",
+                      "title": "Protocol error in data phase detected",
+                      "default": false
+                    },
+                    "it_reserved_address_access": {
+                      "type": "boolean",
+                      "title": "Access to reserved address occurred",
+                      "default": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "system": {
+          "type": "object",
+          "title": "System",
+          "properties": {
+            "gpio": {
+              "type": "object",
+              "title": "GPIO",
+              "properties": {
+                "gpio_tx": {
+                  "title": "GPIO Tx",
+                  "type": "object",
+                  "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.id",
+                  "needs": [
+                    {
+                      "selector": "TX",
+                      "constraints": {
+                        "mode": {
+                          "const": "ALTERNATE"
+                        }
+                      }
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "error",
+                      "message": "The selected FDCAN peripheral cannot be mapped to an Tx pin: no pin available in the selected package.",
+                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'TX')"
+                    }
+                  ]
+                },
+                "gpio_rx": {
+                  "title": "GPIO Rx",
+                  "type": "object",
+                  "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.id",
+                  "needs": [
+                    {
+                      "selector": "RX",
+                      "constraints": {
+                        "mode": {
+                          "const": "ALTERNATE"
+                        }
+                      }
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "error",
+                      "message": "The selected FDCAN peripheral cannot be mapped to an Rx pin: no pin available in the selected package.",
+                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RX')"
+                    }
+                  ]
+                }
+              }
+            },
+            "nvic": {
+              "type": "object",
+              "title": "NVIC",
+              "properties": {
+                "enable_interrupt_line0": {
+                  "type": "boolean",
+                  "title": "Line 0 interrupt",
+                  "default": false
+                },
+                "irq_handler_generation_line0": {
+                  "type": "boolean",
+                  "title": "Line 0 IRQ handler generation",
+                  "default": true,
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$system.nvic.enable_interrupt_line0 && $info.layer === 'HAL'"
+                    }
+                  ]
+                },
+                "nvic_config_line0": {
+                  "title": "Line 0 interrupt",
+                  "type": "object",
+                  "objectType": "need.interrupt.lines",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_CORTEX_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.id",
+                  "needs": [
+                    {
+                      "selector": "IT0"
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$system.nvic.enable_interrupt_line0"
+                    }
+                  ]
+                },
+                "enable_interrupt_line1": {
+                  "type": "boolean",
+                  "title": "Line 1 interrupt",
+                  "default": false
+                },
+                "irq_handler_generation_line1": {
+                  "type": "boolean",
+                  "title": "Line 1 IRQ handler generation",
+                  "default": true,
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$system.nvic.enable_interrupt_line1 && $info.layer === 'HAL'"
+                    }
+                  ]
+                },
+                "nvic_config_line1": {
+                  "title": "Line 1 interrupt",
+                  "type": "object",
+                  "objectType": "need.interrupt.lines",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_CORTEX_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.id",
+                  "needs": [
+                    {
+                      "selector": "IT1"
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$system.nvic.enable_interrupt_line1"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{{!--
+  ******************************************************************************
+  * @file           : mx_adc_template.c.hbs
+  * @brief          : ADC Peripheral initialization
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  ~--}}
+{{#helper_common_beautifier}}
+{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
+{{log "strategy" @root.strategy~}}
+{{#if (eq @root.strategy "SW")}}
+  {{~assign 'current_resource' 'ADC'~}}
+  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:ADC')~}}
+  {{~assign 'dma_resource' 'STM32CubeMX2 Config:ADC'~}}
+{{else}}
+  {{~assign "strategy" 'HW'~}}
+  {{#get_myctx~}}
+    {{#with _myctx~}}
+      {{~log "ADC template _myctx:" this~}}
+      {{~assign 'instances' instances~}}
+    {{/with~}}
+  {{/get_myctx~}}
+  {{~assign 'current_resource' (get 'hw_resource')~}}
+  {{~assign 'dma_resource' @root.current_resource~}}
+{{/if}}
+{{log "ADC template current_resource:" @root.current_resource~}}
+{{log "ADC template instances:" (toJSON @root.instances)~}}
+{{> SYSTEM fct='system_check_ll_optim'}}
+/**
+  ******************************************************************************
+  * @file           : mx_{{lowercase @root.current_resource}}.c
+  * @brief          : {{@root.current_resource}} Peripheral initialization
+{{> LICENSE}}
+
+/* Includes ------------------------------------------------------------------*/
+#include "mx_{{lowercase @root.current_resource}}.h"
+{{> RCC fct='include_rcc'~}}
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private functions prototype------------------------------------------------*/
+/* Exported variables by reference--------------------------------------------*/
+{{#each @root.instances~}}
+  {{#if (eq @root.strategy "SW")}}
+    {{~assign 'adc_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+    {{~log "ADC template adc_cxt:" (toJSON @root.adc_cxt)~}}
+    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+    {{~assign 'current_layer' @root.adc_cxt.info.layer~}}
+    {{~log "ADC template current_resource:" @root.current_resource~}}
+  {{else}}
+    {{~assign 'current_layer' info.layer~}}
+  {{/if}}
+  {{#if (eq @root.current_layer 'HAL')}}
+static hal_adc_handle_t h{{@root.current_resource}};
+{{> DMA_HAL fct='get_dma_handles' resource=@root.dma_resource strategy=@root.strategy}}
+  {{else}}
+{{> DMA_LL fct='get_dma_lli_variables' resource=@root.dma_resource strategy=@root.strategy}}
+  {{/if}}
+{{/each}}
+
+{{helper_common_initialize_index~}}
+{{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
+{{assign 'nvic_context' 'undefined'~}}
+{{assign 'nvic_generate_handler' true~}}
+{{#each @root.instances}}
+  {{#if (eq @root.strategy "HW")}}
+    {{~assign 'name' name~}}
+    {{~assign 'current_layer' info.layer~}}
+    {{~assign 'adc_cxt' this}}
+  {{else}}
+    {{~assign 'adc_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+    {{~assign 'name' @root.adc_cxt.name~}}
+    {{~assign 'current_layer' @root.adc_cxt.info.layer~}}
+    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
+  {{/if}}
+  {{~log "ADC template instance:" (toJSON this)~}}
+{{! Initialize the context for LL code optimization ~}}
+{{assign 'lut_table'   (helper_adc_get_lut_table 'ADCV1')~}}
+{{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
+/******************************************************************************/
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/******************************************************************************/
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
+{{assign 'current_index' (helper_common_inc_index @root.current_resource)~}}
+{{!
+    Generation of initialization function used in HAL
+~}}
+{{#with @root.adc_cxt}}
+{{#if (eq @root.current_layer 'HAL')}}
+hal_adc_handle_t *{{@root.fct_name}}_init(void)
+{
+{{assign 'adc_clock_activation_mode' (helper_common_if_rcc_clock_activated @root.core_ctxt.[0] @root.component)~}}
+{{#if (not (eq @root.adc_clock_activation_mode 2))}}
+{{> PWR_HAL fct='generate_peripheral_supply_activation' hw_resource=@root.current_resource ~}}
+{{/if}}
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='ADC'}}
+
+{{> ADC_HAL fct='init'}}
+
+{{#with system}}
+{{!==================== GPIO ====================}}
+{{> GPIO_HAL fct='init_resource' resource=@root.current_resource return_if_failed='NULL'}}
+{{!==================== NVIC for ADC ====================}}
+{{#with nvic}}
+{{#if enable_interruption}}
+  {{assign 'found_adc_interrupt' true~}}
+  /* Enable the interruption for ADC */
+{{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context  @root.nvic_context nvic_config.needs @root.current_resource irq_handler_generation)~}}
+{{#> CORTEX fct='init' layer=@root.current_layer needs=nvic_config.needs}}
+#warning "Partial HAL CORTEX is not present"
+{{/CORTEX}}
+{{/if}}{{! enable_interruption~}}
+{{/with}}{{! nvic ~}}
+{{!==================== DMA ====================}}
+{{#with dma}}
+{{#if dma_enable}}
+  /* Configure DMA */
+{{> DMA_HAL fct='init' needs=dma_config.needs}}
+  /* Link DMA handle to ADC handle */
+  HAL_ADC_REG_SetDMA(&h{{@root.current_resource}}, &h{{@root.dma_channel_instance}});
+
+{{/if}}
+{{/with}}{{! dma ~}}
+{{/with}}{{! system}}
+  return &h{{@root.current_resource}};
+}
+
+void {{@root.fct_name}}_deinit(void)
+{
+{{> ADC_HAL fct='deinit'}}
+
+{{> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.current_resource}}
+{{> RCC fct='generate_peripheral_clock_reset' hw_resource=@root.current_resource}}
+{{> RCC fct='kernel_clock_deinit' hw_resource=@root.current_resource}}
+
+{{#with system}}
+{{!==================== NVIC for ADC ====================}}
+{{#with nvic}}
+{{#if enable_interruption}}
+  /* Disable the interruption for ADC */
+{{#> CORTEX fct='deinit' layer=@root.current_layer needs=nvic_config.needs}}
+#warning "Partial HAL CORTEX is not present"
+{{/CORTEX}}
+{{/if}}
+{{/with}}{{! nvic ~}}
+{{!==================== GPIO ====================}}
+{{#with gpio}}
+{{#> GPIO_HAL fct='deinit_resource' resource=@root.current_resource}}
+{{/GPIO_HAL}}
+{{/with}}
+{{!==================== DMA ====================}}
+{{#with dma}}
+{{#if dma_enable}}
+{{> DMA_HAL fct='deinit' needs=dma_config.needs}}
+{{/if}}
+{{/with}}{{! dma ~}}
+{{/with}}{{! system ~}}
+}
+{{else}}{{! eq @root.current_layer 'LL' ~}}
+ADC_TypeDef *{{@root.fct_name}}_init(void)
+{
+{{> PWR_LL fct='generate_peripheral_supply_activation' hw_resource=@root.current_resource ~}}
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='ADC'}}
+
+{{> ADC_LL fct='init'}}
+
+{{#with system}}
+{{!==================== GPIO ====================}}
+{{> GPIO_LL fct='init_resource' resource=@root.current_resource}}
+{{!==================== NVIC for ADC ====================}}
+{{#with nvic}}
+{{#if enable_interruption}}
+  {{assign 'found_adc_interrupt' true~}}
+  /* Enable the interruption for ADC */
+{{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context nvic_config.needs @root.current_resource irq_handler_generation)~}}
+{{#> CORTEX fct='init' layer=@root.current_layer needs=nvic_config.needs}}
+#warning "Partial LL CORTEX is not present"
+{{/CORTEX}}
+{{/if}}
+{{/with}}{{! nvic ~}}
+{{!==================== DMA ====================}}
+{{#with dma}}
+{{#if dma_enable}}
+  /* Configure DMA */
+{{> DMA_LL fct='init' needs=dma_config.needs}}
+
+{{/if}}
+{{log '========== dma_enable: 'dma_enable~}}
+{{log '========== dma_config: 'dma_config~}}
+{{/with}}{{! dma ~}}
+{{/with}}{{! system ~}}
+
+  return {{@root.current_resource}};
+}
+
+void {{@root.fct_name}}_deinit(void)
+{
+{{> ADC_LL fct='deinit'}}
+
+{{> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.current_resource}}
+{{> RCC fct='generate_peripheral_clock_reset' hw_resource=@root.current_resource}}
+{{> RCC fct='kernel_clock_deinit' hw_resource=@root.current_resource}}
+
+{{#with system}}
+{{!==================== NVIC for ADC ====================}}
+{{#with nvic}}
+{{#if enable_interruption}}
+{{assign 'found_adc_interrupt' true~}}
+{{#> CORTEX fct='deinit' layer=@root.current_layer needs=nvic_config.needs}}
+#warning "Partial LL CORTEX is not present"
+{{/CORTEX}}
+{{/if}}
+{{/with}}{{! nvic ~}}
+{{!==================== GPIO ====================}}
+{{#with gpio}}
+{{#unless (eq @root.gpio_needs 'undefined')}}
+{{#> GPIO_LL fct='deinit_resource' resource=@root.current_resource}}
+{{/GPIO_LL}}
+{{/unless}}
+{{/with}}{{! gpio ~}}
+{{!==================== DMA ====================}}
+{{#with dma}}
+{{#if dma_enable}}
+  /* Configure DMA */
+{{> DMA_LL fct='deinit' needs=dma_config.needs}}
+
+{{/if}}
+{{/with}}{{! dma ~}}
+{{/with}}{{! system ~}}
+}
+
+{{/if}}{{! eq @root.current_layer 'HAL'}}
+{{#if (eq @root.current_layer 'HAL')}}
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
+{{!
+    Generation of getHandle functions used in HAL
+~}}
+hal_adc_handle_t *{{@root.fct_name}}_gethandle(void)
+{
+  return &h{{@root.current_resource}};
+}
+
+{{#if (not (eq @root.nvic_context 'undefined'))}}
+{{> CORTEX fct='generate_irqhandler' type='implementation' component='ADC'}}
+{{/if}}
+
+{{/if}}
+
+
+{{#if (eq @root.current_layer 'LL')}}
+{{> DMA_LL fct='get_dma_lli_reg' resource=@root.dma_resource strategy=@root.strategy type='implementation'}}
+{{/if}}
+
+
+{{/with}}
+{{/each}}
+{{/helper_common_beautifier}}

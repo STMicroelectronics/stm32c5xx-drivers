@@ -1,0 +1,137 @@
+{{!--
+  ******************************************************************************
+  * @file           : mx_sbs_template.c.hbs
+  * @brief          : SBS Peripheral initialization
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  ~--}}
+{{helper_globalize_API @root~}}
+{{#helper_common_beautifier}}
+{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
+{{log "strategy" @root.strategy~}}
+{{#if (eq @root.strategy "SW")}}
+  {{! ~}}
+  {{assign 'current_resource' 'SBS'~}}
+  {{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:SBS')~}}
+{{else}}
+  {{! ~}}
+  {{assign "strategy" "HW"~}}
+  {{#get_myctx~}}
+    {{#with _myctx~}}
+      {{assign 'current_resource' resource~}}
+      {{assign 'instances' instances~}}
+    {{/with~}}
+  {{/get_myctx~}}
+{{/if}}
+{{log "current_resource = " @root.current_resource~}}
+{{log "instances = " @root.instances~}}
+{{> SYSTEM fct='system_check_ll_optim'}}
+/**
+  ******************************************************************************
+  * @file           : mx_{{lowercase @root.current_resource}}.c
+  * @brief          : {{@root.current_resource}} Peripheral initialization
+{{> LICENSE}}
+
+/* Includes ----------------------------------------------------------------------------------------------------------*/
+#include "mx_{{lowercase @root.current_resource}}.h"
+
+/* Private typedef ---------------------------------------------------------------------------------------------------*/
+/* Private define ----------------------------------------------------------------------------------------------------*/
+/* Private macro -----------------------------------------------------------------------------------------------------*/
+/* Private variables -------------------------------------------------------------------------------------------------*/
+/* Private functions prototype----------------------------------------------------------------------------------------*/
+/* Exported variables by reference------------------------------------------------------------------------------------*/
+/* Exported function definition --------------------------------------------------------------------------------------*/
+{{!
+    Generation of handle for each function defined in HAL layer
+    - save a variable to indicate if handle has been already created (only 1 handle by function)
+~}}
+{{#each @root.instances}}
+{{assign 'lut_table'   (helper_sbs_get_lut_table 'SBSV1')~}}
+{{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
+  {{! ~}}
+  {{assign 'current_layer' info.layer~}}
+/******************************************************************************/
+/* Exported functions for SBS in {{@root.current_layer}} layer */
+/******************************************************************************/
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer '0')~}}
+system_status_t {{@root.fct_name}}_init(void)
+{
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
+{{> SBS fct='set_analog_io_switch_supply' layer=@root.current_layer}}
+{{> SBS fct='fast_mode_plus_driving_capability' layer=@root.current_layer}}
+{{> SBS fct='i2c_smbus_selection' layer=@root.current_layer}}
+{{> SBS fct='enable_timer_connections' layer=@root.current_layer}}
+{{> SBS fct='configure_compensation_cells'}}
+{{> SBS fct='flash_eccnmi' layer=@root.current_layer}}
+{{> SBS fct='set_epoch_value' layer=@root.current_layer}}
+{{> SBS fct='set_ethernet_external_phy_interrupt_polarity' layer=@root.current_layer}}
+{{> SBS fct='set_ethernet_phy_interface' layer=@root.current_layer}}
+{{#with system}}
+  {{#if nvic.bridge_error_interruption}}
+
+  {{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context nvic.irq_line_priority.needs @root.current_resource irq_handler_generation)~}}
+  {{assign 'bridge_error_interruption' nvic.bridge_error_interruption~}}
+  /* Set SBS Interrupt priority*/
+{{#> CORTEX fct='init' layer=@root.current_layer needs=nvic.irq_line_priority.needs}}
+#warning "Partial CORTEX is not present"
+{{/CORTEX}}
+  {{/if}}
+{{/with}}
+
+  return SYSTEM_OK;
+}
+
+system_status_t {{@root.fct_name}}_deinit(void)
+{
+{{#if @root.bridge_error_interruption}}
+  /* Disable the SBS bridge interrupt */
+{{> CORTEX fct='deinit' layer=@root.current_layer needs=System.nvic.irq_line_priority.needs}}
+
+{{/if}}
+{{> RCC fct='generate_peripheral_clock_reset' hw_resource=@root.current_resource}}
+{{> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.current_resource}}
+  return SYSTEM_OK;
+}
+{{/each}}
+
+{{#if @root.bridge_error_interruption}}
+{{assign 'irq_info_list' (helper_cortex_nvic_get_irqline_info_list @root.NvicAPI @root.nvic_context 'SBS_NS_BusErrorBridge')~}}
+{{#each @root.irq_info_list}}
+{{#if generate_handler}}
+/******************************************************************************/
+/*                     {{description}}                    */
+/******************************************************************************/
+{{#if (eq @root.current_layer 'HAL')}}
+void {{line}}_IRQHandler(void)
+{
+  HAL_{{component}}_IRQHandler();
+}
+{{else}}
+void {{line}}_IRQHandler(void)
+{
+
+}
+{{/if}}
+{{else}}
+/******************************************************************************/
+/*    {{description}} is managed directly in user code.   */
+/*
+void {{line}}_IRQHandler(void)
+{
+}
+  */
+/******************************************************************************/
+{{/if}}{{!generate_handler~}}
+{{/each}}
+{{/if}}
+{{/helper_common_beautifier}}

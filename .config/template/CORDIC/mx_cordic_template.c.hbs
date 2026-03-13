@@ -1,0 +1,134 @@
+{{!--
+  ******************************************************************************
+  * @file           : mx_cordic_template.c.hbs
+  * @brief          : {{@root.current_resource}} Peripheral initialization
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  ~--}}
+{{#helper_common_beautifier}}
+{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
+{{log "strategy" @root.strategy~}}
+{{#if (eq @root.strategy "SW")}}
+  {{~assign 'current_resource' 'CORDIC'~}}
+  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:CORDIC')~}}
+  {{~assign 'dma_resource' 'STM32 MX Config:CORDIC'~}}
+{{else}}
+  {{~assign "strategy" 'HW'~}}
+  {{#get_myctx~}}
+  {{#with _myctx~}}
+    {{~log "CORDIC template _myctx:" this~}}
+    {{~assign 'current_resource' resource~}}
+    {{~assign 'dma_resource' resource~}}
+    {{~assign 'instances' instances~}}
+  {{/with~}}
+  {{/get_myctx~}}
+{{/if}}
+{{log "CORDIC template current_resource:" @root.current_resource~}}
+{{> SYSTEM fct='system_check_ll_optim'}}
+/**
+  ******************************************************************************
+  * @file           : mx_{{lowercase @root.current_resource}}.c
+  * @brief          : {{@root.current_resource}} Peripheral initialization
+{{> LICENSE}}
+
+
+/* Includes ------------------------------------------------------------------*/
+#include "mx_{{lowercase @root.current_resource}}.h"
+{{> RCC fct='include_rcc'}}
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private functions prototypes ----------------------------------------------*/
+/* Exported variables by reference -------------------------------------------*/
+{{assign 'hal_handle_exist' false~}}
+{{assign 'nvic_context' 'undefined'~}}
+{{#each @root.instances~}}
+{{#if (eq @root.strategy "SW")}}
+  {{~assign 'cordic_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+  {{~log "CORDIC template cordic_cxt:" (toJSON @root.cordic_cxt)~}}
+  {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+  {{~assign 'current_layer' @root.cordic_cxt.info.layer~}}
+  {{~log "CORDIC template current_resource:" @root.current_resource~}}
+{{else}}
+  {{~assign 'current_layer' info.layer~}}
+{{/if}}
+{{#if (eq @root.current_layer 'HAL')}}
+{{#unless @root.hal_handle_exist}}
+{{~assign 'hal_handle_exist' true~}}
+static hal_cordic_handle_t h{{@root.current_resource}};
+{{/unless}}
+{{> DMA_HAL fct='get_dma_handles' resource=@root.current_resource strategy=@root.strategy}}
+{{else}}
+{{> DMA_LL fct='get_dma_lli_variables' resource=@root.current_resource strategy=@root.strategy}}
+{{/if}}
+{{/each}}
+
+{{assign 'hal_handle_exist' 0~}}
+{{helper_common_initialize_index~}}
+{{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
+{{#each @root.instances}}
+{{#if (eq @root.strategy "HW")}}
+{{assign 'name' name~}}
+{{assign 'current_layer' info.layer~}}
+{{assign 'cordic_cxt' this}}
+{{else}}
+{{assign 'cordic_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+{{assign 'current_resource' @root.cordic_cxt.settings.resource.id~}}
+{{assign 'name' @root.cordic_cxt.name~}}
+{{assign 'current_layer' @root.cordic_cxt.info.layer~}}
+{{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
+{{/if}}
+{{assign 'lut_table'   (helper_cordic_get_lut_table 'V1')~}}
+{{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
+/******************************************************************************/
+/* Exported functions for CORDIC in {{@root.current_layer}} layer (SW instance {{name}}) */
+/******************************************************************************/
+{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index @root.current_function @root.from_where)~}}
+{{assign 'current_index' (helper_common_inc_index @root.current_resource)~}}
+
+{{#if (eq @root.current_layer 'HAL')}}
+{{!
+    Generation of initialization function used in HAL
+~}}
+{{> CORDIC_HAL fct='init'}}
+{{!
+    Generation of de-initialization function used in HAL
+~}}
+{{> CORDIC_HAL fct='deinit'}}
+
+{{!
+    Generation of getHandle functions used in HAL
+~}}
+hal_cordic_handle_t *{{@root.fct_name}}_gethandle(void)
+{
+  return &h{{@root.current_resource}};
+}
+{{else}}
+{{assign 'nvic_generate_handler' false~}}
+{{!
+    Generation of initialization function used in LL
+~}}
+{{> CORDIC_LL fct='init'}}
+{{!
+    Generation of de-initialization function used in LL
+~}}
+{{> CORDIC_LL fct='deinit'}}
+
+{{> DMA_LL fct='get_dma_lli_reg' resource=@root.current_resource strategy=@root.strategy type='implementation'}}
+
+{{/if}}
+{{/each}}
+
+{{> CORTEX fct='generate_irqhandler' type='implementation' component='CORDIC'}}
+{{/helper_common_beautifier}}

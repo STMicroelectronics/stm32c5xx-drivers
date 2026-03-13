@@ -1,0 +1,136 @@
+{{!
+ * @file Partial used to generate code for TAMP:
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+~}}
+{{!
+  Partial used for LL TAMP:
+  how to use
+  > TAMP_LL fct='xxxx' with xxxx:
+    * exported_functions_init
+~}}
+
+{{!
+############################
+##  exported_functions_init
+############################
+~}}
+{{#with basic}}
+{{#with tamper_indiv_config}}
+{{#each tampers}}
+{{#if use_channel}}
+{{#if (eq mode "Passive")}}
+{{#unless @root.found_passive_tamper}}
+{{assign 'found_passive_tamper' true~}}
+{{/unless}}
+{{/if}}{{!Passive~}}
+{{#if (eq mode "Active")}}
+{{#unless @root.found_active_tamper}}
+{{assign 'found_active_tamper' true~}}
+{{/unless}}
+{{/if}}{{!Active~}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!tampers~}}
+{{/with}}{{!tamper_indiv_config~}}
+{{/with}}{{!basic~}}
+
+{{#if (eq fct 'exported_functions_init')}}
+{{!
+    Generation of initialization function used in LL
+~}}
+system_status_t {{@root.fct_name}}_init(void)
+{
+{{> PWR_LL fct='generate_write_protection_disable'}}
+
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource~}}
+
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource sw_resource='TAMP'}}
+
+{{#with basic}}
+{{#with tamper_global_config}}
+{{#with passive}}
+{{#if (eq @root.found_passive_tamper true)}}
+  LL_TAMP_SetConfig(LL_TAMP_PULL_UP_{{#if precharge}}ENABLE{{else}}DISABLE{{/if}},
+                    LL_TAMP_DURATION_{{#if precharge}}{{precharge_duration}}RTCCLK{{else}}1RTCCLK{{/if}},
+                    LL_TAMP_FILTER_{{#if passive_filter}}{{filter_type_activation}}SAMPLES{{else}}DISABLE{{/if}},
+                    LL_TAMP_SAMPLFREQDIV_{{sample_frequency_div}});
+
+{{/if}}
+{{/with}}{{!passive~}}
+
+{{#with active}}
+{{#if (eq @root.found_active_tamper true)}}
+  LL_TAMP_ATAMP_SetConfig(LL_TAMP_ATAMP_FILTERING_{{#if active_filter}}ENABLE{{else}}DISABLE{{/if}},
+                          {{output_periode}},
+                          LL_TAMP_ATAMP_SHARING_{{#if output_shared}}ENABLE{{else}}DISABLE{{/if}},
+                          LL_TAMP_ATAMP_ASYNCPRES_RTCCLK{{#if (eq asynchronous_prescaler 1)}}{{else}}_{{asynchronous_prescaler}}{{/if}});
+
+{{/if}}
+{{/with}}{{!active~}}
+{{/with}}{{!tamper_global_config~}}
+
+{{#with tamper_indiv_config}}
+{{#each tampers}}
+{{#if use_channel}}
+{{#if (eq mode "Passive")}}
+  LL_TAMP_SetConfigTampers({{#if tamper_label_name}}{{tamper_label_name}}{{else}}LL_{{helper_tamp_convert _foreignKey}}{{/if}},
+                           LL_TAMP_ACTIVELEVEL_{{helper_tamp_passive_trigger_convert  trigger}},
+                           LL_TAMP_{{#if (eq erase 'ERASE')}}ERASE_ACTIVATE_ALL{{else}}NOERASE_TAMPER{{/if}},
+                           LL_TAMP_MASK_{{#if (eq mask 'UNMASKED')}}NONE{{else}}TAMPER{{/if}});
+
+{{/if}}{{!Passive~}}
+{{#if (eq mode "Active")}}
+  LL_TAMP_SetConfigTampers({{#if tamper_label_name}}{{tamper_label_name}}{{else}}LL_{{helper_tamp_convert _foreignKey}}{{/if}}, 0, LL_TAMP_{{#if (eq erase 'ERASE')}}ERASE_ACTIVATE_ALL{{else}}NOERASE_TAMPER{{/if}}, 0);
+
+{{/if}}{{!Active~}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!tampers~}}
+
+{{#each internal_tampers}}
+{{#if use_channel}}
+  LL_TAMP_SetConfigInternalTampers({{#if int_tamper_label_name}}{{int_tamper_label_name}}{{else}}LL_{{helper_tamp_internal_convert _foreignKey}}{{/if}}, LL_TAMP_ITAMP_{{#if (eq erase 'ERASE')}}ERASE_ACTIVE_ALL{{else}}NOERASE_TAMPER{{/if}});
+
+{{/if}}{{!use_channel~}}
+{{/each}}{{!internal_tampers~}}
+{{/with}}{{!tamper_indiv_config~}}
+{{/with}}{{!basic~}}
+
+{{#with additional}}
+{{#if hw_boot_key_block}}
+  LL_TAMP_LockBootHardwareKey();
+
+{{/if}}{{!hw_boot_key_block~}}
+
+{{#if use_resource_protection}}
+  LL_TAMP_EnableResourceProtection(LL_TAMP_RESOURCE_{{resource}});
+
+{{/if}}{{!use_resource_protection~}}
+{{/with}}{{!additional~}}
+
+{{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
+  /* Enable the interruption for TAMP */
+{{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.irq_config.needs @root.current_resource false)~}}
+{{> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
+
+{{/if}}
+
+  return SYSTEM_OK;
+}
+
+void {{@root.fct_name}}_deinit(void)
+{
+{{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
+  /* Disable the interuption for TAMP */
+{{> CORTEX fct='deinit' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
+{{/if}}
+}
+{{else}}
+#warning "Function {{fct}} not present in partial TAMP_partial.hbs"
+{{/if}}

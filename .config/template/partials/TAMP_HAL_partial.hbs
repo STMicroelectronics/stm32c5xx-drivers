@@ -1,0 +1,202 @@
+{{!
+ * @file Partial used to generate code for TAMP:
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+~}}
+{{!
+  Partial used for HAL TAMP:
+  how to use
+  > TAMP_HAL fct='xxxx' with xxxx:
+    * exported_functions_init
+~}}
+
+{{!
+############################
+##  exported_functions_init
+############################
+~}}
+{{#with basic}}
+{{#with tamper_indiv_config}}
+{{#each tampers}}
+{{#if use_channel}}
+{{#if (eq mode "Passive")}}
+{{#unless @root.found_passive_tamper}}
+{{assign 'found_passive_tamper' true~}}
+{{/unless}}
+{{/if}}{{!Passive~}}
+{{#if (eq mode "Active")}}
+{{#unless @root.found_active_tamper}}
+{{assign 'found_active_tamper' true~}}
+{{/unless}}
+{{/if}}{{!Active~}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!tampers~}}
+{{/with}}{{!tamper_indiv_config~}}
+{{/with}}{{!basic~}}
+
+{{#if (eq fct 'exported_functions_init')}}
+system_status_t {{@root.fct_name}}_init(void)
+{
+{{#with basic}}
+{{#with tamper_global_config}}
+{{#with passive}}
+  {{#if (eq @root.found_passive_tamper true)}}
+  hal_tamp_passive_config_t             p_passive_global_config;
+  {{/if}}
+{{/with}}{{!passive~}}
+{{#with active}}
+  {{#if (eq @root.found_active_tamper true)}}
+  hal_tamp_active_config_t              p_active_global_config;
+  {{/if}}
+{{/with}}{{!active~}}
+{{/with}}{{!tamper_global_config~}}
+{{#with tamper_indiv_config}}
+{{#each tampers}}
+{{#if use_channel}}
+{{#if (eq mode "Passive")}}
+{{#unless @root.found_passive_indiv_tamper}}
+  {{assign 'found_passive_indiv_tamper' true~}}
+  hal_tamp_passive_individual_config_t  p_passive_indiv_config;
+{{/unless}}
+{{/if}}{{!Passive~}}
+{{#if (eq mode "Active")}}
+{{#unless @root.found_active_indiv_tamper}}
+  {{assign 'found_active_indiv_tamper' true~}}
+  hal_tamp_active_individual_config_t   p_active_indiv_config;
+{{/unless}}
+{{/if}}{{!Active~}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!tampers~}}
+{{#each internal_tampers}}
+{{#if use_channel}}
+{{#unless @root.found_internal_tamper}}
+  {{assign 'found_internal_tamper' true~}}
+  hal_tamp_internal_individual_config_t p_internal_tamper_config;
+{{/unless}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!internal_tampers~}}
+{{/with}}{{!tamper_indiv_config~}}
+
+{{/with}}{{!basic~}}
+
+{{> PWR_HAL fct='generate_write_protection_disable'}}
+
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource~}}
+
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource sw_resource='TAMP'}}
+
+{{#with basic}}
+{{#with tamper_global_config}}
+{{#with passive}}
+{{#if (eq @root.found_passive_tamper true)}}
+  p_passive_global_config.precharge = HAL_TAMP_PASSIVE_PULL_UP_PRECHARGE_{{#if precharge}}ENABLE{{else}}DISABLE{{/if}};
+  p_passive_global_config.precharge_duration = HAL_TAMP_PASSIVE_PULL_UP_PRECHARGE_{{precharge_duration}}_RTCCLK;
+  p_passive_global_config.type_activation = HAL_TAMP_PASSIVE_FILTER_{{#if passive_filter}}{{filter_type_activation}}_SAMPLES{{else}}DISABLE{{/if}};
+  p_passive_global_config.sample_frequency = HAL_TAMP_PASSIVE_SAMPLE_FREQ_DIV_{{sample_frequency_div}};
+  if (HAL_TAMP_PASSIVE_SetConfig(&p_passive_global_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}
+{{/with}}{{!passive~}}
+
+{{#with active}}
+{{#if (eq @root.found_active_tamper true)}}
+  p_active_global_config.output_period = {{output_periode}};
+  p_active_global_config.filter = HAL_TAMP_ACTIVE_FILTER_{{#if active_filter}}ENABLE{{else}}DISABLE{{/if}};
+  p_active_global_config.asynchronous_prescaler = HAL_TAMP_ACTIVE_PRESCALER_RTCCLK{{#if (eq asynchronous_prescaler 1)}}{{else}}_DIV_{{asynchronous_prescaler}}{{/if}};
+  p_active_global_config.shared_output = HAL_TAMP_ACTIVE_TAMPER_OUTPUT_{{#if output_shared}}SHARED{{else}}NOT_SHARED{{/if}};
+  if (HAL_TAMP_ACTIVE_SetConfig(&p_active_global_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}
+{{/with}}{{!active~}}
+{{/with}}{{!tamper_global_config~}}
+
+{{#with tamper_indiv_config}}
+{{#each tampers}}
+{{#if use_channel}}
+{{#if (eq mode "Passive")}}
+  p_passive_indiv_config.trigger = HAL_TAMP_PASSIVE_TRIGGER_{{trigger}};
+  p_passive_indiv_config.erase_secrets = HAL_TAMP_PASSIVE_SECRETS_{{erase}};
+  p_passive_indiv_config.masked = HAL_TAMP_PASSIVE_{{mask}};
+  if (HAL_TAMP_PASSIVE_SetConfigTampers({{#if tamper_label_name}}{{tamper_label_name}}{{else}}HAL_TAMP_{{_foreignKey}}{{/if}}, &p_passive_indiv_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}{{!Passive~}}
+{{#if (eq mode "Active")}}
+  p_active_indiv_config.tamper_output = HAL_TAMP_ACTIVE_TAMPER_OUTPUT_{{tamper_output}};
+  p_active_indiv_config.erase_secrets = HAL_TAMP_ACTIVE_SECRETS_{{erase}};
+  if (HAL_TAMP_ACTIVE_SetConfigTampers({{#if tamper_label_name}}{{tamper_label_name}}{{else}}HAL_TAMP_{{_foreignKey}}{{/if}}, &p_active_indiv_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}{{!Active~}}
+{{/if}}{{!use_channel~}}
+{{/each}}{{!tampers~}}
+
+{{#each internal_tampers}}
+{{#if use_channel}}
+  p_internal_tamper_config.erase_secrets = HAL_TAMP_INTERNAL_SECRETS_{{erase}};
+  if (HAL_TAMP_INTERNAL_SetConfigTampers({{#if int_tamper_label_name}}{{int_tamper_label_name}}{{else}}HAL_TAMP_{{_foreignKey}}{{/if}}, &p_internal_tamper_config) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}{{!use_channel~}}
+{{/each}}{{!internal_tampers~}}
+{{/with}}{{!tamper_indiv_config~}}
+{{/with}}{{!basic~}}
+
+{{#with additional}}
+{{#if hw_boot_key_block}}
+  if (HAL_TAMP_LockBHK() != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{/if}}{{!hw_boot_key_block~}}
+
+{{#if use_resource_protection}}
+  if (HAL_TAMP_EnableResourceProtection(HAL_TAMP_RESOURCE_{{resource}}) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+{{/if}}{{!use_resource_protection~}}
+{{/with}}{{!additional~}}
+
+{{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
+  /* Enable the interruption for TAMP */
+{{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.irq_config.needs @root.current_resource system.nvic.irq_handler_generation)~}}
+{{> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
+{{/if}}
+
+  return SYSTEM_OK;
+}
+
+void {{@root.fct_name}}_deinit(void)
+{
+{{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
+  /* Disable the interuption for TAMP */
+{{> CORTEX fct='deinit' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
+{{/if}}
+}
+{{else}}
+{{!
+ Default case which should not occur
+~}}
+#warning "Function {{fct}} not present in partial TAMP_partial.hbs"
+{{/if}}
