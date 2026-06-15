@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:RNG",
-  "grammarVersion": "3.5",
+  "grammarVersion": "3.9",
   "type": "object",
   "properties": {
     "parameters": {
@@ -15,10 +15,16 @@
             "labels": {
               "type": "array",
               "title": "Add a label",
-              "description": "Labels allow to create aliases inside mx_hal_def.h file like '<label>_init', '<label>_deinit' and '<label>_gethandle'. These aliases can be used on application side.",
+              "description": "Add labels to create clear aliases for init, deinit, and get-handle helper functions in your application code.",
               "items": {
                 "type": "string",
-                "pattern": "^([a-zA-Z_][a-zA-Z0-9_]{1,31})?$",
+                "actions": [
+                  {
+                    "type": "error",
+                    "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                    "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                  }
+                ],
                 "minLength": 0,
                 "maxLength": 32,
                 "unique": "project",
@@ -108,8 +114,8 @@
             },
             "config_1": {
               "type": "integer",
-              "title": "Value 1",
-              "description": "Value1 must be a value between 0 and 0x3F.",
+              "title": "Custom profile value 1",
+              "description": "Set custom profile value 1. Allowed range: 0x00 to 0x3F.",
               "actions": [
                 {
                   "type": "include",
@@ -125,8 +131,8 @@
             },
             "config_2": {
               "type": "integer",
-              "title": "Value 2",
-              "description": "Value2 must be a value between 0 and 0x7.",
+              "title": "Custom profile value 2",
+              "description": "Set custom profile value 2. Allowed range: 0x0 to 0x7.",
               "actions": [
                 {
                   "type": "include",
@@ -141,8 +147,8 @@
             },
             "config_3": {
               "type": "integer",
-              "title": "Value 3",
-              "description": "Value3 must be a value between 0 and 0xF.",
+              "title": "Custom profile value 3",
+              "description": "Set custom profile value 3. Allowed range: 0x0 to 0xF.",
               "actions": [
                 {
                   "type": "include",
@@ -284,7 +290,7 @@
             "noise_source": {
               "type": "object",
               "title": "Noise source",
-              "description": "RNG noise source structure definition.",
+              "description": "Choose the oscillator sources used to build entropy for the custom profile.",
               "actions": [
                 {
                   "type": "include",
@@ -390,7 +396,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -415,7 +422,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -440,7 +448,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -465,7 +474,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -490,7 +500,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -515,7 +526,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -540,7 +552,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -565,7 +578,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -590,7 +604,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is disabled by default."
                 }
               ],
               "display_format": [
@@ -616,10 +631,141 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "#comment": "Use for instance for RNG",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
-          "description": "RNG Global Structure definition.",
+          "description": "Control system-level RNG options, including interrupt behavior.",
           "properties": {
             "nvic": {
               "title": "NVIC",
@@ -628,7 +774,7 @@
                 "enable_interruption": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Interruption"
+                  "title": "Interrupt"
                 },
                 "irq_handler_generation": {
                   "title": "IRQ handler generation",

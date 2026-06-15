@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'RTC'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:RTC')~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "RTC template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
-{{log "RTC template current_resource:" @root.current_resource~}}
-{{log "RTC template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'RTC' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "RTC template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 /**
   ******************************************************************************
@@ -50,15 +38,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'RTC_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "RTC template RTC_cxt:" (toJSON @root.RTC_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.RTC_cxt.info.layer~}}
-    {{~log "RTC template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'RTC_cxt' config~}}
+  {{~log "RTC template RTC_cxt:" (toJSON @root.RTC_cxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.RTC_cxt.info.layer~}}
+  {{~log "RTC template current_resource:" @root.current_resource~}}
   {{#if (eq @root.current_layer 'HAL')}}
 {{> GPIO_HAL fct='gpio_exti_get_variables' resource=@root.current_resource~}}
   {{/if}}
@@ -66,17 +50,17 @@
 
 {{assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "HW")}}
-    {{~assign 'name' name~}}
-    {{~assign 'current_layer' info.layer~}}
-    {{~assign 'RTC_cxt' this~}}
-  {{/if}}
+  {{~assign 'RTC_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'name' @root.RTC_cxt.name~}}
+  {{~assign 'current_layer' @root.RTC_cxt.info.layer~}}
 {{! Initialize the context for LL code optimization ~}}
 {{!-- {{assign 'lut_table'   (helper_RTC_get_lut_table 'V1')~}} --}}
     {{~helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
 /******************************************************************************/
-/** Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}})            **/
+/** Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer            **/
 /******************************************************************************/
+  {{#with @root.RTC_cxt}}
     {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
 {{!
     Generation of initialization function used in HAL
@@ -186,7 +170,7 @@ system_status_t {{@root.fct_name}}_init(void)
   }
       {{/if}}
       {{#if additional.alarm_a.enable_alarm_a}}
-  
+
   /* Configure alarm A */
   hal_rtc_alarm_config_t alarm_a_config;
         {{#if (eq basic.mode 'BINARY')}}
@@ -270,7 +254,7 @@ system_status_t {{@root.fct_name}}_init(void)
         {{/if}}
       {{/if}}  {{! additional.alarm_a.enable_alarm_a'}}
       {{#if additional.alarm_b.enable_alarm_b}}
-  
+
   /* Configure alarm B */
   hal_rtc_alarm_config_t alarm_b_config;
         {{#if (eq basic.mode 'BINARY')}}
@@ -498,7 +482,7 @@ system_status_t {{@root.fct_name}}_init(void)
   }
 
       {{/if}}
-{{> GPIO_HAL fct='init_resource' resource=@root.current_resource}}
+{{> GPIO_HAL fct='init_resource' resource=@root.current_resource return_if_failed='SYSTEM_POWER_ERROR'}}
       {{#with system}}
         {{#with nvic}}
           {{#if enable_interruption}}
@@ -525,63 +509,121 @@ void {{@root.fct_name}}_deinit(void)
       {{/with}}
 }
 
-    {{else}} {{! @root.current_layer 'HAL'}}
-      {{#> RTC_LL fct='init'}}
-      {{/RTC_LL}}
-      {{#> RTC_LL fct='deinit'}}
-      {{/RTC_LL}}
-    {{/if}} {{! @root.current_layer 'HAL'}}
-    {{#with system}}
-      {{#with nvic}}
-        {{#if use_unitary_irq_handlers}}
-void RTC_IRQHandler(void)
+{{#with security_privilege}}
+  {{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+  {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+system_status_t {{@root.fct_name}}_config_privilege(void)
+  {{else}}
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+  {{/if}}
 {
-          {{#each unitary_apis}}
-            {{#if (eq this.api_name 'HAL_RTC_ALARM_IRQHandler')}}
-  /* Don't forget to call HAL_RTC_ALARM_Start */
-  HAL_RTC_ALARM_IRQHandler();
-            {{/if}} {{! HAL_RTC_ALARM_IRQHandler}}
-            {{#if (eq this.api_name 'HAL_RTC_TIMESTAMP_IRQHandler')}}
-  /* Don't forget to call HAL_RTC_TIMESTAMP_EnableIT */
-  HAL_RTC_TIMESTAMP_IRQHandler();
-            {{/if}} {{! HAL_RTC_TIMESTAMP_IRQHandler}}
-            {{#if (eq this.api_name 'HAL_RTC_WAKEUP_IRQHandler')}}
-  /* Don't forget to call HAL_RTC_WAKEUP_Start */
-  HAL_RTC_WAKEUP_IRQHandler();
-            {{/if}} {{! HAL_RTC_WAKEUP_IRQHandler}}
-            {{#if (eq this.api_name 'HAL_RTC_SubSecondsUnderflow_IRQHandler')}}
-  /* Don't forget to call HAL_RTC_CALENDAR_IsEnabledITSubSecondsUnderflow */
-  HAL_RTC_SubSecondsUnderflow_IRQHandler();
-            {{/if}} {{! HAL_RTC_SubSecondsUnderflow_IRQHandler}}
-            {{#unless @last}}
+  /*
+   * Full access security path:
+   * Configure RTC resources security/privilege attributes
+   */
 
-            {{/unless}}
-          {{/each}} {{! unitary_apis}}
+  {{#> PWR_HAL fct='generate_write_protection_disable'}}
+{{/PWR_HAL}}
+
+ {{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
+ {{/RCC}}
+
+  /* Disable write protection */
+  if (HAL_RTC_DisableWriteProtection() != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{#with security}}
+{{assign "access_levels_all_states" (helper_rtc_attribute_all_states access_levels)}}
+{{#unless  @root.access_levels_all_states.allNegative}}
+{{#if @root.access_levels_all_states.allPositive}}
+
+  /* Configure security attributes for RTC peripheral */
+  if (HAL_RTC_SetSecAttr(HAL_RTC_SEC_ITEM_ALL, HAL_RTC_SEC) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{else}}
+{{assign "security_items" (helper_rtc_get_attribute_items @root.current_layer 'SEC' access_levels)}}
+{{#unless (eq security_items '')}}
+
+  /* Configure security attributes for RTC peripheral */
+  if (HAL_RTC_SetSecAttr({{@root.security_items}}, HAL_RTC_SEC) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{else}}
+{{log "No specific security attributes require configuration for this RTC instance."}}
+{{/unless}}
+{{/if}}
+{{else}}
+{{log "No security attributes (all) require configuration for this RTC instance."}}
+{{/unless}}
+{{/with}}
+
+{{#with privilege}}
+{{assign "access_levels_all_states" (helper_rtc_attribute_all_states access_levels)}}
+{{#unless  @root.access_levels_all_states.allNegative}}
+{{#if @root.access_levels_all_states.allPositive}}
+
+  /* Configure privilege attributes for RTC peripheral */
+  if (HAL_RTC_SetPrivAttr(HAL_RTC_PRIV_ITEM_ALL, HAL_RTC_PRIV) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{else}}
+{{assign "privilege_items" (helper_rtc_get_attribute_items @root.current_layer 'PRIV' access_levels)}}
+{{#unless (eq privilege_items '')}}
+
+  /* Configure privilege attributes for RTC peripheral */
+  if (HAL_RTC_SetPrivAttr({{@root.privilege_items}}, HAL_RTC_PRIV) != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+{{else}}
+{{log "No specific privilege attributes require configuration for this RTC instance."}}
+{{/unless}}
+{{/if}}
+{{else}}
+{{log "No privilege attributes (all) require configuration for this RTC instance."}}
+{{/unless}}
+{{/with}}
+
+{{#> GPIO_HAL fct='gpio_config_security' resource=@root.current_resource}}{{/GPIO_HAL}}
+
+{{#if illegal_access}}
+  /* Enable HSEM IAC interrupt */
+  HAL_RIF_IAC_EnableIT(HAL_RIF_IAC_RTC);
+{{/if}}
+
+  /* Enable write protection */
+  if (HAL_RTC_EnableWriteProtection() != HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+
+  return SYSTEM_OK;
 }
-        {{else}} {{! use_unitary_irq_handlers}}
-          {{~assign 'irq_info_list' (helper_cortex_nvic_get_irqline_info_list @root.NvicAPI @root.nvic_context 'RTC')~}}
-          {{#each @root.irq_info_list}}
-            {{#if generate_handler}}
-/******************************************************************************/
-/**                     {{description}}                     **/
-/******************************************************************************/
-void {{line}}_IRQHandler(void)
-{
-  HAL_{{component}}_IRQHandler();
-}
-            {{else}} {{! generate_handler}}
-/******************************************************************************/
-/*    {{description}} is managed directly in user code.   */
-/******************************************************************************/
-/*
-void {{line}}_IRQHandler(void)
-{
-}
-  */
-            {{/if}} {{! generate_handler}}
-          {{/each}} {{! @root.irq_info_list}}
-        {{/if}} {{! use_unitary_irq_handlers}}
-      {{/with}} {{! nvic}}
-    {{/with}} {{! system}}
+{{/with}}
+
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
+{{else}} {{! @root.current_layer 'HAL'}}
+{{#> RTC_LL fct='init'}}
+
+{{/RTC_LL}}
+{{#> RTC_LL fct='deinit'}}
+
+{{/RTC_LL}}
+{{#> RTC_LL fct='config_security_privilege'}}
+
+{{/RTC_LL}}
+{{/if}} {{! @root.current_layer 'HAL'}}
+{{> CORTEX fct='generate_irqhandler' type='implementation' component='RTC'}}
+  {{/with}}
 {{/each}}
 {{/helper_common_beautifier}}

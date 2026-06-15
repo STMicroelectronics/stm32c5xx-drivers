@@ -86,6 +86,17 @@
             }
           }
         },
+        "additional": {
+          "title": "Advanced features",
+          "type": "object",
+          "properties": {
+            "enable_exception_debugmon": {
+              "title": "Debug monitor exception",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "title": "System",
           "type": "object",
@@ -95,16 +106,32 @@
               "type": "object",
               "properties": {
                 "enable_management_svc": {
-                  "title": "SVC management",
+                  "title": "SVC priority management",
                   "type": "boolean",
-                  "default": true,
+                  "default": false,
                   "description": "Supervisor call (SVC) exception is always enabled, you may disable its management to remove related code generation.",
                   "actions": [
                     {
-                      "type": "include",
-                      "condition": "(!$get('swproject.hasRTOSenabled'))"
+                      "type": "exclude",
+                      "condition": "$get('swproject.hasRTOSenabled')"
                     }
                   ]
+                },
+                "note_svc": {
+                  "title": "SVC is handled by FreeRTOS",
+                  "type": "string",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$get('swproject.hasRTOSenabled')"
+                    },
+                    {
+                      "type": "disable",
+                      "condition": "true",
+                      "message": "This field is informational and cannot be edited."
+                    }
+                  ],
+                  "default": "SVC priority not configurable"
                 },
                 "irq_config1": {
                   "title": "SVC priority",
@@ -119,21 +146,37 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "(!$get('swproject.hasRTOSenabled')) && $system.nvic.enable_management_svc"
+                      "condition": "$system.nvic.enable_management_svc"
                     }
                   ]
                 },
                 "enable_management_pendsv": {
-                  "title": "Pendable service management",
+                  "title": "Pendable service priority management",
                   "type": "boolean",
-                  "default": true,
+                  "default": false,
                   "description": "PendSV exception is always enabled, you may disable its management to remove related code generation.",
                   "actions": [
                     {
-                      "type": "include",
-                      "condition": "(!$get('swproject.hasRTOSenabled'))"
+                      "type": "exclude",
+                      "condition": "$get('swproject.hasRTOSenabled')"
                     }
                   ]
+                },
+                "note_pendsv": {
+                  "title": "PendSV is handled by FreeRTOS",
+                  "type": "string",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$get('swproject.hasRTOSenabled')"
+                    },
+                    {
+                      "type": "disable",
+                      "condition": "true",
+                      "message": "This field is informational and cannot be edited."
+                    }
+                  ],
+                  "default": "PendSV priority not configurable"
                 },
                 "irq_config2": {
                   "title": "Pendable service priority",
@@ -148,14 +191,14 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "(!$get('swproject.hasRTOSenabled')) && $system.nvic.enable_management_pendsv"
+                      "condition": "$system.nvic.enable_management_pendsv"
                     }
                   ]
                 },
                 "enable_exception_debugmon": {
-                  "title": "Debug monitor exception and management",
+                  "title": "Debug monitor priority management",
                   "type": "boolean",
-                  "default": true
+                  "default": false
                 },
                 "irq_config3": {
                   "title": "Debug monitor priority",

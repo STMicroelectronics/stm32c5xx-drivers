@@ -10,43 +10,6 @@
  */
 
 /**
- * Return the number of ETH Rx or Tx Descriptors.
- * @note set the ETH_TX_DESC_CNT and ETH_TX_DESC_CNT macro
- * @param {object} eth_instance_configuration ETH configuration returned by SWConfigurationAPI.getInstancesConfiguration getter
- * @param {string} type of descriptors : 'rx' or 'tx'
- * @returns {integer} number of descriptors or false
- */
-function helper_eth_get_descriptors_nb(eth_instance_configuration, type) {
-  let result = 1;
-  try {
-    console.info(`helper_eth_get_descriptors_nb: eth_configuration=${JSON.stringify(
-        eth_instance_configuration)}`
-    );
-
-    eth_instance_configuration.forEach((sw_instance) => {
-      sw_instance.settings.blocks.configs.forEach((config) => {
-        if (type === 'rx') {
-		  if (config.Basic.RxDescConfiguration.hasOwnProperty("rx_desc_nb")) {
-            result = config.Basic.RxDescConfiguration["rx_desc_nb"];
-			console.info(`helper_eth_get_descriptors_nb: Nb Tx Descriptors : ${result}`);
-          }
-        } else if (type === 'tx') {
-		  if (config.Basic.TxDescConfiguration.hasOwnProperty("tx_desc_nb")) {
-            result = config.Basic.TxDescConfiguration["tx_desc_nb"];
-			console.info(`helper_eth_get_descriptors_nb: Nb Tx Descriptors : ${result}`);
-          }
-        } else {
-		  console.warn(`helper_eth_get_descriptors_nb: Invalid Descriptor Type : ${type}`);
-		}
-      });
-    });
-  } catch (e) {
-    console.error(`helper_eth_get_descriptors_nb: ${e}`);
-  }
-  return result;
-}
-
-/**
  * Return the MAC Address Parts.
  * @note set the Ethernet MAC Address Array
  * @param {string} mac_address_str MAC Address (i.e : '02:00:00:00:00:00')
@@ -64,57 +27,6 @@ function helper_eth_get_mac_address_from_string(mac_address_str) {
     console.error(`helper_eth_get_mac_address_from_string: ${e}`);
   }
   return mac_parts;
-}
-
-/**
- * Return if specified Additional feature of the ETH is used or not.
- * @note set the HAL_ETH_USE_XXX macros
- * @param {object} eth_instance_configuration ETH configuration returned by SWConfigurationAPI.getInstancesConfiguration getter
- * @returns {boolean} true or false
- */
-function helper_eth_additional_feature_enabled(eth_instance_configuration, feature) {
-  let result = 0;
-  try {
-    console.info(`helper_eth_additional_feature_enabled: eth_configuration=${JSON.stringify(
-        eth_instance_configuration)}`
-    );
-
-    eth_instance_configuration.forEach((sw_instance) => {
-      sw_instance.settings.blocks.configs.forEach((config) => {
-        if (feature === 'ptp') {
-		  if (config.Additional.hasOwnProperty("use_hal_ptp")) {
-            result = config.Additional["use_hal_ptp"];
-			console.info(`helper_eth_additional_feature_enabled: ETH PTP Enable status : ${result}`);
-          }
-		} else if (feature === 'cbs') {
-		  if (config.Additional.hasOwnProperty("use_hal_cbs")) {
-            result = config.Additional["use_hal_cbs"];
-			console.info(`helper_eth_additional_feature_enabled: ETH CBS Enable status : ${result}`);
-          }
-		} else if (feature === 'fpe') {
-		  if (config.Additional.hasOwnProperty("use_hal_fpe")) {
-            result = config.Additional["use_hal_fpe"];
-			console.info(`helper_eth_additional_feature_enabled: ETH FPE Enable status : ${result}`);
-          }
-		} else if (feature === 'tas') {
-		  if (config.Additional.hasOwnProperty("use_hal_tas")) {
-            result = config.Additional["use_hal_tas"];
-			console.info(`helper_eth_additional_feature_enabled: ETH TAS Enable status : ${result}`);
-          }
-        } else if (feature === 'tbs') {
-		  if (config.Additional.hasOwnProperty("use_hal_tbs")) {
-            result = config.Additional["use_hal_tbs"];
-			console.info(`helper_eth_additional_feature_enabled: Nb Tx Descriptors : ${result}`);
-          }
-        } else {
-		  console.warn(`helper_eth_additional_feature_enabled: Invalid Feature : ${feature}`);
-		}
-      });
-    });
-  } catch (e) {
-    console.error(`helper_eth_additional_feature_enabled: ${e}`);
-  }
-  return result;
 }
 
 /**
@@ -223,9 +135,7 @@ function helper_eth_get_irq_handler(nvic_api, exti_api, resource, config) {
 
 module.exports = {
 
-  helper_eth_get_descriptors_nb,
   helper_eth_get_mac_address_from_string,
-  helper_eth_additional_feature_enabled,
   helper_eth_get_irq_handler,
 
 };

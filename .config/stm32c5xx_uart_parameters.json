@@ -333,6 +333,7 @@
               "default": false,
               "actions": [
                 {
+                  "message": "One bit sampling is not available in this instance.",
                   "type": "disable",
                   "condition": "$resource.features.baudgen_type==true"
                 }
@@ -466,6 +467,11 @@
                 {
                   "type": "include",
                   "condition": "($resource.features.auton) && ($basic.mode==='async') && ((!$additional.enable_rs485_mode) || ($additional.enable_rs485_mode===false)) && ((!$basic.hw_flow_ctl) || ($basic.hw_flow_ctl ==='NONE'))"
+                },
+                {
+                  "type": "info",
+                  "condition": "true",
+                  "message": "The selected interconnect must be configured manually."
                 }
               ],
               "default": false
@@ -511,6 +517,11 @@
                 {
                   "type": "include",
                   "condition": "$additional.am_enable_packet_trigger"
+                },
+                {
+                  "type": "info",
+                  "condition": "true",
+                  "message": "The selected interconnect must be configured manually"
                 }
               ],
               "objectType": "query",
@@ -847,6 +858,136 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -1138,6 +1279,7 @@
                   "title": "Global interrupt",
                   "actions": [
                     {
+                      "message": "Interrupt is mandatory when DMA is enabled.",
                       "type": "disable",
                       "condition": "$system.dma.enable_dma_tx"
                     },

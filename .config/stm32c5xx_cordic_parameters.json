@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:CORDIC",
-  "grammarVersion": "3.1",
+  "grammarVersion": "3.8",
   "type": "object",
   "properties": {
     "parameters": {
@@ -212,7 +212,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS')"
+                      "condition": "($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS')",
+                      "message": "Two arguments are available only for COSINE, SINE, PHASE, and MODULUS functions."
                     }
                   ]
                 }
@@ -249,7 +250,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "(($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS') || ($basic.function === 'HCOSINE') || ($basic.function === 'HSINE')) && ($basic.out_width === 32)"
+                      "condition": "(($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS') || ($basic.function === 'HCOSINE') || ($basic.function === 'HSINE')) && ($basic.out_width === 32)",
+                      "message": "Two results are available only for 32-bit COSINE, SINE, PHASE, MODULUS, HCOSINE, and HSINE functions."
                     }
                   ]
                 }
@@ -266,7 +268,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS') || ($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT')"
+                      "condition": "($basic.function === 'COSINE') || ($basic.function === 'SINE') || ($basic.function === 'PHASE') || ($basic.function === 'MODULUS') || ($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT')",
+                      "message": "Scale 0 is available for COSINE, SINE, PHASE, MODULUS, SQUAREROOT, and ARCTANGENT functions."
                     }
                   ]
                 },
@@ -276,7 +279,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'NATURALLOG') || ($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT') || ($basic.function === 'HARCTANGENT') || ($basic.function === 'HCOSINE') || ($basic.function === 'HSINE')"
+                      "condition": "($basic.function === 'NATURALLOG') || ($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT') || ($basic.function === 'HARCTANGENT') || ($basic.function === 'HCOSINE') || ($basic.function === 'HSINE')",
+                      "message": "Scale 1 is available for NATURALLOG, SQUAREROOT, ARCTANGENT, HARCTANGENT, HCOSINE, and HSINE functions."
                     }
                   ]
                 },
@@ -286,7 +290,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')"
+                      "condition": "($basic.function === 'SQUAREROOT') || ($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')",
+                      "message": "Scale 2 is available for SQUAREROOT, ARCTANGENT, and NATURALLOG functions."
                     }
                   ]
                 },
@@ -296,7 +301,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')"
+                      "condition": "($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')",
+                      "message": "Scale 3 is available for ARCTANGENT and NATURALLOG functions."
                     }
                   ]
                 },
@@ -306,7 +312,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')"
+                      "condition": "($basic.function === 'ARCTANGENT') || ($basic.function === 'NATURALLOG')",
+                      "message": "Scale 4 is available for ARCTANGENT and NATURALLOG functions."
                     }
                   ]
                 },
@@ -316,7 +323,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'ARCTANGENT')"
+                      "condition": "($basic.function === 'ARCTANGENT')",
+                      "message": "Scale 5 is available only for the ARCTANGENT function."
                     }
                   ]
                 },
@@ -326,7 +334,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'ARCTANGENT')"
+                      "condition": "($basic.function === 'ARCTANGENT')",
+                      "message": "Scale 6 is available only for the ARCTANGENT function."
                     }
                   ]
                 },
@@ -336,7 +345,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.function === 'ARCTANGENT')"
+                      "condition": "($basic.function === 'ARCTANGENT')",
+                      "message": "Scale 7 is available only for the ARCTANGENT function."
                     }
                   ]
                 }
@@ -421,6 +431,137 @@
                   "message": "The recommended precision range is 6 "
                 }
               ]
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "#comment": "Use for instance for CORDIC",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -527,7 +668,7 @@
               "title": "NVIC",
               "properties": {
                 "interruption_global": {
-                  "title": "Interruption",
+                  "title": "Global interrupt",
                   "type": "boolean",
                   "default": false
                 },

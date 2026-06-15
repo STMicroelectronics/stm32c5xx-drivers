@@ -627,7 +627,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "$additional.enable_ti_mode == 'EnableTI'"
+                  "condition": "$additional.enable_ti_mode == 'EnableTI'",
+                  "message": "Only MSB first is allowed in TI mode."
                 }
               ]
             },
@@ -678,7 +679,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "$additional.enable_ti_mode == 'EnableTI'"
+                  "condition": "$additional.enable_ti_mode == 'EnableTI'",
+                  "message": "NSS pin management is mandatory in TI mode."
                 }
               ],
               "default": "INTERNAL"
@@ -1194,7 +1196,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$basic.timing.clock_phase==2"
+                      "condition": "$basic.timing.clock_phase==2",
+                      "message": "NSS pulse mode is not allowed when data is captured on second edge of the clock signal."
                     },
                     {
                       "type": "set",
@@ -1222,7 +1225,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "($additional.enable_ti_mode === 'EnableTI') || ($additional.nss_config_t.nss_pulse)"
+                      "condition": "($additional.enable_ti_mode === 'EnableTI') || ($additional.nss_config_t.nss_pulse)",
+                      "message": "NSS signal polarity is not configurable in TI mode or when NSS pulse mode is enabled."
                     }
                   ],
                   "oneOf": [
@@ -1321,7 +1325,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "$additional.enable_ti_mode == 'EnableTI'"
+                      "condition": "$additional.enable_ti_mode == 'EnableTI'",
+                      "message": "Master SS idleness is not configurable in TI mode."
                     }
                   ],
                   "description": "Time between the activation of chip select (NSS) and the first transferred data."
@@ -1434,7 +1439,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "($additional.enable_ti_mode == 'EnableTI') || ($basic.mode!='MASTER')"
+                  "condition": "($additional.enable_ti_mode == 'EnableTI') || ($basic.mode!='MASTER')",
+                  "message": "Master inter data idleness is only configurable in master mode with Motorola protocol."
                 }
               ],
               "description": "Minimum time delay inserted between two consecutive data frames (available in master mode only with Motorola protocol)."
@@ -1450,7 +1456,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$additional.enable_ti_mode == 'EnableTI'"
+                      "condition": "$additional.enable_ti_mode == 'EnableTI'",
+                      "message": "Ready pin is not available in TI mode."
                     }
                   ]
                 },
@@ -1536,6 +1543,136 @@
                   "default": false
                 }
               }
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -1800,8 +1937,8 @@
               "type": "object",
               "title": "NVIC",
               "properties": {
-                "enable_interruption": {
-                  "title": "Interruption",
+                "enable_interrupt": {
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": false,
                   "actions": [
@@ -1814,7 +1951,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "($system.dma.enable_dma_rx) || ($system.dma.enable_dma_tx)"
+                      "condition": "($system.dma.enable_dma_rx) || ($system.dma.enable_dma_tx)",
+                      "message": "Interrupt is mandatory when DMA is enabled."
                     }
                   ]
                 },
@@ -1825,7 +1963,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$system.nvic.enable_interruption && $info.layer === 'HAL'"
+                      "condition": "$system.nvic.enable_interrupt && $info.layer === 'HAL'"
                     }
                   ]
                 },
@@ -1834,7 +1972,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$system.nvic.enable_interruption"
+                      "condition": "$system.nvic.enable_interrupt"
                     }
                   ],
                   "type": "object",

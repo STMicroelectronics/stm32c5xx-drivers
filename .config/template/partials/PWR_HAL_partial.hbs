@@ -40,13 +40,16 @@
 {{!
  Generate the PWR HAL code to configure the voltage scaling
 ~}}
-  {{~log "PWR_HAL_partial generate_vos_config: context="@root.context.additional.main_supply_configuration.voltage_scaling~}}
-  {{#unless (eq @root.context.additional.main_supply_configuration.voltage_scaling 'VOLT_SCALE_0')}}
+  {{~#if context}}
+    {{~log "PWR_HAL_partial generate_vos_config: context="@context}}
+    {{~assign 'voltage_scaling' context}}
+  {{~else}}
+    {{~log "PWR_HAL_partial generate_vos_config: context="@root.context.additional.main_supply_configuration.voltage_scaling}}
+    {{~assign 'voltage_scaling' (lookup (helper_pwr_get_voltage_scaling) @root)}}
+  {{~/if}} 
+  {{~log "PWR_HAL_partial generate_vos_config: context="@root.context.additional.main_supply_configuration.voltage_scaling}}
   /* Configure the Voltage scaling level */
-  if (HAL_PWR_SetMainRegulatorVoltageScalingRange(HAL_PWR_{{@root.context.additional.main_supply_configuration.voltage_scaling}}) != HAL_OK)
-  {{else}}
-  /* Voltage scaling VOLT_SCALE_0 is selected by default */
-  {{/unless}}
+  if (HAL_PWR_SetMainRegulatorVoltageScalingRange(HAL_PWR_{{voltage_scaling}}) != HAL_OK)
 {{else if (eq fct 'generate_write_protection_disable')}}
 {{!
  Generate the PWR HAL code to disable the RTC Domain Write protection
@@ -66,7 +69,7 @@
   /* In order to simplify the code generation and management for the user, the write protection is not enabled by
      default. In real case application, we advise to enable it once all the necessary configurations are done. */
   /* Enable RTC Domain Write Protection */
-  //HAL_PWR_EnableRTCDomainWriteProtection();
+  /* HAL_PWR_EnableRTCDomainWriteProtection(); */
 
 {{!> RCC fct='generate_peripheral_clock_deactivation' resource=@root.current_resource}}
 {{~else if (eq fct 'generate_peripheral_supply_activation')~}}

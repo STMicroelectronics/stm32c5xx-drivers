@@ -28,7 +28,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is informational and cannot be edited."
                 },
                 {
                   "type": "set",
@@ -125,7 +126,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$get('swproject.hasRTOSenabled') || ($get('envVar.value','CORE_PROJECT_TIMEBASE') == 'SYSTICK')"
+                  "condition": "$get('swproject.hasRTOSenabled') || ($get('envVar.value','CORE_PROJECT_TIMEBASE') == 'SYSTICK')",
+                  "message": "Can't be changed when SysTick is managed by FreeRTOS or HAL timebase."
                 },
                 {
                   "type": "set",
@@ -240,7 +242,7 @@
               "type": "object",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": true
                 },

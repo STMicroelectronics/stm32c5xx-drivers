@@ -17,20 +17,16 @@
   ~--}}
 {{#helper_common_beautifier}}
 {{~assign 'current_resource' 'RCC'~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'rcc_cxt'(helper_rcc_get_component_context 'STMicroelectronics::Device:STM32CubeMX2 Config:RCC')~}}
-{{else}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~assign 'rcc_cxt' instances.[0]~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'RCC' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "RCC template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'rcc_ctx' @root.codegen_ctxt.instances.[0].config~}}
 {{~helper_rcc_init_codegen @root}}
-{{~assign 'current_layer' @root.rcc_cxt.info.layer ~}}
+{{~assign 'current_layer' @root.rcc_ctx.info.layer ~}}
 {{~assign 'all_resources' (helper_rcc_get_all_resources) ~}}
 {{~assign 'all_ppp_clock_configs' (helper_rcc_get_all_perifs_clock_config @root.all_resources) ~}}
-{{~assign 'system_config' (helper_rcc_get_system_config @root.rcc_cxt) ~}}
+{{~assign 'system_config' (helper_rcc_get_system_config @root.rcc_ctx) ~}}
 {{~assign 'used_oscillators' (helper_rcc_get_used_osc @root.system_config @root.all_ppp_clock_configs) ~}}
 /**
   ******************************************************************************
@@ -47,7 +43,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32_{{lowercase @root.rcc_cxt.info.layer}}.h"
+#include "stm32_{{lowercase @root.rcc_ctx.info.layer}}.h"
 #include "mx_def.h"
 
 /* Exported types ------------------------------------------------------------*/
@@ -60,7 +56,7 @@ extern "C" {
 /* Exported macros -----------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 {{assign 'current_index' 0~}}
-{{#with @root.rcc_cxt}}
+{{#with @root.rcc_ctx}}
 /******************************************************************************/
 /* Exported functions for RCC in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -70,10 +66,13 @@ system_status_t {{@root.fct_name}}_init(void);
 void {{@root.fct_name}}_deinit(void);
 
 {{> CORTEX fct='generate_irqhandler' type='prototype' component='RCC'}}
+{{#if (eq @root.current_layer 'HAL')}}
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
+{{/if}}
 
 {{/with}}
 
-{{~#if (helper_rcc_is_controlled_by_periph @root.rcc_cxt)}}
+{{~#if (helper_rcc_is_controlled_by_periph @root.rcc_ctx)}}
   {{#each @root.all_resources}}
 
 system_status_t mx_rcc_{{lowercase this}}_clock_config(void);
@@ -85,7 +84,7 @@ system_status_t mx_rcc_peripherals_clock_config(void);
 {{/if~}}
 
 
-{{~#unless (helper_rcc_is_central @root.rcc_cxt)}}
+{{~#unless (helper_rcc_is_central @root.rcc_ctx)}}
   {{#each used_oscillators}}
 
 system_status_t mx_rcc_{{lowercase this}}_clock_config(uint32_t nb_resources);

@@ -19,11 +19,6 @@
 --}}
 {{!==================== partial function: init ====================~}}
 {{#if (eq fct 'init')}}
-  if (HAL_ADC_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
-  {
-    return NULL;
-  }
-
 {{assign 'regular_sequencer' basic.group_panel.reg_config_t.reg_sequencer~}}
 {{assign 'injected_sequencer' basic.group_panel.inj_config_t.inj_sequencer}}
   hal_adc_config_t adc_config;
@@ -250,20 +245,22 @@
 {{/if}}
 {{!==================== Oversampling ====================~}}
 {{#if (eq additional.ovs_sel true)}}
-{{#with additional.ovs_panel}}
 
   hal_adc_ovs_config_t ovs_config;
-  ovs_config.scope    = HAL_ADC_OVS_{{scope}};
-  ovs_config.discont  = HAL_ADC_OVS_{{discont}};
-  ovs_config.ratio    = {{ratio}};
+{{#with additional.ovs_panel}}
+  ovs_config.scope      = HAL_ADC_OVS_{{scope}};
+{{#if (not (eq scope 'DISABLE'))}}
+  ovs_config.discont    = HAL_ADC_OVS_{{discont}};
+  ovs_config.ratio      = {{ratio}};
   {{#if (eq shift_keep_res true)}}
-  ovs_config.shift    = HAL_ADC_GetOverSamplingShiftKeepRes(ovs_config.ratio);
-  {{else}}
-  ovs_config.shift    = {{shift}};
-  {{/if}}
+  ovs_config.shift      = HAL_ADC_GetOverSamplingShiftKeepRes(ovs_config.ratio);
+  {{~else}}
+  ovs_config.shift      = {{shift}};
+  {{~/if}}
+{{~/if~}}{{!(eq scope DISABLE)}}
   HAL_ADC_SetConfigOverSampling(&h{{uppercase @root.current_resource}}, HAL_ADC_OVS_1, &ovs_config);
 
-{{/with}}
+{{/with}}{{!ovs_panel}}
 {{/if~}}{{!(eq additional.ovs_sel true)~}}
 {{!==================== Offset ====================~}}
 {{#if (eq additional.offset_sel true)}}

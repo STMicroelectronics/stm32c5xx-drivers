@@ -44,22 +44,6 @@
 {{! clock_activation != HAL_CLK_ENABLE_PERIPH_PWR_SYSTEM: pwr clock need to be configured inside application ~}}
 {{!log 'SYSTEM_partial.hbs (fct=gpio_pwr_activation): core_ctxt=' @root.core_ctxt 'port=' port 'pin=' pin~}}
 {{else}}
-{{! Generate RCC clock activation inside mx_pppi.c depending of ppp_clk_enable_model option  ~}}
-{{!   => if ppp_clk_enable_model=== HAL_CLK_ENABLE_NO, RCC clock activation for PPP is done inside mx_pppi_init function  ~}}
-{{!  > SYSTEM component='uart' resource=@root.current_resource                               ~}}
-{{!                                                                                          ~}}
-{{assign "jsonFilter" (JSONparse '{"cgroup": "STM32CubeMX2 Config", "csub": "CORE"}')~}}
-{{assign 'core_ctxt' (@root.SWConfigurationAPI.getSwInstancesConfiguration @root.jsonFilter)~}}
-{{assign 'core_ctxt' (helper_common_if_rcc_clock_activated @root.core_ctxt.[0] component)~}}
-{{!log 'SYSTEM_partial.hbs: core_ctxt=' @root.core_ctxt~}}
-{{! clock_activation == HAL_CLK_ENABLE_NO: RCC and pwr clock need to be configured inside application ~}}
-{{#if (eq @root.core_ctxt 0)}}
-  {{assign 'found_RCC_EnableClock' true~}}
-  HAL_RCC_{{resource}}_EnableClock();
-{{#if (eq resource 'SAES')}}
-  /* Enable RNG clock is mandatory for SAES */
-  HAL_RCC_RNG_EnableClock();
-{{/if}}
+#warning "Function {{fct}} not present in partial SYSTEM_partial.hbs"
 
-{{/if}}
 {{/if}}

@@ -92,18 +92,25 @@
             },
             "interruption": {
               "type": "object",
-              "title": "Interruption",
+              "title": "Interrupt",
               "properties": {
                 "enable_interruption": {
                   "type": "boolean",
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "description": "Activate the interuption of the line.",
-                  "default": false
+                  "actions": [
+                    {
+                      "type": "set",
+                      "computed": {
+                        "default": "$getRootParameter('pins') != null"
+                      }
+                    }
+                  ]
                 },
                 "irq_handler_generation": {
                   "type": "boolean",
-                  "title": "IRQ Handler generation",
-                  "description": "Activate the generation of the IRQ Handler.",
+                  "title": "IRQ handler generation",
+                  "description": "Activate the generation of the IRQ handler.",
                   "default": true,
                   "actions": [
                     {
@@ -128,6 +135,12 @@
                       "name": "HAL_CORTEX_PROJECT_USE_HAL",
                       "condition": "$getRootParameter('layer') === 'HAL'",
                       "semaphore": true
+                    },
+                    {
+                        "on": "update-value",
+                        "name": "HAL_EXTI_SYSTEM_GPIO_STANDARD_EXTI",
+                        "condition": "$getRootParameter('pins') != null",
+                        "semaphore": true
                     }
                   ],
                   "owner": "$resource.id",

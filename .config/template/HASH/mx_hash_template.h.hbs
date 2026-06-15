@@ -15,18 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'file_name' 'HASH'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:HASH')~}}
-{{else}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{assign 'current_resource' resource~}}
-{{assign 'file_name' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'HASH' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "HASH template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -43,6 +37,17 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+{{assign 'include_mx_def' false~}}
+{{#each @root.instances}}
+{{assign 'hash_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.hash_cxt.info.layer~}}
+  {{#with @root.hash_cxt.security_privilege}}
+    {{#unless @root.include_mx_def}}
+{{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+    {{/unless}}
+  {{/with}}
 #include "stm32_hal.h"
 
 /* Exported types ------------------------------------------------------------*/
@@ -51,20 +56,10 @@ extern "C" {
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
-{{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'hash_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.hash_cxt.settings.parameters.info.layer~}}
-{{assign 'configs' @root.hash_cxt.settings.parameters~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{/if}}
 /******************************************************************************/
 /* Exported functions for DCACHE in {{@root.current_layer}} layer */
 /******************************************************************************/
-{{#with @root.configs}}
+{{#with @root.hash_cxt}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
 /**
   * @brief {{@root.fct_name}} init function
@@ -89,7 +84,21 @@ void {{@root.fct_name}}_deinit(void);
   */
 hal_hash_handle_t *{{@root.fct_name}}_gethandle(void);
 {{/if}}
-
+{{#with security_privilege}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+{{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+{{/if}}
+{{/with}}
 {{/with}}
 {{/each}}
 

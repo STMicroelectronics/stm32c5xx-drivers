@@ -162,7 +162,7 @@ __WEAK {{return_type}} {{#if (and shared is_interruption)}}{{resource_hw}}{{else
 {{~assign 'text' (helper_cortex_nvic_generate_comment_block description generate_handler)}}
 {{@root.text}}
 /******************************************************************************/
-    {{#if (or generate_handler shared)}}
+    {{~#if (or generate_handler shared)}}
 
 {{return_type}} {{#if (and shared is_interruption)}}{{resource_hw}}{{else}}{{line}}{{/if}}_IRQHandler(void);
     {{~else}}
@@ -210,7 +210,7 @@ void {{line}}_Handler(void)
 {{~assign 'text' (helper_cortex_nvic_generate_comment_block description generate_handler)}}
 {{@root.text}}
 /******************************************************************************/
-    {{#if generate_handler}}
+    {{~#if generate_handler}}
 
 void {{line}}_Handler(void);
     {{~else}}

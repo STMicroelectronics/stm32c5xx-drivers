@@ -94,23 +94,36 @@
               "title": "Fault management",
               "type": "object",
               "properties": {
-                "enable_usage_fault": {
-                  "title": "Usage fault",
+                "enable_mem_management_fault": {
+                  "title": "Memory management fault",
                   "type": "boolean",
                   "description": "The system escalates to hard fault if you do not enable it.",
-                  "default": true
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "path": "mem_management_fault",
+                    "component": "CORTEX"
+                  },
+                  "default": false
                 },
                 "enable_bus_fault": {
                   "title": "Bus fault",
                   "type": "boolean",
                   "description": "The system escalates to hard fault if you do not enable it.",
-                  "default": true
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "CORTEX_BUSFAULT_ENABLED",
+                      "condition": "$value",
+                      "value": true
+                    }
+                  ],
+                  "default": false
                 },
-                "enable_mem_management_fault": {
-                  "title": "Memory management fault",
+                "enable_usage_fault": {
+                  "title": "Usage fault",
                   "type": "boolean",
                   "description": "The system escalates to hard fault if you do not enable it.",
-                  "default": true
+                  "default": false
                 }
               }
             }
@@ -119,17 +132,25 @@
         "system": {
           "title": "System",
           "type": "object",
-          "actions": [
-            {
-              "type": "include",
-              "condition": "$basic.fault_management.enable_mem_management_fault || $basic.fault_management.enable_bus_fault || $basic.fault_management.enable_usage_fault"
-            }
-          ],
           "properties": {
             "nvic": {
               "title": "NVIC",
               "type": "object",
               "properties": {
+                "enable_management_mem": {
+                  "title": "Memory management priority management",
+                  "type": "boolean",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.fault_management.enable_mem_management_fault",
+                      "attributes": {
+                        "const": true
+                      }
+                    }
+                  ],
+                  "default": false
+                },
                 "irq_config1": {
                   "title": "Memory management priority",
                   "type": "object",
@@ -137,7 +158,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$basic.fault_management.enable_mem_management_fault"
+                      "condition": "$system.nvic.enable_management_mem"
                     }
                   ],
                   "owner": "$resource.name",
@@ -147,6 +168,20 @@
                     }
                   ]
                 },
+                "enable_management_bus": {
+                  "title": "Bus fault priority management",
+                  "type": "boolean",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.fault_management.enable_bus_fault",
+                      "attributes": {
+                        "const": true
+                      }
+                    }
+                  ],
+                  "default": false
+                },
                 "irq_config2": {
                   "title": "Bus fault priority",
                   "type": "object",
@@ -154,7 +189,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$basic.fault_management.enable_bus_fault"
+                      "condition": "$system.nvic.enable_management_bus"
                     }
                   ],
                   "owner": "$resource.name",
@@ -164,6 +199,20 @@
                     }
                   ]
                 },
+                "enable_management_usage": {
+                  "title": "Usage fault priority management",
+                  "type": "boolean",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.fault_management.enable_usage_fault",
+                      "attributes": {
+                        "const": true
+                      }
+                    }
+                  ],
+                  "default": false
+                },
                 "irq_config3": {
                   "title": "Usage fault priority",
                   "type": "object",
@@ -171,7 +220,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$basic.fault_management.enable_usage_fault"
+                      "condition": "$system.nvic.enable_management_usage"
                     }
                   ],
                   "owner": "$resource.name",

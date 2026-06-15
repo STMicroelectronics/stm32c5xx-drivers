@@ -15,23 +15,10 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'current_resource' 'CRC'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:CRC')~}}
-{{else}}
-{{assign "strategy" 'HW'~}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{log "CRC template _myctx:" this~}}
-{{assign 'current_resource' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
-{{log "CRC template current_resource:" @root.current_resource~}}
-{{log "CRC template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'CRC' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "CRC template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -50,15 +37,11 @@
 /* Exported variables by reference--------------------------------------------*/
 {{assign 'hal_handle_exist' 0~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'crc_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
+{{assign 'crc_cxt' config~}}
 {{log "CRC template crc_cxt:" (toJSON @root.crc_cxt)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.crc_cxt.settings.parameters.info.layer~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.crc_cxt.info.layer~}}
 {{log "CRC template current_resource:" @root.current_resource~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{#if (eq @root.hal_handle_exist 0)}}
 static hal_crc_handle_t h{{uppercase @root.current_resource}};
@@ -71,19 +54,13 @@ static hal_crc_handle_t h{{uppercase @root.current_resource}};
 {{assign 'nvic_needs' 'undefined'~}}
 {{assign 'nvic_generate_handler' true~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'name' name~}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{else}}
-{{assign 'crc_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'crc_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'name' @root.crc_cxt.name~}}
-{{assign 'current_layer' @root.crc_cxt.settings.parameters.info.layer~}}
-{{assign 'configs' @root.crc_cxt.settings.parameters~}}
-{{/if}}
+{{assign 'current_layer' @root.crc_cxt.info.layer~}}
+{{assign 'configs' @root.crc_cxt~}}
 /******************************************************************************/
-/* Exported functions for CRC (SW instance {{#if (eq name undefined)}}{{instanceIndex}}{{else}}{{name}}{{/if}} in {{@root.current_layer}}) layer */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{#with @root.configs}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
@@ -110,7 +87,7 @@ hal_crc_handle_t *{{@root.fct_name}}_init(void)
   crc_config.polynomial_coefficient   = 0x{{uppercase (dec2hex value)}};
   crc_config.polynomial_size          = HAL_CRC_POLY_SIZE_{{size}}B;
 {{/with}}
-  crc_config.crc_init_value           = 0x{{#if crc_init_value}}{{uppercase (dec2hex crc_init_value)}}{{else}}FFFFFFFF{{/if}};
+  crc_config.crc_init_value           = 0x{{#if crc_init_value}}{{uppercase (dec2hex crc_init_value)}}{{else}}0{{/if}};
   crc_config.output_data_reverse_mode = HAL_CRC_OUTDATA_REVERSE_{{#if output_data_reverse_mode}}{{output_data_reverse_mode}}{{else}}NONE{{/if}};
   crc_config.input_data_reverse_mode  = HAL_CRC_INDATA_REVERSE_{{#if input_data_reverse_mode}}{{input_data_reverse_mode}}{{else}}NONE{{/if}};
   HAL_CRC_SetConfig(&h{{uppercase @root.current_resource}}, &crc_config);
@@ -207,7 +184,26 @@ hal_crc_handle_t *{{@root.fct_name}}_gethandle(void)
 {{assign 'hal_handle_exist' 1~}}
 {{/if}}
 {{/if}}
+{{#with security_privilege}}
 
+{{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                      Privileged attribute management                       */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+{{else}}
+/******************************************************************************/
+/*                Security and privileged attributes management               */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+{{/if}}
+{
+{{> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}
+
+  return SYSTEM_OK;
+}
+{{/with}}
 {{/with}}
 {{/each}}
 {{/helper_common_beautifier}}

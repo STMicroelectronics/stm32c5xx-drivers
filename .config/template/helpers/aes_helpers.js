@@ -20,7 +20,7 @@
 
 function helper_aes_string_to_vector(str) {
     try {
-        console.log(
+        console.info(
             `[INFO] helper_aes_string_to_vector: HEX String=${str}`
         );
 
@@ -53,7 +53,7 @@ function helper_aes_string_to_vector(str) {
         return result;
 
     } catch (e) {
-        console.log(`[ERROR] helper_aes_string_to_vector: ${e}`);
+        console.error(`[ERROR] helper_aes_string_to_vector: ${e}`);
         return {};
     }
 }
@@ -66,7 +66,7 @@ function helper_aes_string_to_vector(str) {
  */
 function helper_aes_verify_length(str, length) {
     try {
-        console.log(`[INFO] helper_aes_verify_length: HEX String=${str}, Expected Length=${length}`);
+        console.info(`[INFO] helper_aes_verify_length: HEX String=${str}, Expected Length=${length}`);
 
         // Check if the string is exactly '0x'
         if (str === '0x') {
@@ -100,7 +100,7 @@ function helper_aes_verify_length(str, length) {
 
 function helper_aes_verif(str, size) {
     try {
-        console.log(
+        console.info(
             `[INFO] helper_aes_verif: HEX String=${str} and Size=${size}`
         );
 
@@ -119,7 +119,7 @@ function helper_aes_verif(str, size) {
         return adjustedLength < requiredLength ? 1 : 0;
 
     } catch (e) {
-        console.log(`[ERROR] helper_aes_verif: ${e}`);
+        console.error(`[ERROR] helper_aes_verif: ${e}`);
         return {};
     }
 }
@@ -132,7 +132,7 @@ function helper_aes_verif(str, size) {
 
 function helper_aes_size_header_msg(str) {
     try {
-        console.log(
+        console.info(
             `[INFO] helper_aes_size_header_msg: HEX String=${str}`
         );
 
@@ -146,7 +146,7 @@ function helper_aes_size_header_msg(str) {
         return Math.ceil(numDigits / 8);
 
     } catch (e) {
-        console.log(`[ERROR] helper_aes_size_header_msg: ${e}`);
+        console.error(`[ERROR] helper_aes_size_header_msg: ${e}`);
         return {};
     }
 }
@@ -160,7 +160,7 @@ function helper_aes_size_header_msg(str) {
 
 function helper_aes_check_last_word(str, nbr) {
     try {
-        console.log(
+        console.info(
             `[INFO] helper_aes_check_last_word: HEX String=${str}, Number=${nbr}`
         );
 
@@ -173,7 +173,7 @@ function helper_aes_check_last_word(str, nbr) {
         return lastWord === target;
 
     } catch (e) {
-        console.log(`[ERROR] helper_aes_check_last_word: ${e}`);
+        console.error(`[ERROR] helper_aes_check_last_word: ${e}`);
         return {};
     }
 }
@@ -185,7 +185,7 @@ function helper_aes_check_last_word(str, nbr) {
  */
 function helper_aes_is_valid_hex(str) {
     try {
-        console.log(
+        console.info(
             `[INFO] helper_aes_is_valid_hex: Checking HEX string=${str}`
         );
 
@@ -253,7 +253,7 @@ function helper_aes_get_irq_handler(nvic_api, exti_api, resource, config) {
         }
       }
     } catch (e) {
-      console.log(`[ERROR] helper_aes_get_irq_handler: ${e}`);
+      console.error(`[ERROR] helper_aes_get_irq_handler: ${e}`);
     }
     return result;
   }

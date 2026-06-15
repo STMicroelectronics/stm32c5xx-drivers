@@ -11,16 +11,23 @@
 
 /* Private constants -----------------------------------------------------------------------------------------------*/
 
+const possible_feature_group = {
+  1: "GROUP1",  /* Including HSIDIV3 */
+  2: "GROUP2",  /* Including HSIDIV4 */
+};
+
 /* Mapping between CUBE Mx Resource name and clock tree */
 const map_splitted_ppp = {
   "ADC12.ADC1": "ADC1",
   "ADC12.ADC2": "ADC2",
   "COMP12.COMP1": "COMP1",
   "COMP12.COMP2": "COMP2",
+  "COMP34.COMP3": "COMP3",
+  "COMP34.COMP4": "COMP4",
   "RAMCFG.SRAM1": "RAMCFG",
   "RAMCFG.SRAM2": "RAMCFG",
-  "USB_DRD_FS.DEVICE": "USB",
-  "USB_DRD_FS.HOST": "USB",
+  "USB_DRD_FS.DEVICE": "USB_DRD_FS",
+  "USB_DRD_FS.HOST": "USB_DRD_FS",
 };
 
 const no_config_ppp = ['RCC', 'NVIC', 'MPU', 'ICACHE'];
@@ -53,8 +60,10 @@ const map_clock_source = {
   PSI: "PSIS",
   PSI_DIV_3: 'PSIDIV3',
   HSI_DIV_3: 'HSIDIV3',
+  PSI_DIV_4: 'PSIDIV4',
+  HSI_DIV_4: 'HSIDIV4',
   ETH1_RMII_REF: 'RMII',
-  ETH1_Input_Clock: 'FB'
+  ETH1_CLK_Div: 'FB'
 };
 
 /* Map of the resources kernel clock : used for the kernel clock source selection */
@@ -68,10 +77,12 @@ const map_kernel_clock = {
   COMP3: "COMP34",
   COMP4: "COMP34",
   DAC1: "ADCDAC",
+  DAC2: "ADCDAC",
   FDCAN1: "FDCAN",
   FDCAN2: "FDCAN",
   RNG: "CK48",
   USB: "CK48",
+  USB_DRD_FS: "CK48",
   TAMP: "RTC"
 };
 
@@ -90,30 +101,36 @@ const map_hw_resource_name = {
   RAMCFG_SRAM2: "RAMCFG",
   RTC: "RTCAPB",
   TAMP: "RTCAPB",
+  USB_DRD_FS: "USB"
 };
 
 /* Map of the sw resource name (used in ll kernel clock source) */
 const map_sw_resource_name = {
-  RNG:  "CK48",
-  ADC:  "ADCDAC",
-  DAC:  "ADCDAC",
-  USB:  "CK48",
-  TAMP: "RTC",
-  ETH:  "ETH1",
+  ADC:        "ADCDAC",
+  DAC:        "ADCDAC",
+  ETH:        "ETH1",
+  PLAY:       "PLAY1",
+  RNG:        "CK48",
+  TAMP:       "RTC",
+  USB:        "CK48",
+  USB_DRD_FS: "CK48",
 };
 
 /* Map of the resources (peripherals) name - to get the kernel clock source */
 const map_resources_name_for_kernel_source = {
-  ADC1:   "ADC_DAC",
-  ADC2:   "ADC_DAC",
-  ADC12:  "ADC_DAC",
-  ADC3:   "ADC_DAC",
-  DAC1:   "ADC_DAC",
-  ETH1:   "ETH1",
-  FDCAN1: "FDCAN",
-  FDCAN2: "FDCAN",
-  RNG:    "USB_RNG",
-  USB:    "USB_RNG",
+  ADC1:       "ADC_DAC",
+  ADC2:       "ADC_DAC",
+  ADC12:      "ADC_DAC",
+  ADC3:       "ADC_DAC",
+  DAC1:       "ADC_DAC",
+  DAC2:       "ADC_DAC",
+  ETH1:       "ETH1",
+  FDCAN1:     "FDCAN",
+  FDCAN2:     "FDCAN",
+  PLAY1:      "PLAY",
+  RNG:        "USB_RNG",
+  USB:        "USB_RNG",
+  USB_DRD_FS: "USB_RNG",
 };
 
 /* List of the external clock source */
@@ -222,9 +239,11 @@ const available_oscillators = [
   'HSIS',
   'HSIK',
   'HSIDIV3',
+  'HSIDIV4',
   'PSIS',
   'PSIK',
   'PSIDIV3',
+  'PSIDIV4',
   'LSE',
   'LSI',
 ];
@@ -232,7 +251,8 @@ const available_oscillators = [
 const psi_clock_outputs = [
   'PSIS',
   'PSIK',
-  'PSIDIV3'
+  'PSIDIV3',
+  'PSIDIV4'
 ];
 
 /* List of resources required to set the ADC divider */
@@ -243,6 +263,7 @@ const rtc_divider_resources = [
 
 const available_sys_clk_src = {
   HSI_DIV_3: "HSIDIV3",
+  HSI_DIV_4: "HSIDIV4",
   HSI: "HSIS",
   HSIS: "HSIS",
   HSE: "HSE",
@@ -264,31 +285,41 @@ const map_mco_src = {
   'HSI': 'HSIS',
   'PSI': 'PSIS',
   'HSI_DIV_3': 'HSIDIV3',
+  'HSI_DIV_4': 'HSIDIV4',
   'PSI_DIV_3': 'PSIDIV3',
+  'PSI_DIV_4': 'PSIDIV4',
 };
 
 // Peripheral to Group mapping
 const peripheralBusMapping = {
-  LPDMA1:         "AHB1_GRP1",
-  LPDMA2:         "AHB1_GRP1",
-  FLITF:          "AHB1_GRP1",
-  CRC:            "AHB1_GRP1",
   CORDIC:         "AHB1_GRP1",
-  RAMCFG:         "AHB1_GRP1",
-  RAMCFG_SRAM1:   "AHB1_GRP1",
-  RAMCFG_SRAM2:   "AHB1_GRP1",
-  ETH1:           "AHB1_GRP1",
-  ETH1CK:         "AHB1_GRP1",
-  ETH1TX:         "AHB1_GRP1",
-  ETH1RX:         "AHB1_GRP1",
+  CRC:            "AHB1_GRP1",
   ETH:            "AHB1_GRP1",
   ETHCK:          "AHB1_GRP1",
   ETHTX:          "AHB1_GRP1",
   ETHRX:          "AHB1_GRP1",
-  SRAM2:          "AHB1_GRP1",
-  SRAM1:          "AHB1_GRP1",
+  ETH1:           "AHB1_GRP1",
+  ETH1CK:         "AHB1_GRP1",
+  ETH1TX:         "AHB1_GRP1",
+  ETH1RX:         "AHB1_GRP1",
   FLASH:          "AHB1_GRP1",
+  FLITF:          "AHB1_GRP1",
+  LPDMA1:         "AHB1_GRP1",
+  LPDMA2:         "AHB1_GRP1",
+  RAMCFG:         "AHB1_GRP1",
+  RAMCFG_SRAM1:   "AHB1_GRP1",
+  RAMCFG_SRAM2:   "AHB1_GRP1",
+  SRAM1:          "AHB1_GRP1",
+  SRAM2:          "AHB1_GRP1",
 
+  ADC:            "AHB2_GRP1",
+  ADC1:           "AHB2_GRP1",
+  ADC2:           "AHB2_GRP1",
+  ADC3:           "AHB2_GRP1",
+  AES:            "AHB2_GRP1",
+  CCB:            "AHB2_GRP1",
+  DAC1:           "AHB2_GRP1",
+  DAC2:           "AHB2_GRP1",
   GPIOA:          "AHB2_GRP1",
   GPIOB:          "AHB2_GRP1",
   GPIOC:          "AHB2_GRP1",
@@ -297,20 +328,22 @@ const peripheralBusMapping = {
   GPIOF:          "AHB2_GRP1",
   GPIOG:          "AHB2_GRP1",
   GPIOH:          "AHB2_GRP1",
-  ADC:            "AHB2_GRP1",
-  ADC1:           "AHB2_GRP1",
-  ADC2:           "AHB2_GRP1",
-  ADC3:           "AHB2_GRP1",
-  DAC1:           "AHB2_GRP1",
-  AES:            "AHB2_GRP1",
   HASH:           "AHB2_GRP1",
-  RNG:            "AHB2_GRP1",
   PKA:            "AHB2_GRP1",
+  RNG:            "AHB2_GRP1",
   SAES:           "AHB2_GRP1",
-  CCB:            "AHB2_GRP1",
 
   XSPI1:          "AHB4_GRP1",
 
+  CRS:            "APB1_GRP1",
+  I2C1:           "APB1_GRP1",
+  I2C2:           "APB1_GRP1",
+  I3C1:           "APB1_GRP1",
+  OPAMP1:         "APB1_GRP1",
+  OPAMP2:         "APB1_GRP1",
+  OPAMP3:         "APB1_GRP1",
+  SPI2:           "APB1_GRP1",
+  SPI3:           "APB1_GRP1",
   TIM2:           "APB1_GRP1",
   TIM3:           "APB1_GRP1",
   TIM4:           "APB1_GRP1",
@@ -318,55 +351,53 @@ const peripheralBusMapping = {
   TIM6:           "APB1_GRP1",
   TIM7:           "APB1_GRP1",
   TIM12:          "APB1_GRP1",
-  WWDG:           "APB1_GRP1",
-  OPAMP1:         "APB1_GRP1",
-  SPI2:           "APB1_GRP1",
-  SPI3:           "APB1_GRP1",
-  USART2:         "APB1_GRP1",
-  USART3:         "APB1_GRP1",
   UART4:          "APB1_GRP1",
   UART5:          "APB1_GRP1",
-  I2C1:           "APB1_GRP1",
-  I2C2:           "APB1_GRP1",
-  I3C1:           "APB1_GRP1",
-  CRS:            "APB1_GRP1",
-  USART6:         "APB1_GRP1",
   UART7:          "APB1_GRP1",
+  USART2:         "APB1_GRP1",
+  USART3:         "APB1_GRP1",
+  USART6:         "APB1_GRP1",
+  WWDG:           "APB1_GRP1",
 
   COMP:           "APB1_GRP2",
   COMP1:          "APB1_GRP2",
   COMP2:          "APB1_GRP2",
+  COMP3:          "APB1_GRP2",
+  COMP4:          "APB1_GRP2",
   FDCAN:          "APB1_GRP2",
   FDCAN1:         "APB1_GRP2",
   FDCAN2:         "APB1_GRP2",
 
-  TIM1:           "APB2_GRP1",
+  PLAY1:          "APB2_GRP1",
   SPI1:           "APB2_GRP1",
+  TIM1:           "APB2_GRP1",
   TIM8:           "APB2_GRP1",
-  USART1:         "APB2_GRP1",
   TIM15:          "APB2_GRP1",
   TIM16:          "APB2_GRP1",
   TIM17:          "APB2_GRP1",
+  TIM20:          "APB2_GRP1",
+  USART1:         "APB2_GRP1",
   USB:            "APB2_GRP1",
+  USB_DRD_FS:     "APB2_GRP1",
 
-  SBS:            "APB3_GRP1",
-  LPUART1:        "APB3_GRP1",
   LPTIM1:         "APB3_GRP1",
+  LPUART1:        "APB3_GRP1",
   RTCAPB:         "APB3_GRP1",
   RTC:            "APB3_GRP1",
+  SBS:            "APB3_GRP1",
   TAMP:           "APB3_GRP1"
 
 };
 
 // Group to Clock mapping
 const groupClockMapping = {
-  AHB1_GRP1: "HCLK1",
-  AHB2_GRP1: "HCLK2",
-  AHB4_GRP1: "HCLK4",
-  APB1_GRP1: "PCLK1",
-  APB1_GRP2: "PCLK1",
-  APB2_GRP1: "PCLK2",
-  APB3_GRP1: "PCLK3"
+  AHB1_GRP1: "AHB",
+  AHB2_GRP1: "AHB",
+  AHB4_GRP1: "AHB",
+  APB1_GRP1: "APB1_Peripheral",
+  APB1_GRP2: "APB1_Peripheral",
+  APB2_GRP1: "APB2_Peripheral",
+  APB3_GRP1: "APB3_Peripheral"
 };
 
 /* Definition of the clock configuration strategy */
@@ -429,12 +460,13 @@ const rcc_ctx_defaults = {
 
 /* Private Global variables -----------------------------------------------------------------------------------------------*/
 let g_rcc_api = null;                     /* The list of global APIs */
-let g_core_cxt = null;                    /* Object containing the core context */
-let g_rcc_cxt = null;                     /* Object containing the rcc json parameter user confguration */
+let g_core_ctx = null;                    /* Object containing the core context */
+let g_rcc_ctx = null;                     /* Object containing the rcc json parameter user confguration */
 let g_rcc_clock_tree_config = null;       /* Object containing the rcc clock tree user configuration */
 let g_rcc_all_resources = null;           /* Object containing the rcc bound resources */
 let g_all_perifs_clock_config = null;     /* Object containing the rcc bound resources clock configurations */
 let g_rcc_used_osc = null;                /* Array containing the used oscillators */
+let g_c5_feature_group = null;            /* The c5 feature group */
 
 const g_rcc_resource_state = {};            /* Object containing the resources that are enabled (clocks, pll, config)*/
 
@@ -447,7 +479,7 @@ const g_rcc_resource_state = {};            /* Object containing the resources t
  * It thus get clock sources, dividers, PLL configurations
  * @param {string} resource_name HW resource name (ex: ADC1)
  * @param {object} all_periphs_config_object Current result of the clock configuration
- * @returns {object} Return an updated of the object current_ctxt
+ * @returns {object} Return an updated of the object current_ctx
  * ex {
  * "HCLK": {
  *    "resources": [
@@ -493,6 +525,7 @@ function rcc_get_pppi_configurations(
 
   try {
     console.info(`rcc_get_pppi_configurations: resource=${resource_name}`);
+    const c5_feature_group = helper_rcc_detect_feature_group();
 
     let clock_source_object = helper_rcc_get_clock_source_object(resource_name);
     if (clock_source_object) {
@@ -523,6 +556,18 @@ function rcc_get_pppi_configurations(
         let clock_object = g_rcc_api.clockAPI.getClockInformationById('HSE_Divider_RTC');
         rcc_add_resource_clock_source(result, 'HSE_DIV', clock_object.frequency, resource_name);
       }
+
+      /* Also add kernel clock source (HSIDIV3 or HSIDIV4) */
+      if (c5_feature_group === 'GROUP2') {
+        let clock_object = g_rcc_api.clockAPI.getClockInformationById('HSI_DIV_4');
+        rcc_add_resource_clock_source(result, 'HSIDIV4', clock_object.frequency, resource_name);
+      }
+      else  {
+        let clock_object = g_rcc_api.clockAPI.getClockInformationById('HSI_DIV_3');
+        rcc_add_resource_clock_source(result, 'HSIDIV3', clock_object.frequency, resource_name);
+      }
+
+
     }
     else if (resource_name == 'RTC') {
       const rtc_clock_source_object = helper_rcc_get_clock_source_object("RTC");
@@ -571,6 +616,12 @@ function rcc_get_pppi_configurations(
       }
       clock_source_id = "";
     }
+    else if (resource_name =='PLAY1'){
+      /* PLAY Divider detection */
+      clock_source_id = 'PLAY_Div';
+      let clock_object = g_rcc_api.clockAPI.getClockInformationById(clock_source_id);
+      rcc_add_resource_clock_source(result, 'PLAY_DIV', clock_object.frequency, resource_name);
+    }
 
     /* If additional resource not yet added, do it now */
     if (clock_source_id != ""){
@@ -586,13 +637,6 @@ function rcc_get_pppi_configurations(
       let clock_object = g_rcc_api.clockAPI.getClockInformationById(clock_source_id);
       rcc_add_resource_clock_source(result, "ADC_DAC_DIV", clock_object.frequency, resource_name);
     }
-
-
-
-
-
-
-
 
   } catch (error) {
     console.error(`rcc_get_pppi_configurations: ${error}`);
@@ -649,6 +693,7 @@ function rcc_find_system_clock_src() {
   let ok = false;
   let object = {
     HSIDIV3: false,
+    HSIDIV4: false,
     HSIS: false,
     HSE: false,
     PSIS: false,
@@ -734,14 +779,16 @@ function rcc_find_clock_divider(){
     adc:'1',
     rtc:'1',
     eth1:'1',
+    play:'1'
   }
 
   try {
-    object.hsik = g_rcc_api.clockAPI.getClockInformationById('HSIK')?.value;
-    object.psik = g_rcc_api.clockAPI.getClockInformationById('PSIK')?.value;
-    object.adc = g_rcc_api.clockAPI.getClockInformationById('ADCDACPRE_DIV')?.value;
-    object.rtc = g_rcc_api.clockAPI.getClockInformationById('HSE_Divider_RTC')?.value;
-    object.eth1 = g_rcc_api.clockAPI.getClockInformationById('ETH1_CLK_Div')?.value;
+    object.hsik = g_rcc_api.clockAPI.getClockInformationById('HSIK')?.value || '1';
+    object.psik = g_rcc_api.clockAPI.getClockInformationById('PSIK')?.value || '1';
+    object.adc = g_rcc_api.clockAPI.getClockInformationById('ADCDACPRE_DIV')?.value || '1';
+    object.rtc = g_rcc_api.clockAPI.getClockInformationById('HSE_Divider_RTC')?.value || '1';
+    object.eth1 = g_rcc_api.clockAPI.getClockInformationById('ETH1_CLK_Div')?.value || '1';
+    object.play = g_rcc_api.clockAPI.getClockInformationById('PLAY_Div')?.value || '1';
 
     /* convert number to string. 1.5 is converted to 1_5 */
     object.hsik = object.hsik?.toString().replace('.', '_');
@@ -815,12 +862,12 @@ function rcc_find_systick_clock_src() {
  *  }
  * }
  */
-function rcc_find_clk_outputs_config(rcc_ctx) {
+function rcc_find_clk_outputs_config(rcc_ctx, c5_feature_group) {
   let ok = false;
   let object = {
     mco1: {src: 'SYSCLK', div: 1, used : false},
     mco2: {src: 'SYSCLK', div: 1, used : false},
-    lsco: {src: 'LSI', div: 0, used : false}
+    lsco: {src: 'LSI', div: 0, used : false, pin: 'PB0'}
   }
 
   try {
@@ -847,6 +894,19 @@ function rcc_find_clk_outputs_config(rcc_ctx) {
     if (rcc_ctx?.additional.clk_outputs.lsco) {
       object.lsco.src = g_rcc_api.clockAPI.getClockInformationById('LSCO_Clock_Source').value;
       object.lsco.used = true;
+
+      if (c5_feature_group === 'GROUP2') {
+        /* Get the pin used for LSCO */
+        const possible_pins = ['PB0', 'PB2'];
+        for (const pin of possible_pins) {
+          let pin_data_object = g_rcc_api.pinoutAPI.getPinData(pin);
+          if (pin_data_object.signals.some(signal => signal.name === "RCC_LSCO")) {
+            object.lsco.pin = pin;
+            break;
+          }
+        }
+      }
+
     }
     ok = true;
   }
@@ -875,35 +935,41 @@ function rcc_find_clk_outputs_config(rcc_ctx) {
  */
 function rcc_find_psi_config(){
 
-  const available_psi_src = [ "LSE", "HSE", "HSI_DIV_18"];
+  const available_psi_src = [ "LSE", "HSE", "HSI_DIV_18", "HSI_DIV_24"];
 
   const psi_src_hal = {
     LSE: "LSE",
     HSE: "HSE",
-    HSI_DIV_18: "HSI_8MHz"
+    HSI_DIV_18: "HSI_8MHz",
+    HSI_DIV_24: "HSI_8MHz"
   };
   const psi_src_ll = {
     LSE: "LSE",
     HSE: "HSE",
-    HSI_DIV_18: "HSIDIV18"
+    HSI_DIV_18: "HSIDIV18",
+    HSI_DIV_24: "HSIDIV24"
   };
 
   const available_psi_src_to_enable = {
     LSE: "LSE",
     HSE: "HSE",
-    HSI_DIV_18: "HSIS"
+    HSI_DIV_18: "HSIS",
+    HSI_DIV_24: "HSIS"
   };
 
   const available_psi_fy = {
     '100000000':'100MHZ',
     '144000000':'144MHZ',
-    '160000000':'160MHZ'
+    '160000000':'160MHZ',
+    '192000000':'192MHZ',
+    '200000000':'200MHZ'
   };
 
   const psi_possible_reference_fy = {
     LSE:['32768'],
     HSE:['8000000', '16000000', '24000000', '25000000', '32000000', '48000000', '50000000'],
-    HSI_DIV_18:['8000000']
+    HSI_DIV_18:['8000000'],
+    HSI_DIV_24:['8000000']
   };
 
   const available_ref_name_for_psi = {
@@ -975,7 +1041,7 @@ function rcc_find_psi_config(){
       }
       else
       {
-        /* This is HSI div 18 */
+        /* This is HSI div18 or HSI div24 all equal to 8Mhz*/
         object.ref = "8MHZ";
       }
 
@@ -1010,7 +1076,9 @@ function rcc_find_psi_config(){
 function rcc_adjust_flash_latency(system_clock_frequency, selected_latency)
 {
   let latency = selected_latency ? selected_latency : 0;
-  const optimal_latency = helper_rcc_get_optimal_latency(system_clock_frequency);
+
+  const latency_max_frequency = g_rcc_api.peripheralsResourceManagerAPI.getHardwareIpDescription("RCC").features.flash.latency_max_frequency;
+  const optimal_latency = helper_rcc_get_optimal_latency(latency_max_frequency, system_clock_frequency);
   if (latency < optimal_latency)
   {
     latency = optimal_latency;
@@ -1028,7 +1096,9 @@ function rcc_adjust_flash_latency(system_clock_frequency, selected_latency)
 function rcc_adjust_flash_programming_delay(system_clock_frequency, selected_programming_delay)
 {
   let programming_delay = selected_programming_delay ? selected_programming_delay : 0;
-  const optimal_programming_delay = helper_rcc_get_optimal_programming_delay(system_clock_frequency);
+
+  const programming_delay_max_frequency = g_rcc_api.peripheralsResourceManagerAPI.getHardwareIpDescription("RCC").features.flash.programming_delay_max_frequency;
+  const optimal_programming_delay = helper_rcc_get_optimal_programming_delay(programming_delay_max_frequency,system_clock_frequency);
   if (programming_delay < optimal_programming_delay)
   {
     programming_delay = optimal_programming_delay;
@@ -1052,9 +1122,40 @@ function helper_rcc_init_codegen(root){
     g_rcc_api['peripheralsResourceManagerAPI'] = root.peripheralsResourceManagerAPI;
     g_rcc_api['clockAPI'] = root.clockAPI;
     g_rcc_api['EnvVarAPI'] = root.EnvVarAPI;
+    g_rcc_api['pinoutAPI'] = root.pinoutAPI;
 
     console.info(`helper_rcc_init_codegen: initialization successful`);
   }
+}
+
+
+/**
+ * Detect the RCC feature group of the MCU based on available clock frequencies.
+ * @param  None
+ * @returns {string} The detected feature group ("GROUP1" or "GROUP2")
+ */
+function helper_rcc_detect_feature_group() {
+  if (g_c5_feature_group == null){
+    let found = false;
+    try {
+      g_rcc_api.clockAPI.getClockFrequency("HSI_DIV_3");
+      g_c5_feature_group = "GROUP1";
+      found = true;
+    }
+    catch (error) {
+      console.info(`helper_rcc_detect_feature_group: HSI_DIV_3 not found, trying HSI_DIV_4`);
+    }
+    if (!found){
+      try {
+        g_rcc_api.clockAPI.getClockFrequency("HSI_DIV_4");
+        g_c5_feature_group = "GROUP2";
+      }
+      catch (error) {
+        console.error(`helper_rcc_detect_feature_group: HSI_DIV_4 not found, feature group detection failed`);
+      }
+    }
+  }
+  return g_c5_feature_group;
 }
 
 /**
@@ -1084,15 +1185,15 @@ function helper_rcc_get_component_context(componentId) {
  * @returns {object} The RCC config (user inputs)
  */
 function helper_rcc_get_rcc_context() {
-  if (!g_rcc_cxt){
-    g_rcc_cxt = helper_rcc_get_component_context('STMicroelectronics::Device:STM32CubeMX2 Config:RCC');
+  if (!g_rcc_ctx){
+    g_rcc_ctx = helper_rcc_get_component_context('STMicroelectronics::Device:STM32CubeMX2 Config:RCC');
 
-    if (!g_rcc_cxt){
-      g_rcc_cxt = rcc_ctx_defaults;
+    if (!g_rcc_ctx){
+      g_rcc_ctx = rcc_ctx_defaults;
       console.info(`helper_rcc_get_rcc_context: RCC not bound - default configuration used`);
     }
   }
-  return g_rcc_cxt;
+  return g_rcc_ctx;
 }
 
 /**
@@ -1100,10 +1201,10 @@ function helper_rcc_get_rcc_context() {
  * @returns {object} The CORE configuration
  */
 function helper_rcc_get_core_context() {
-  if (g_core_cxt == null){
-    g_core_cxt = helper_rcc_get_component_context('STMicroelectronics::Device:STM32CubeMX2 Config:CORE');
+  if (g_core_ctx == null){
+    g_core_ctx = helper_rcc_get_component_context('STMicroelectronics::Device:STM32CubeMX2 Config:CORE');
   }
-  return g_core_cxt;
+  return g_core_ctx;
 }
 
 
@@ -1175,6 +1276,7 @@ function helper_rcc_get_system_config(rcc_ctx) {
       }
 
       let result;
+      const c5_feature_group = helper_rcc_detect_feature_group();
 
       /* Build system clcok source object */
       result = rcc_find_system_clock_src();
@@ -1211,13 +1313,21 @@ function helper_rcc_get_system_config(rcc_ctx) {
       }
 
       /* Fill in Frequencies */
+      if (c5_feature_group === "GROUP1"){
       rcc_config.frequencies['default'] = g_rcc_api.clockAPI.getClockFrequency("HSI_DIV_3"); /* Default clock is HSIDIV3 */
+      }
+      else if (c5_feature_group === "GROUP2"){
+        rcc_config.frequencies['default'] = g_rcc_api.clockAPI.getClockFrequency("HSI_DIV_4"); /* Default clock is HSIDIV4 */
+      }
+      else {
+        rcc_config.frequencies['default'] = 0;
+      }
       rcc_config.frequencies['ahb'] = parseInt(g_rcc_api.clockAPI.getClockFrequency("AHB_Clock"));
       rcc_config.frequencies['system'] = rcc_config.clock_source.frequency;
       rcc_config.frequencies['hsi'] = g_rcc_api.clockAPI.getClockFrequency("HSI");
 
       /* Find MCO configs */
-      result = rcc_find_clk_outputs_config(rcc_ctx);
+      result = rcc_find_clk_outputs_config(rcc_ctx, c5_feature_group);
       rcc_config.clk_outputs = result.object;
       if (result.ok === false){
         console.error(`helper_rcc_get_hal_clock_config_object: mco parsing error`);
@@ -1522,10 +1632,10 @@ function helper_rcc_get_ppp_name(hw_resource)
 
 /**
  * Retrieve the power voltage scaling
- * @param {{ configs: { pwr_voltage_scaling: string; }[]; }} rcc_cxt the rcc context
+ * @param {{ configs: { pwr_voltage_scaling: string; }[]; }} rcc_ctx the rcc context
  * @returns {string} the power voltage scaling, temporary it does not exist, set to default to range 4
  */
-function helper_rcc_get_power_voltage_scaling(rcc_cxt) {
+function helper_rcc_get_power_voltage_scaling(rcc_ctx) {
   let pwr_scaling = '1';
   try {
     let pwr_ctx = helper_rcc_get_component_context('STMicroelectronics::Device:STM32CubeMX2 Config:PWR');
@@ -1552,6 +1662,7 @@ function helper_rcc_is_dacsh_needed(resource){
   }
   return false;
 }
+
 /**
  * Check if a resource also needs SBS activation
  * @param {string} resource, the name of the resource
@@ -1793,40 +1904,6 @@ function helper_rcc_is_controlled_by_user(config){
 }
 
 /**
- * Check if the ADC divider is required
- * @param {object} all_resources, the list of binded resource names
- * @returns {boolean} True or False
- */
-function helper_rcc_is_adc_divider_needed(all_resources){
-  try {
-    return adc_divider_resources.some(item => all_resources.includes(item));
-  } catch (error) {
-    console.error(`helper_rcc_is_adc_divider_needed: ${error}`);
-  }
-  return false;
-}
-
-/**
- * Check if the RTC divider is required
- * @param {object} all_resources, the list of binded resource names
- * @returns {boolean} True or False
- */
-function helper_rcc_is_rtc_divider_needed(all_resources){
-  let divider_needed = false;
-  try {
-    const rtc_clock_source_object = helper_rcc_get_clock_source_object("RTC");
-    const rtc_clock_source = helper_rcc_remap_clock_source(rtc_clock_source_object.value);
-
-    if (rtc_clock_source == "HSE_DIV")
-      divider_needed = rtc_divider_resources.some(item => all_resources.includes(item));
-
-  } catch (error) {
-    console.error(`helper_rcc_is_rtc_divider_needed: ${error}`);
-  }
-  return divider_needed;
-}
-
-/**
  * Return the systick divider value
  * @param {object} system_config
  * @param {boolean} external systick source is external or not
@@ -1957,6 +2034,12 @@ function helper_rcc_get_clk_enable_mode(hw_resource) {
     if (component_config.info?.function_type) {
       component = component_config.info.function_type;
     }
+    if (hw_resource.includes('DMA')) {
+      component = 'DMA';
+    }
+    if (hw_resource.includes('GPIO')) {
+      component = 'GPIO';
+    }
     const component_key = component.toLowerCase() + "_feature";
 
     if (Object.hasOwnProperty.call(core_configuration, component_key)) {
@@ -2027,35 +2110,22 @@ function helper_rcc_get_startup_time(board, clock){
   return startup_time;
 }
 
-/* Minimum recommanded flash latency wait states for a given frequency */
-const flash_latencies = {
-
-  optimal_values: {
-    0: 34000000,
-    1: 68000000,
-    2: 102000000,
-    3: 136000000,
-    4: 170000000,
-    5: 200000000
-    },
-  maximum: 15
-};
-
 /**
  * Check if the flash latency is possible for a given frequency
+ * @param {object} latency_max_frequency An object containing the maximum frequencies in MHz for each latency value.
  * @param {number} system_clock_frequency The system clock frequency in hertz.
  * @param {number} latency The flash latency in wait states.
  * @returns {boolean} True if the flash latency is possible, false otherwise.
  */
-function helper_rcc_is_flash_latency_possible(system_clock_frequency, latency)
+function helper_rcc_is_flash_latency_possible(latency_max_frequency, system_clock_frequency, latency)
 {
   let ret = false;
 
-  if (latency <= flash_latencies.maximum)
+  if (latency < Object.keys(latency_max_frequency).length)
   {
-    if (latency in flash_latencies.optimal_values)
+    if (latency in latency_max_frequency)
     {
-      if (system_clock_frequency <= flash_latencies.optimal_values[latency])
+      if (system_clock_frequency <= (latency_max_frequency[latency] * 1000000))
       {
         ret = true;
       }
@@ -2071,47 +2141,56 @@ function helper_rcc_is_flash_latency_possible(system_clock_frequency, latency)
 
 /**
  * Get the optimal flash latency for a given frequency
+ * @param {object} latency_max_frequency An object containing the maximum frequencies in MHz for each latency value.
  * @param {number} system_clock_frequency
  * @returns {number} latency
  */
-function helper_rcc_get_optimal_latency(system_clock_frequency) {
-  let latency = flash_latencies.maximum;
+function helper_rcc_get_optimal_latency(latency_max_frequency, system_clock_frequency) {
+  let latency = Object.keys(latency_max_frequency).length-1;
   /* console.warn(`helper_rcc_get_optimal_latency (${system_clock_frequency})`); */
 
-  for(const [lat, frequency] of Object.entries(flash_latencies.optimal_values)) {
-    if (system_clock_frequency <= frequency){
+  for(const [lat, frequency] of Object.entries(latency_max_frequency)) {
+    if (system_clock_frequency <= (frequency*1000000)){
       latency = lat;
       break;}
   }
-
   /* console.warn(`helper_rcc_get_optimal_latency (${latency})`); */
   return Number(latency);
 }
 
-/* Minimum recommanded flash latency wait states for a given frequency */
-const programming_delays = {
-  optimal_values: {
-    0: 68000000,
-    1: 136000000,
-    2: 200000000
-    },
-  maximum: 4
-};
+/**
+ * Get the maximum frequency for a given flash latency and voltage scaling
+ * @param {object} latency_max_frequency An object containing the maximum frequencies in MHz for each latency value.
+ * @param {number} latency The flash latency in wait states.
+ * @returns {string} The maximum frequency in MHz in a readable format (e.g: "168") or "N.A." if not available.
+ */
+function helper_rcc_get_latency_max_freq(latency_max_frequency, latency){
+  let max_freq_str = "N.A.";
+
+  /*console.warn(`helper_rcc_get_latency_max_freq (${latency})`); */
+  if (latency in latency_max_frequency)
+  {
+    let max_freq = latency_max_frequency[latency];
+    max_freq_str = max_freq.toFixed(3).replace(/\.?0+$/, '');
+  }
+  return max_freq_str;
+}
 
 /**
  * Check if the flash programming delay is possible for a given frequency
- * @param {number} system_clock_frequency
- * @param {number} programming_delay
+ * @param {object} programming_delay_max_frequency An object containing the maximum frequencies in MHz for each programming delay value.
+ * @param {number} system_clock_frequency system frequency in hertz
+ * @param {number} programming_delay to be checked
  * @returns
  */
-function helper_rcc_is_flash_programming_delay_possible(system_clock_frequency, programming_delay)
+function helper_rcc_is_flash_programming_delay_possible(programming_delay_max_frequency, system_clock_frequency, programming_delay)
 {
   let ret = false;
-  if (programming_delay <= programming_delays.maximum)
+  if (programming_delay < (Object.keys(programming_delay_max_frequency).length))
   {
-    if (programming_delay in programming_delays.optimal_values)
+    if (programming_delay in programming_delay_max_frequency)
     {
-      if (system_clock_frequency <= programming_delays.optimal_values[programming_delay])
+      if (system_clock_frequency <= (programming_delay_max_frequency[programming_delay] * 1000000))
       {
         ret = true;
       }
@@ -2121,25 +2200,58 @@ function helper_rcc_is_flash_programming_delay_possible(system_clock_frequency, 
       ret = true;
     }
   }
-  /*console.info(`helper_rcc_is_flash_programming_delay_possible. For ${system_clock_frequency} and ${programming_delay} is ${ret}`);*/
+  return ret;
+}
+
+/**
+ * Check if the flash programming delay is available
+ * @param {object} programming_delay_max_frequency An object containing the maximum frequencies in MHz for each programming delay value.
+ * @param {number} programming_delay to be checked
+ * @returns
+ */
+function helper_rcc_is_flash_programming_delay_available(programming_delay_max_frequency, programming_delay)
+{
+  let ret = false;
+  if (programming_delay in programming_delay_max_frequency)
+  {
+    ret = true;
+  }
   return ret;
 }
 
 /**
  * Get the optimal flash programming delay for a given frequency
+ * @param {object} programming_delay_max_frequency An object containing the maximum frequencies in MHz for each programming delay value.
  * @param {number} system_clock_frequency
- * @returns {number} programming_delay
+ * @returns {number} adjusted programming delay
  */
-function helper_rcc_get_optimal_programming_delay(system_clock_frequency) {
-  let programming_delay = programming_delays.maximum;
+function helper_rcc_get_optimal_programming_delay(programming_delay_max_frequency, system_clock_frequency) {
+  let programming_delay = Object.keys(programming_delay_max_frequency).length - 1;
 
-  for(const [delay, frequency] of Object.entries(programming_delays.optimal_values)) {
-    if (system_clock_frequency <= frequency){
+  for(const [delay, frequency] of Object.entries(programming_delay_max_frequency)) {
+    if (system_clock_frequency <= (frequency * 1000000)){
       programming_delay = delay;
       break;}
   }
-  /* console.info(`helper_rcc_get_optimal_programming_delay. For ${system_clock_frequency} is ${programming_delay}`); */
   return Number(programming_delay);
+}
+
+/**
+ * Get the maximum frequency for a given flash programming delay and voltage scaling
+ * @param {object} programming_delay_max_frequency An object containing the maximum frequencies in MHz for each programming delay value.
+ * @param {number} programming_delay The flash programming delay in wait states.
+ * @returns {string} The maximum frequency in MHz in a readable format (e.g: "168") or "N.A." if not available.
+ */
+function helper_rcc_get_programming_delay_max_freq(programming_delay_max_frequency, programming_delay){
+  let max_freq_str = "N.A.";
+
+  /*console.warn(`helper_rcc_get_programming_delay_max_freq (${programming_delay})`);*/
+  if (programming_delay in programming_delay_max_frequency)
+  {
+    let max_freq = programming_delay_max_frequency[programming_delay];
+    max_freq_str = max_freq.toFixed(3).replace(/\.?0+$/, '');
+  }
+  return max_freq_str;
 }
 
 /**
@@ -2159,7 +2271,7 @@ function helper_rcc_get_bus_group(peripheralInstance) {
 function helper_rcc_get_bus_clock_name(peripheralInstance) {
   const group = peripheralBusMapping[peripheralInstance];
   const clock = group ? groupClockMapping[group] : null;
-  return clock ? `${clock}_Peripheral_Clock` : "";
+  return clock ? `${clock}_Clock` : "";
 }
 
 /**
@@ -2169,23 +2281,28 @@ function helper_rcc_get_bus_clock_name(peripheralInstance) {
  */
 function helper_rcc_display_frequency(frequency)
 {
-  let value, unit;
+  try {
+    let value, unit;
 
-  if (frequency >= 1e6) {
-    value = frequency / 1e6;
-    unit = ' MHz';
-  } else if (frequency >= 1e3) {
-    value = frequency / 1e3;
-    unit = ' kHz';
-  } else {
-    value = frequency;
-    unit = ' Hz';
+    if (frequency >= 1e6) {
+      value = frequency / 1e6;
+      unit = ' MHz';
+    } else if (frequency >= 1e3) {
+      value = frequency / 1e3;
+      unit = ' kHz';
+    } else {
+      value = frequency;
+      unit = ' Hz';
+    }
+
+    /* Limit to 3 floating point digits and suppress useless zeros. */
+    let strValue = value.toFixed(3).replace(/\.?0+$/, '');
+
+    return strValue + unit;
+  } catch (error) {
+    console.error(`[ERROR] helper_rcc_display_frequency: ${error}`);
+    return frequency + ' Hz';
   }
-
-  // Limit to 3 floating point digits and suppress useless zeros.
-  let strValue = value.toFixed(3).replace(/\.?0+$/, '');
-
-  return strValue + unit;
 }
 
 /**
@@ -2196,7 +2313,10 @@ function helper_rcc_display_frequency(frequency)
 function helper_rcc_display_values(...arg){
     for (var i = 0; i < arg.length; i++)
     {
-      console.info(`helper_rcc_display_values. Variable #${i} is ${arg[i]}`);
+      const value = typeof arg[i] === "object" && arg[i] !== null
+      ? JSON.stringify(arg[i], null, 2)
+      : String(arg[i]);
+      console.info(`helper_rcc_display_values. Variable #${i} is ${value}`);
     }
     return 222;
 }
@@ -2236,6 +2356,7 @@ function max(a, b){
 /* Module Exports */
 module.exports = {
   helper_rcc_init_codegen,
+  helper_rcc_detect_feature_group,
   helper_rcc_get_component_context,
   helper_rcc_get_rcc_context,
   helper_rcc_is_feature_enabled,
@@ -2271,8 +2392,6 @@ module.exports = {
   helper_rcc_is_central,
   helper_rcc_is_controlled_by_periph,
   helper_rcc_is_controlled_by_user,
-  helper_rcc_is_adc_divider_needed,
-  helper_rcc_is_rtc_divider_needed,
   helper_rcc_get_systick_divider,
   helper_rcc_get_irq_handler,
   helper_rcc_get_clk_enable_mode,
@@ -2280,8 +2399,11 @@ module.exports = {
   helper_rcc_get_startup_time,
   helper_rcc_is_flash_latency_possible,
   helper_rcc_get_optimal_latency,
+  helper_rcc_get_latency_max_freq,
   helper_rcc_is_flash_programming_delay_possible,
+  helper_rcc_is_flash_programming_delay_available,
   helper_rcc_get_optimal_programming_delay,
+  helper_rcc_get_programming_delay_max_freq,
   helper_rcc_get_bus_group,
   helper_rcc_get_bus_clock_name,
   helper_rcc_display_frequency,

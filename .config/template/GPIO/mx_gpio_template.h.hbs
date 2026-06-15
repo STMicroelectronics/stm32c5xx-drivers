@@ -15,23 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{! ~}}
-  {{assign 'file_name' 'GPIO'~}}
-  {{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:GPIO')~}}
-{{else}}
-  {{! ~}}
-  {{assign "strategy" "HW"~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{! ~}}
-      {{assign 'file_name' resource~}}
-      {{assign 'current_resource' resource~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context_gpio 'GPIO' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.pinoutAPI)~}}
+{{log "GPIO template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -55,19 +44,12 @@ extern "C" {
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
   {{!log "GPIO template - instance:" (toJSON this)~}}
-  {{#if (eq @root.strategy "HW")}}
-    {{! ~}}
-    {{assign 'current_layer' info.layer~}}
-    {{assign 'name' name~}}
-  {{else}}
-    {{! ~}}
-    {{assign 'gpio_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{assign 'current_layer' @root.gpio_cxt.info.layer~}}
-    {{assign 'current_resource' @root.gpio_cxt.settings.resources.instance.label~}}
-    {{assign 'name' @root.gpio_cxt.name~}}
-  {{/if}}
+  {{assign 'gpio_cxt' config~}}
+  {{assign 'current_resource' current_resource~}}
+  {{assign 'current_layer' @root.gpio_cxt.info.layer~}}
+  {{assign 'configs' @root.gpio_cxt~}}
 /******************************************************************************/
-/* Exported defines for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported defines for {{@root.current_resource}} in {{@root.current_layer}} layer                             */
 /******************************************************************************/
 {{assign 'define' "#define"}}
   {{#with @root.configs}}
@@ -124,7 +106,7 @@ extern "C" {
 {{@root.define}} {{helper_gpio_add_pad_right (concat (uppercase this) "_INIT_STATE") 47}} LL_GPIO_PIN_{{../output_init_state}}
                 {{#if (not (eq ../output_active_state undefined))}}
 {{@root.define}} {{helper_gpio_add_pad_right (concat (uppercase this) "_ACTIVE_STATE") 47}} LL_GPIO_PIN_{{../output_active_state}}
-{{@root.define}} {{helper_gpio_add_pad_right (concat (uppercase this) "_INACTIVE_STATE") 47}} LL_GPIO_PIN_{{#if (eq output_active_state 'RESET')}}SET{{else}}RESET{{/if}}
+{{@root.define}} {{helper_gpio_add_pad_right (concat (uppercase this) "_INACTIVE_STATE") 47}} LL_GPIO_PIN_{{#if (eq ../output_active_state 'RESET')}}SET{{else}}RESET{{/if}}
                 {{/if}}
               {{/if}}
             {{/if}}
@@ -146,21 +128,13 @@ extern "C" {
 /* Exported functions ------------------------------------------------------- */
 {{helper_common_initialize_index~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "HW")}}
-    {{! ~}}
-    {{assign 'current_layer' info.layer~}}
-    {{assign 'configs' this~}}
-    {{assign 'name' name~}}
-  {{else}}
-    {{! ~}}
-    {{assign 'gpio_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{assign 'current_layer' @root.gpio_cxt.info.layer~}}
-    {{assign 'current_resource' @root.gpio_cxt.settings.resources.instance.label~}}
-    {{assign 'name' @root.gpio_cxt.name~}}
-  {{/if}}
+  {{~assign 'gpio_cxt' config~}}
+  {{assign 'current_resource' current_resource~}}
+  {{assign 'current_layer' @root.gpio_cxt.info.layer~}}
+  {{assign 'configs' @root.gpio_cxt~}}
   {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer                           */
 /******************************************************************************/
     {{! ~}}
     {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
@@ -183,7 +157,7 @@ system_status_t {{@root.fct_name}}_init(void);
 system_status_t {{@root.fct_name}}_deinit(void);
 
 {{/each}}
-{{> EXTI fct='exti_gpio_gethandle_proto' resource=@root.current_resource exti_list=@root.exti_object.list_exti}}
+{{> EXTI fct='exti_gpio_gethandle' resource=@root.current_resource exti_list=@root.exti_object.list_exti type='prototype' called_by_pppi_gpio=false}}
 {{> CORTEX fct='generate_irqhandler' type='prototype' component='EXTI'}}
 
 #ifdef __cplusplus

@@ -94,7 +94,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$additional.enable_ecc === false"
+                  "condition": "$additional.enable_ecc === false",
+                  "message": "This parameter is disabled because ECC is not enabled."
                 }
               ]
             },
@@ -105,7 +106,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$additional.enable_ecc === false"
+                  "condition": "$additional.enable_ecc === false",
+                  "message": "This parameter is disabled because ECC is not enabled."
                 }
               ]
             },
@@ -127,7 +129,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$additional.enable_double_ecc_interrupt === true"
+                  "condition": "$additional.enable_double_ecc_interrupt === true",
+                  "message": "This parameter is disabled because double ECC error interrupt is not enabled."
                 }
               ]
             }
@@ -138,6 +141,137 @@
               "condition": "$resource.features.ecc_feature == 1"
             }
           ]
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "#comment": "Use for instance for RAMCFG",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.parent"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privilege attribute",
+              "description": "Set the privilege attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.parent"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.parent"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "type": "boolean",
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.parent"
+              },
+              "default": false
+            }
+          }
         },
         "system": {
           "title": "System",
@@ -191,21 +325,20 @@
                   ]
                 },
                 "nmi_interruption": {
+                  "title": "NMI RAMCFG exception management",
+                  "description": "This handler processes the NMI exception that occurs when a double ECC error is detected in the RAM.",
                   "type": "boolean",
-                  "title": "NMI interrupt",
-                  "description": "NMI is always enabled by hardware, thus you cannot change it here.",
-                  "default": true,
-                  "readOnly": true
+                  "default": false
                 },
                 "irq_handler_generation_nmi": {
                   "type": "boolean",
                   "title": "NMI IRQ handler generation",
                   "description": "Handles NMI when a double ECC error occurs in SRAM.",
-                  "default": false,
+                  "default": true,
                   "actions": [
                     {
-                      "type": "exclude",
-                      "condition": "$info.layer === 'LL'"
+                      "type": "include",
+                      "condition": "$system.nvic.nmi_interruption && ($info.layer === 'HAL')"
                     }
                   ]
                 },
@@ -213,6 +346,12 @@
                   "title": "NMI IRQ line priority",
                   "type": "object",
                   "objectType": "need.interrupt.lines",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$system.nvic.nmi_interruption"
+                    }
+                  ],
                   "variables": [
                     {
                       "on": "update-value",

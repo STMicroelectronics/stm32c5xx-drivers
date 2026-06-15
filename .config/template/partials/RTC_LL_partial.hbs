@@ -135,7 +135,7 @@ system_status_t {{@root.fct_name}}_init(void)
       {{#with alarm_a}}
   LL_RTC_ALM_SetBinAutoClr(LL_RTC_ALARM_A, LL_RTC_ALMA_SUBSECONDBIN_AUTOCLR_NO);
   LL_RTC_ALM_SetFlagAutoClr(LL_RTC_ALARM_A, LL_RTC_ALM_AUTOCLR_{{#if flag_auto_clear}}YES{{else}}NO{{/if}});
-  
+
         {{#if (eq alarm_date_week_day_sel 'MONTHDAY')}}
   uint32_t alarm_a_date = 0x{{alarm_date}}U;
         {{/if}}
@@ -195,7 +195,7 @@ system_status_t {{@root.fct_name}}_init(void)
       {{#with alarm_b}}
   LL_RTC_ALM_SetBinAutoClr(LL_RTC_ALARM_B, LL_RTC_ALMA_SUBSECONDBIN_AUTOCLR_NO);
   LL_RTC_ALM_SetFlagAutoClr(LL_RTC_ALARM_B, LL_RTC_ALM_AUTOCLR_{{#if flag_auto_clear}}YES{{else}}NO{{/if}});
-  
+
         {{#if (eq alarm_date_week_day_sel 'MONTHDAY')}}
   uint32_t alarm_b_date = 0x{{alarm_date}}U;
         {{/if}}
@@ -338,7 +338,7 @@ system_status_t {{@root.fct_name}}_init(void)
   /* Enable write protection */
   LL_RTC_EnableWriteProtection();
 
-{{> GPIO_LL fct='init_resource' resource=@root.current_resource}}
+{{> GPIO_LL fct='init_resource' resource=@root.current_resource return_if_failed='SYSTEM_POWER_ERROR'}}
   {{#with system}}
     {{#with nvic}}
       {{#if enable_interruption}}
@@ -366,6 +366,84 @@ void {{@root.fct_name}}_deinit(void)
   {{/with}}
 {{> GPIO_LL fct='deinit_resource' resource=@root.current_resource}}
 }
+
+{{else if (eq fct 'config_security_privilege')}}
+
+{{#with security_privilege}}
+  {{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+  {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+system_status_t {{@root.fct_name}}_config_privilege(void)
+  {{else}}
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+  {{/if}}
+{
+  /*
+   * Full access security path:
+   * Configure RTC resources security/privilege attributes
+   */
+
+  {{#> PWR_LL fct='generate_write_protection_disable'}}
+  {{/PWR_LL}}
+
+ {{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
+ {{/RCC}}
+
+  /* Disable write protection */
+  LL_RTC_DisableWriteProtection();
+
+{{#with security}}
+{{assign "access_levels_all_states" (helper_rtc_attribute_all_states access_levels)}}
+{{#unless  @root.access_levels_all_states.allNegative}}
+{{#if @root.access_levels_all_states.allPositive}}
+  /* Configure security attributes for RTC peripheral */
+  LL_RTC_SetSecAttr(LL_RTC_SEC_ITEM_ALL, LL_RTC_ATTR_SEC);
+{{else}}
+{{assign "security_items" (helper_rtc_get_attribute_items @root.current_layer 'SEC' access_levels)}}
+{{#unless (eq security_items '')}}
+  /* Configure security attributes for RTC peripheral */
+  LL_RTC_SetSecAttr({{@root.security_items}}, LL_RTC_ATTR_SEC);
+{{else}}
+{{log "No specific security attributes require configuration for this RTC instance."}}
+{{/unless}}
+{{/if}}
+{{else}}
+{{log "No security attributes (all) require configuration for this RTC instance."}}
+{{/unless}}
+{{/with}}
+
+{{#with privilege}}
+{{assign "access_levels_all_states" (helper_rtc_attribute_all_states access_levels)}}
+{{#unless  @root.access_levels_all_states.allNegative}}
+{{#if @root.access_levels_all_states.allPositive}}
+  /* Configure privilege attributes for RTC peripheral */
+  LL_RTC_SetPrivAttr(LL_RTC_PRIV_ITEM_ALL, LL_RTC_ATTR_PRIV);
+{{else}}
+{{assign "privilege_items" (helper_rtc_get_attribute_items @root.current_layer 'PRIV' access_levels)}}
+{{#unless (eq privilege_items '')}}
+  /* Configure privilege attributes for RTC peripheral */
+  LL_RTC_SetPrivAttr({{@root.privilege_items}}, LL_RTC_ATTR_PRIV);
+{{else}}
+{{log "No specific privilege attributes require configuration for this RTC instance."}}
+{{/unless}}
+{{/if}}
+{{else}}
+{{log "No privilege attributes (all) require configuration for this RTC instance."}}
+{{/unless}}
+{{/with}}
+
+{{#> GPIO_LL fct='gpio_config_security' resource=@root.current_resource}}{{/GPIO_LL}}
+
+{{#if illegal_access}}
+  /* Enable HSEM IAC interrupt */
+  LL_RIF_IAC_EnableIT(LL_RIF_RTC);
+{{/if}}
+
+  /* Enable write protection */
+  LL_RTC_EnableWriteProtection();
+
+  return SYSTEM_OK;
+}
+{{/with}}
 
 {{else}}
 #warning "Function {{fct}} not present in partial RTC_LL_partial.hbs"

@@ -67,7 +67,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "$get('envVar.value', 'CORE_TIM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_TIM_TIMEBASE') === $resource.id"
+                  "condition": "$get('envVar.value', 'CORE_TIM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_TIM_TIMEBASE') === $resource.id",
+                  "message": "The software layer is set to HAL for TIM timebase."
                 }
               ],
               "variables": [
@@ -112,7 +113,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "$get('envVar.value', 'CORE_TIM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_TIM_TIMEBASE') === $resource.id"
+                  "condition": "$get('envVar.value', 'CORE_TIM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_TIM_TIMEBASE') === $resource.id",
+                  "message": "Initialization code generation is managed by the HAL TIM timebase template."
                 }
               ],
               "default": "called"
@@ -120,7 +122,6 @@
             "timebase_info": {
               "type": "string",
               "title": "HAL TIM timebase information",
-              "readOnly": true,
               "actions": [
                 {
                   "type": "include",
@@ -128,9 +129,8 @@
                 },
                 {
                   "type": "set",
-                  "condition": "true",
                   "attributes": {
-                    "default": "HAL TIM timebase template will control this timer."
+                    "const": "HAL TIM timebase template will control this timer."
                   }
                 }
               ]
@@ -152,14 +152,9 @@
               "title": "Time-base",
               "properties": {
                 "frequency": {
-                  "type": "integer",
+                  "type": "string",
                   "title": "Timer output frequency",
                   "description": "Timer output frequency depending on TIM kernel clock, prescaler and period.",
-                  "readOnly": true,
-                  "display_format": [
-                    "dec"
-                  ],
-                  "unit": "Hz",
                   "actions": [
                     {
                       "type": "include",
@@ -167,13 +162,27 @@
                     },
                     {
                       "type": "set",
-                      "condition": "true",
+                      "condition": "($common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period)) < 1000",
                       "computed": {
-                        "const": "$common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period)"
+                        "const": "$common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period) + ' Hz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period)) >= 1000 && ($common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period)) < 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period) / 1000 + ' kHz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period)) >= 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_frequency($get('clock.frequency', $resource.id), $basic.time_base.clock_source_configuration.prescaler, $basic.time_base.counter.period) / 1000000 + ' MHz'"
                       }
                     }
                   ],
-                  "default": 0
+                  "default": ""
                 },
                 "clock_source_configuration": {
                   "type": "object",
@@ -224,7 +233,7 @@
                           "actions": [
                             {
                               "type": "include",
-                              "condition": "($resource.features.nb_of_sm > 0) && (($resource.features.nb_of_cc > 2) || (($resource.peripheralVersionNum >= 5.0) && ($resource.features.nb_of_cc > 1) && ($resource.features.bk_impl > 0)))"
+                              "condition": "($resource.features.nb_of_sm > 0) && ($resource.features.nb_of_cc > 1) && ($resource.features.cnt_dir === 2)"
                             }
                           ]
                         }
@@ -234,7 +243,6 @@
                     "kernel_clock_source": {
                       "type": "string",
                       "title": "Kernel clock source",
-                      "readOnly": true,
                       "actions": [
                         {
                           "type": "include",
@@ -250,14 +258,9 @@
                       "default": ""
                     },
                     "kernel_clock_frequency": {
-                      "type": "integer",
+                      "type": "string",
                       "title": "Kernel clock frequency",
                       "description": "TIM kernel clock used to feed the TIM prescaler.",
-                      "display_format": [
-                        "dec"
-                      ],
-                      "unit": "Hz",
-                      "readOnly": true,
                       "actions": [
                         {
                           "type": "include",
@@ -265,12 +268,27 @@
                         },
                         {
                           "type": "set",
+                          "condition": "($get('clock.frequency',$resource.id)) < 1000",
                           "computed": {
-                            "const": "$get('clock.frequency', $resource.id)"
+                            "const": "$get('clock.frequency',$resource.id) + ' Hz'"
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($get('clock.frequency',$resource.id)) >= 1000 && ($get('clock.frequency',$resource.id)) < 1000000",
+                          "computed": {
+                            "const": "$get('clock.frequency',$resource.id) / 1000 + ' kHz'"
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($get('clock.frequency',$resource.id)) >= 1000000",
+                          "computed": {
+                            "const": "$get('clock.frequency',$resource.id) / 1000000 + ' MHz'"
                           }
                         }
                       ],
-                      "default": 0
+                      "default": ""
                     },
                     "trigger_input": {
                       "type": "string",
@@ -374,7 +392,7 @@
                         },
                         {
                           "type": "info",
-                          "condition": "$value.source !== 'AFI'",
+                          "condition": "!/^AFI(?:\\s*\\([^)]*\\))?$/i.test($value.source)",
                           "message": "The selected interconnect must be configured manually."
                         }
                       ],
@@ -382,8 +400,8 @@
                       "query": {
                         "entity": "peripheral.interconnect.external input trigger",
                         "parent": "$resource.id",
-                          "where": "!$entity.source.includes('AFI') || $get('pinout.peripheralCanBeMapped', $resource.id, 'ETR')",
-                        "title": "{{source.replace(/(AFI|Input pins)/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC')}}"
+                        "where": "!$entity.source.includes('AFI') || $get('pinout.peripheralCanBeMapped', $resource.id, 'ETR')",
+                        "title": "{{source.replace(/^(?:AFI(?:\\s*\\([^)]*\\))?|Input pins)$/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC')}}"
                       }
                     },
                     "encoder_mode": {
@@ -523,7 +541,7 @@
                     "clock_filter": {
                       "type": "string",
                       "title": "Clock filter",
-                      "description": "Defines the frequency used to sample the input (division) and the length of the digital filter applied. The digital filter is made of an event counter in which N consecutive events are needed to validate a transition on the output.",
+                      "description": "Defines the frequency used to sample the input and the length of the digital filter applied. The digital filter is made of an event counter in which N consecutive events are needed to validate a transition on the output.",
                       "actions": [
                         {
                           "type": "include",
@@ -671,6 +689,7 @@
                     "clock_prescaler": {
                       "type": "integer",
                       "title": "Clock prescaler",
+                      "description": "Division ratio between the timer external trigger (tim_etr) frequency and the prescaled ETR signal (tim_etrp).",
                       "actions": [
                         {
                           "type": "include",
@@ -700,6 +719,7 @@
                     "clock_sync_prescaler": {
                       "type": "integer",
                       "title": "Clock synchronous prescaler",
+                      "description": "Division ratio between the prescaled ETR signal (tim_etrp) and filtered ETR signal (tim_etrf).",
                       "actions": [
                         {
                           "type": "include",
@@ -777,7 +797,7 @@
                     "prescaler": {
                       "type": "integer",
                       "title": "Prescaler",
-                      "description": "This parameter can be a number between 0 and 0xFFFF.",
+                      "description": "Division ratio between the timer input clock and the counter clock.",
                       "display_format": [
                         "hex",
                         "dec"
@@ -798,7 +818,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$resource.features.cnt_dir === 2"
+                          "condition": "$resource.features.cnt_dir === 2",
+                          "message": "The counter mode is available when the timer supports multiple counting modes."
                         },
                         {
                           "type": "set",
@@ -886,21 +907,20 @@
                         "dec"
                       ],
                       "minimum": 1,
-                      "maximum": 65535,
-                      "default": 65535,
                       "actions": [
                         {
                           "type": "set",
                           "condition": "($resource.features.cnt_width === 16) && !$basic.time_base.counter.dithering",
                           "attributes": {
-                            "description": "For counter with a 16 bits resolution, this parameter can be a number between 1 and 0xFFFF."
+                            "default": 65535,
+                            "maximum": 65535
                           }
                         },
                         {
                           "type": "set",
                           "condition": "($resource.features.cnt_width === 16) && $basic.time_base.counter.dithering",
                           "attributes": {
-                            "description": "For counter with a 16 bits resolution and dithering, this parameter can be a number between 1 and 0xFFFE.",
+                            "description": "When dithering is enabled, this parameter contains the period's integer part.",
                             "maximum": 65534
                           }
                         },
@@ -908,7 +928,6 @@
                           "type": "set",
                           "condition": "($resource.features.cnt_width === 32) && !$basic.time_base.counter.dithering",
                           "attributes": {
-                            "description": "For counter with a 32 bits resolution, this parameter can be a number between 1 and 0xFFFFFFFF.",
                             "default": 4294967295,
                             "maximum": 4294967295
                           }
@@ -917,7 +936,7 @@
                           "type": "set",
                           "condition": "($resource.features.cnt_width === 32) && $basic.time_base.counter.dithering",
                           "attributes": {
-                            "description": "For counter with a 32 bits resolution and dithering, this parameter can be a number between 1 and 0xFFFFFFE.",
+                            "description": "When dithering is enabled, this parameter contains the period's integer part.",
                             "maximum": 268435454
                           }
                         }
@@ -928,8 +947,13 @@
                       "title": "Counter period dithering pattern",
                       "actions": [
                         {
+                          "type": "include",
+                          "condition": "($resource.peripheralVersionNum >= 4.0)"
+                        },
+                        {
                           "type": "enable",
-                          "condition": "$basic.time_base.counter.dithering"
+                          "condition": "$basic.time_base.counter.dithering",
+                          "message": "The counter period dithering pattern is available when the dithering feature is enabled."
                         }
                       ],
                       "oneOf": [
@@ -1048,6 +1072,7 @@
             "sampling_clock": {
               "type": "object",
               "title": "Sampling clock",
+              "description": "Digital Timer Sampling clock.",
               "actions": [
                 {
                   "type": "include",
@@ -1056,34 +1081,44 @@
               ],
               "properties": {
                 "kernel_clock_frequency": {
-                  "type": "integer",
+                  "type": "string",
                   "title": "Kernel clock frequency",
                   "description": "TIM kernel clock used as a source for DTS clock.",
-                  "display_format": [
-                    "dec"
-                  ],
-                  "unit": "Hz",
-                  "readOnly": true,
                   "actions": [
                     {
                       "type": "set",
+                      "condition": "($get('clock.frequency',$resource.id)) < 1000",
                       "computed": {
-                        "const": "$get('clock.frequency', $resource.id)"
+                        "const": "$get('clock.frequency',$resource.id) + ' Hz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($get('clock.frequency',$resource.id)) >= 1000 && ($get('clock.frequency',$resource.id)) < 1000000",
+                      "computed": {
+                        "const": "$get('clock.frequency',$resource.id) / 1000 + ' kHz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($get('clock.frequency',$resource.id)) >= 1000000",
+                      "computed": {
+                        "const": "$get('clock.frequency',$resource.id) / 1000000 + ' MHz'"
                       }
                     }
                   ],
-                  "default": 0
+                  "default": ""
                 },
                 "clock_division": {
                   "type": "integer",
                   "title": "DTS prescaler",
-                  "description": "The prescaler sets the division ratio between the timer kernel clock (tim_ker_ck) and the DTS sampling clock (DTS_ck). The DTS sampling clock is used, when supported, by the dead-time generator, the break/break2 filters and internal digital filters (tim_etr_in, tim_tix).",
+                  "description": "The prescaler sets the division ratio between the timer kernel clock (tim_ker_ck) and the DTS clock (DTS_ck). The DTS clock is used, when supported, by the dead-time generator, the break/break2 filters and internal digital filters (tim_etr_in, tim_tix).",
                   "actions": [
                     {
                       "type": "set",
                       "condition": "$resource.peripheralVersionNum >= 5.0",
                       "attributes": {
-                        "description": "The prescaler sets the division ratio between the timer kernel clock (tim_ker_ck) and the DTS sampling clock (DTS_ck). The DTS sampling clock is used, when supported, by the dead-time generator, the break/break2 filters and the delayed break."
+                        "description": "The prescaler sets the division ratio between the timer kernel clock (tim_ker_ck) and the DTS clock (DTS_ck). The DTS clock is used, when supported, by the dead-time generator, the break/break2 filters and the delayed break."
                       }
                     }
                   ],
@@ -1114,23 +1149,32 @@
                   "default": 1
                 },
                 "dts_clock_frequency": {
-                  "type": "integer",
+                  "type": "string",
                   "title": "DTS clock frequency",
-                  "display_format": [
-                    "dec"
-                  ],
-                  "unit": "Hz",
-                  "readOnly": true,
                   "actions": [
                     {
                       "type": "set",
-                      "condition": "true",
+                      "condition": "($common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division)) < 1000",
                       "computed": {
-                        "const": "$common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division)"
+                        "const": "$common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division) + ' Hz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division)) >= 1000 && ($common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division)) < 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division) / 1000 + ' kHz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division)) >= 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_sampling_clock($get('clock.frequency', $resource.id), $basic.sampling_clock.clock_division) / 1000000 + ' MHz'"
                       }
                     }
                   ],
-                  "default": 0
+                  "default": ""
                 },
                 "clock_division2": {
                   "type": "integer",
@@ -1187,23 +1231,32 @@
                   "default": 1
                 },
                 "dts2_clock_frequency": {
-                  "type": "integer",
+                  "type": "string",
                   "title": "DTS2 clock frequency",
-                  "display_format": [
-                    "dec"
-                  ],
-                  "unit": "Hz",
-                  "readOnly": true,
                   "actions": [
                     {
                       "type": "set",
-                      "condition": "true",
+                      "condition": "($common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2)) < 1000",
                       "computed": {
-                        "const": "$common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2)"
+                        "const": "$common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2) + ' Hz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2)) >= 1000 && ($common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2)) < 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2) / 1000 + ' kHz'"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "($common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2)) >= 1000000",
+                      "computed": {
+                        "const": "$common.helper_tim_compute_sampling_clock($basic.sampling_clock.dts_clock_frequency, $basic.sampling_clock.clock_division2) / 1000000 + ' MHz'"
                       }
                     }
                   ],
-                  "default": 0
+                  "default": ""
                 }
               }
             },
@@ -1218,7 +1271,7 @@
         "channels": {
           "type": "array",
           "title": "Channel(s)",
-          "rendering": "channels-tabs",
+          "rendering": "channel-tabs",
           "source": "$resource.resources.filter(element => (element.resourceType === 'timer_channel'))",
           "itemId": "id",
           "itemTitle": "name",
@@ -1657,12 +1710,12 @@
                         "actions": [
                           {
                             "type": "enable",
-                            "condition": "($item.output_configuration !== undefined) && ($item.output_configuration.compare_unit_configuration !== undefined) && ($item.output_configuration.compare_unit_configuration.mode.includes('PWM'))",
+                            "condition": "$item.output_configuration.compare_unit_configuration.mode.includes('PWM')",
                             "message": "Fast mode is only available for PWM modes."
                           },
                           {
                             "type": "warning",
-                            "condition": "$basic.time_base.counter.one_pulse_mode && !$value",
+                            "condition": "$basic.time_base.counter.one_pulse_mode && !$value && $item.output_configuration.compare_unit_configuration.mode.includes('PWM')",
                             "message": "Fast mode must be used in one-pulse mode, to have the output pulse starting as soon as possible after the starting trigger."
                           }
                         ],
@@ -2124,68 +2177,6 @@
                   }
                 ],
                 "properties": {
-                  "capture_unit_configuration": {
-                    "type": "object",
-                    "title": "Capture unit",
-                    "properties": {
-                      "source": {
-                        "type": "string",
-                        "title": "Input capture source",
-                        "oneOf": [
-                          {
-                            "title": "Input capture direct mode",
-                            "const": "DIRECT"
-                          },
-                          {
-                            "title": "Input capture indirect mode",
-                            "const": "INDIRECT",
-                            "actions": [
-                              {
-                                "type": "enable",
-                                "condition": "($common.helper_tim_channel_check_indirect($channels, $channel.id)) && !((($channel.id === 'CC1') || ($channel.id === 'CC2')) && ($basic.time_base.clock_source_configuration.clock_source === 'ENCODER_MODE'))",
-                                "message": "Requires adjacent channel in indirect mode."
-                              }
-                            ]
-                          },
-                          {
-                            "title": "Input capture triggered by TRC",
-                            "const": "TRC",
-                            "actions": [
-                              {
-                                "type": "enable",
-                                "condition": "($additional.synchronization.slave_mode.trigger_input === 'ITR') && ($additional.synchronization.slave_mode.mode !== 'DISABLED')",
-                                "message": "Requires slave mode trigger input at internal trigger."
-                              }
-                            ]
-                          }
-                        ],
-                        "default": "DIRECT"
-                      },
-                      "prescaler": {
-                        "type": "integer",
-                        "title": "Prescaler",
-                        "oneOf": [
-                          {
-                            "title": "\u00F7 1",
-                            "const": 1
-                          },
-                          {
-                            "title": "\u00F7 2",
-                            "const": 2
-                          },
-                          {
-                            "title": "\u00F7 4",
-                            "const": 4
-                          },
-                          {
-                            "title": "\u00F7 8",
-                            "const": 8
-                          }
-                        ],
-                        "default": 1
-                      }
-                    }
-                  },
                   "icx_channel_configuration": {
                     "type": "object",
                     "title": "Input channel",
@@ -2201,6 +2192,13 @@
                       "use_channel": {
                         "type": "boolean",
                         "title": "Use channel",
+                        "actions": [
+                          {
+                            "type": "warning",
+                            "condition": "$value && ($item.input_configuration.capture_unit_configuration.source === 'INDIRECT') && ($channel.id !== 'CC1')",
+                            "message": "The input channel is meaningless when using indirect input capture mode."
+                          }
+                        ],
                         "default": true
                       },
                       "labels": {
@@ -2242,7 +2240,7 @@
                           },
                           {
                             "type": "info",
-                            "condition": "$value.source !== 'AFI'",
+                            "condition": "!/^AFI(?:\\s*\\([^)]*\\))?$/i.test($value.source)",
                             "message": "The selected interconnect must be configured manually."
                           }
                         ],
@@ -2251,7 +2249,7 @@
                           "entity": "peripheral.interconnect.input capture trigger",
                           "parent": "$resource.id",
                           "where": "($entity.resource_id  === $channel.id) && (!$entity.source.includes('AFI') || $get('pinout.peripheralCanBeMapped', $resource.id, 'CH' + $common.helper_tim_convert_channel($channel.id)))",
-                          "title": "{{source.replace(/(AFI|Input pins)/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC')}}"
+                            "title": "{{source.replace(/^(?:AFI(?:\\s*\\([^)]*\\))?|Input pins)$/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC').replace(/I3C(\\d+)_IBIACKTI/i, 'I3C$1_IBI_ACK')}}"
                         }
                       },
                       "filter_ic": {
@@ -2348,7 +2346,7 @@
                         "actions": [
                           {
                             "type": "include",
-                            "condition": "$item.input_configuration.icx_channel_configuration.use_channel"
+                            "condition": "$item.input_configuration.icx_channel_configuration.use_channel || ($item.input_configuration.capture_unit_configuration.source === 'INDIRECT')"
                           },
                           {
                             "type": "disable",
@@ -2359,6 +2357,13 @@
                             "type": "disable",
                             "condition": "(($channel.id === 'CC1') && ($basic.time_base.clock_source_configuration.trigger_input === 'TI1FP1')) || (($channel.id === 'CC2') && ($basic.time_base.clock_source_configuration.trigger_input === 'TI2FP2'))",
                             "message": "Polarity already configured when input channel used as clock source."
+                          },
+                          {
+                            "type": "set",
+                            "condition": "$item.input_configuration.capture_unit_configuration.source === 'INDIRECT'",
+                            "attributes": {
+                              "description": "Polarity for the indirect signal in input capture indirect mode."
+                            }
                           }
                         ],
                         "oneOf": [
@@ -2383,6 +2388,69 @@
                           }
                         ],
                         "default": "RISING"
+                      }
+                    }
+                  },
+                  "capture_unit_configuration": {
+                    "type": "object",
+                    "title": "Capture unit",
+                    "properties": {
+                      "source": {
+                        "type": "string",
+                        "title": "Input capture source",
+                        "oneOf": [
+                          {
+                            "title": "Input capture direct mode",
+                            "const": "DIRECT"
+                          },
+                          {
+                            "title": "Input capture indirect mode",
+                            "const": "INDIRECT",
+                            "actions": [
+                              {
+                                "type": "enable",
+                                "condition": "($common.helper_tim_channel_check_indirect($channels, $channel.id)) && !((($channel.id === 'CC1') || ($channel.id === 'CC2')) && ($basic.time_base.clock_source_configuration.clock_source === 'ENCODER_MODE'))",
+                                "message": "Requires adjacent channel in indirect mode."
+                              }
+                            ]
+                          },
+                          {
+                            "title": "Input capture triggered by TRC",
+                            "const": "TRC",
+                            "actions": [
+                              {
+                                "type": "enable",
+                                "condition": "(['ITR', 'TI1F_ED'].includes($additional.synchronization.slave_mode.trigger_input)) && ($additional.synchronization.slave_mode.mode !== 'DISABLED')",
+                                "message": "Requires slave mode trigger input at internal trigger."
+                              }
+                            ]
+                          }
+                        ],
+                        "default": "DIRECT"
+                      },
+                      "prescaler": {
+                        "type": "integer",
+                        "title": "Prescaler",
+                        "description": "Division ratio between the input signal transitions on the capture channel and the actual capture events.",
+                        "oneOf": [
+                          {
+                            "title": "\u00F7 1",
+                            "const": 1
+                          },
+                          {
+                            "title": "\u00F7 2",
+                            "const": 2
+                          },
+                          {
+                            "title": "\u00F7 4",
+                            "const": 4
+                          },
+                          {
+                            "title": "\u00F7 8",
+                            "const": 8
+                          }
+                        ],
+                        "default": 1
                       }
                     }
                   }
@@ -2436,7 +2504,7 @@
                 },
                 "update_flag_remap": {
                   "type": "boolean",
-                  "title": "Update flag remap",
+                  "title": "Update interrupt flag (UIF) remap",
                   "description": "UIF status bit is copied to TIMx_CNT register bit 31.",
                   "default": false,
                   "actions": [
@@ -2453,281 +2521,6 @@
                       }
                     }
                   ]
-                }
-              }
-            },
-            "external_trigger_configuration": {
-              "type": "object",
-              "title": "External trigger",
-              "actions": [
-                {
-                  "type": "include",
-                  "condition": "($resource.features.etr_impl > 0)"
-                }
-              ],
-              "properties": {
-                "use_external_trigger": {
-                  "type": "boolean",
-                  "title": "Use external trigger",
-                  "actions": [
-                    {
-                      "type": "enable",
-                      "condition": "$additional.synchronization.slave_mode.trigger_input === 'ETRF' || $additional.output_stage.ocref_clear.ocref_clear_source_etr || $additional.encoder_interface.encoder_index",
-                      "message": "External trigger not needed (either use it with slave mode controller, ocref clear or encoder index)."
-                    },
-                    {
-                      "type": "error",
-                      "condition": "$value && (($basic.time_base.clock_source_configuration.clock_source === 'EXTERNAL_MODE2') || ($basic.time_base.clock_source_configuration.trigger_input === 'ETRF'))",
-                      "message": "External trigger already used as the timer clock source. Disable \"Use external trigger\" to avoid a conflict."
-                    }
-                  ],
-                  "default": false
-                },
-                "external_trigger": {
-                  "type": "object",
-                  "title": "External trigger",
-                  "objectType": "query",
-                  "query": {
-                    "entity": "peripheral.interconnect.external input trigger",
-                    "parent": "$resource.id",
-                    "where": "!$entity.source.includes('AFI') || $get('pinout.peripheralCanBeMapped', $resource.id, 'ETR')",
-                    "title": "{{source.replace(/(AFI|Input pins)/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC')}}"
-                  },
-                  "actions": [
-                    {
-                      "type": "enable",
-                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
-                      "message": "External trigger is only available when enabled."
-                    },
-                    {
-                      "type": "info",
-                      "condition": "$value.source !== 'AFI'",
-                      "message": "The selected interconnect must be configured manually."
-                    }
-                  ]
-                },
-                "polarity": {
-                  "type": "string",
-                  "title": "Polarity",
-                  "actions": [
-                    {
-                      "type": "enable",
-                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
-                      "message": "External trigger is only available when enabled."
-                    }
-                  ],
-                  "oneOf": [
-                    {
-                      "title": "Non-inverted",
-                      "const": "NONINVERTED"
-                    },
-                    {
-                      "title": "Inverted",
-                      "const": "INVERTED"
-                    }
-                  ],
-                  "default": "NONINVERTED"
-                },
-                "filter_etr": {
-                  "type": "string",
-                  "title": "Filter",
-                  "description": "Defines the frequency used to sample the input (division) and the length of the digital filter applied. The digital filter is made of an event counter in which N consecutive events are needed to validate a transition on the output.",
-                  "actions": [
-                    {
-                      "type": "enable",
-                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
-                      "message": "External trigger is only available when enabled."
-                    }
-                  ],
-                  "oneOf": [
-                    {
-                      "title": "No filter",
-                      "const": "FDIV1"
-                    },
-                    {
-                      "title": "\u00F7 1, N=2",
-                      "const": "FDIV1_N2"
-                    },
-                    {
-                      "title": "\u00F7 1, N=4",
-                      "const": "FDIV1_N4"
-                    },
-                    {
-                      "title": "\u00F7 1, N=8",
-                      "const": "FDIV1_N8"
-                    },
-                    {
-                      "title": "\u00F7 2, N=6",
-                      "const": "FDIV2_N6"
-                    },
-                    {
-                      "title": "\u00F7 2, N=8",
-                      "const": "FDIV2_N8"
-                    },
-                    {
-                      "title": "\u00F7 4, N=6",
-                      "const": "FDIV4_N6"
-                    },
-                    {
-                      "title": "\u00F7 4, N=8",
-                      "const": "FDIV4_N8"
-                    },
-                    {
-                      "title": "\u00F7 8, N=6",
-                      "const": "FDIV8_N6"
-                    },
-                    {
-                      "title": "\u00F7 8, N=8",
-                      "const": "FDIV8_N8"
-                    },
-                    {
-                      "title": "\u00F7 16, N=5",
-                      "const": "FDIV16_N5"
-                    },
-                    {
-                      "title": "\u00F7 16, N=6",
-                      "const": "FDIV16_N6"
-                    },
-                    {
-                      "title": "\u00F7 16, N=8",
-                      "const": "FDIV16_N8"
-                    },
-                    {
-                      "title": "\u00F7 32, N=5",
-                      "const": "FDIV32_N5"
-                    },
-                    {
-                      "title": "\u00F7 32, N=6",
-                      "const": "FDIV32_N6"
-                    },
-                    {
-                      "title": "\u00F7 32, N=8",
-                      "const": "FDIV32_N8"
-                    }
-                  ],
-                  "default": "FDIV1"
-                },
-                "prescaler": {
-                  "type": "integer",
-                  "title": "Prescaler",
-                  "actions": [
-                    {
-                      "type": "enable",
-                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
-                      "message": "External trigger is only available when enabled."
-                    },
-                    {
-                      "type": "warning",
-                      "condition": "($additional.output_stage.ocref_clear.ocref_clear_source_etr) && ($value !== 1)",
-                      "message": "External trigger prescaler must be kept off (\u00F7 1) when ETR used as ocref clear source."
-                    }
-                  ],
-                  "oneOf": [
-                    {
-                      "title": "\u00F7 1",
-                      "const": 1
-                    },
-                    {
-                      "title": "\u00F7 2",
-                      "const": 2
-                    },
-                    {
-                      "title": "\u00F7 4",
-                      "const": 4
-                    },
-                    {
-                      "title": "\u00F7 8",
-                      "const": 8
-                    }
-                  ],
-                  "default": 1
-                },
-                "sync_prescaler": {
-                  "type": "integer",
-                  "title": "Synchronous prescaler",
-                  "actions": [
-                    {
-                      "type": "include",
-                      "condition": "$resource.peripheralVersionNum >= 5.0"
-                    },
-                    {
-                      "type": "enable",
-                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
-                      "message": "External trigger is only available when enabled."
-                    },
-                    {
-                      "type": "warning",
-                      "condition": "($additional.output_stage.ocref_clear.ocref_clear_source_etr) && ($value !== 1)",
-                      "message": "External trigger synchronous prescaler must be kept off (\u00F7 1) when ETR used as ocref clear source."
-                    }
-                  ],
-                  "oneOf": [
-                    {
-                      "title": "\u00F7 1",
-                      "const": 1
-                    },
-                    {
-                      "title": "\u00F7 2",
-                      "const": 2
-                    },
-                    {
-                      "title": "\u00F7 3",
-                      "const": 3
-                    },
-                    {
-                      "title": "\u00F7 4",
-                      "const": 4
-                    },
-                    {
-                      "title": "\u00F7 5",
-                      "const": 5
-                    },
-                    {
-                      "title": "\u00F7 6",
-                      "const": 6
-                    },
-                    {
-                      "title": "\u00F7 7",
-                      "const": 7
-                    },
-                    {
-                      "title": "\u00F7 8",
-                      "const": 8
-                    },
-                    {
-                      "title": "\u00F7 9",
-                      "const": 9
-                    },
-                    {
-                      "title": "\u00F7 10",
-                      "const": 10
-                    },
-                    {
-                      "title": "\u00F7 11",
-                      "const": 11
-                    },
-                    {
-                      "title": "\u00F7 12",
-                      "const": 12
-                    },
-                    {
-                      "title": "\u00F7 13",
-                      "const": 13
-                    },
-                    {
-                      "title": "\u00F7 14",
-                      "const": 14
-                    },
-                    {
-                      "title": "\u00F7 15",
-                      "const": 15
-                    },
-                    {
-                      "title": "\u00F7 16",
-                      "const": 16
-                    }
-                  ],
-                  "default": 1
                 }
               }
             },
@@ -3479,6 +3272,283 @@
                 }
               }
             },
+            "external_trigger_configuration": {
+              "type": "object",
+              "title": "External trigger",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($resource.features.etr_impl > 0)"
+                }
+              ],
+              "properties": {
+                "use_external_trigger": {
+                  "type": "boolean",
+                  "title": "Use external trigger",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.synchronization.slave_mode.trigger_input === 'ETRF' || $additional.output_stage.ocref_clear.ocref_clear_source_etr || $additional.encoder_interface.encoder_index",
+                      "message": "External trigger configuration is only meaningful when ETR is used by the slave mode trigger input, OCREF clear source, or encoder index."
+                    },
+                    {
+                      "type": "error",
+                      "condition": "$value && (($basic.time_base.clock_source_configuration.clock_source === 'EXTERNAL_MODE2') || ($basic.time_base.clock_source_configuration.trigger_input === 'ETRF'))",
+                      "message": "External trigger already used as the timer clock source. Disable \"Use external trigger\" to avoid a conflict."
+                    }
+                  ],
+                  "default": false
+                },
+                "external_trigger": {
+                  "type": "object",
+                  "title": "External trigger",
+                  "objectType": "query",
+                  "query": {
+                    "entity": "peripheral.interconnect.external input trigger",
+                    "parent": "$resource.id",
+                    "where": "!$entity.source.includes('AFI') || $get('pinout.peripheralCanBeMapped', $resource.id, 'ETR')",
+                    "title": "{{source.replace(/^(?:AFI(?:\\s*\\([^)]*\\))?|Input pins)$/i, 'GPIO').replace('RTC_WKUP_IT', 'RTC_WUT_TRG').replace(/^RCC_/, '').replace('HSE_1MHZ', 'HSE_RTC')}}"
+                  },
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
+                      "message": "External trigger is only available when enabled."
+                    },
+                    {
+                      "type": "info",
+                      "condition": "!/^AFI(?:\\s*\\([^)]*\\))?$/i.test($value.source)",
+                      "message": "The selected interconnect must be configured manually."
+                    }
+                  ]
+                },
+                "polarity": {
+                  "type": "string",
+                  "title": "Polarity",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
+                      "message": "External trigger is only available when enabled."
+                    }
+                  ],
+                  "oneOf": [
+                    {
+                      "title": "Non-inverted",
+                      "const": "NONINVERTED"
+                    },
+                    {
+                      "title": "Inverted",
+                      "const": "INVERTED"
+                    }
+                  ],
+                  "default": "NONINVERTED"
+                },
+                "filter_etr": {
+                  "type": "string",
+                  "title": "Filter",
+                  "description": "Defines the frequency used to sample the input (division) and the length of the digital filter applied. The digital filter is made of an event counter in which N consecutive events are needed to validate a transition on the output.",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
+                      "message": "External trigger is only available when enabled."
+                    }
+                  ],
+                  "oneOf": [
+                    {
+                      "title": "No filter",
+                      "const": "FDIV1"
+                    },
+                    {
+                      "title": "\u00F7 1, N=2",
+                      "const": "FDIV1_N2"
+                    },
+                    {
+                      "title": "\u00F7 1, N=4",
+                      "const": "FDIV1_N4"
+                    },
+                    {
+                      "title": "\u00F7 1, N=8",
+                      "const": "FDIV1_N8"
+                    },
+                    {
+                      "title": "\u00F7 2, N=6",
+                      "const": "FDIV2_N6"
+                    },
+                    {
+                      "title": "\u00F7 2, N=8",
+                      "const": "FDIV2_N8"
+                    },
+                    {
+                      "title": "\u00F7 4, N=6",
+                      "const": "FDIV4_N6"
+                    },
+                    {
+                      "title": "\u00F7 4, N=8",
+                      "const": "FDIV4_N8"
+                    },
+                    {
+                      "title": "\u00F7 8, N=6",
+                      "const": "FDIV8_N6"
+                    },
+                    {
+                      "title": "\u00F7 8, N=8",
+                      "const": "FDIV8_N8"
+                    },
+                    {
+                      "title": "\u00F7 16, N=5",
+                      "const": "FDIV16_N5"
+                    },
+                    {
+                      "title": "\u00F7 16, N=6",
+                      "const": "FDIV16_N6"
+                    },
+                    {
+                      "title": "\u00F7 16, N=8",
+                      "const": "FDIV16_N8"
+                    },
+                    {
+                      "title": "\u00F7 32, N=5",
+                      "const": "FDIV32_N5"
+                    },
+                    {
+                      "title": "\u00F7 32, N=6",
+                      "const": "FDIV32_N6"
+                    },
+                    {
+                      "title": "\u00F7 32, N=8",
+                      "const": "FDIV32_N8"
+                    }
+                  ],
+                  "default": "FDIV1"
+                },
+                "prescaler": {
+                  "type": "integer",
+                  "title": "Prescaler",
+                  "description": "Division ratio between the timer external trigger (tim_etr) frequency and the prescaled ETR signal (tim_etrp).",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
+                      "message": "External trigger is only available when enabled."
+                    },
+                    {
+                      "type": "warning",
+                      "condition": "($additional.output_stage.ocref_clear.ocref_clear_source_etr) && ($value !== 1)",
+                      "message": "External trigger prescaler must be kept off (\u00F7 1) when ETR used as ocref clear source."
+                    }
+                  ],
+                  "oneOf": [
+                    {
+                      "title": "\u00F7 1",
+                      "const": 1
+                    },
+                    {
+                      "title": "\u00F7 2",
+                      "const": 2
+                    },
+                    {
+                      "title": "\u00F7 4",
+                      "const": 4
+                    },
+                    {
+                      "title": "\u00F7 8",
+                      "const": 8
+                    }
+                  ],
+                  "default": 1
+                },
+                "sync_prescaler": {
+                  "type": "integer",
+                  "title": "Synchronous prescaler",
+                  "description": "Division ratio between the prescaled ETR signal (tim_etrp) and filtered ETR signal (tim_etrf).",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$resource.peripheralVersionNum >= 5.0"
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$additional.external_trigger_configuration.use_external_trigger",
+                      "message": "External trigger is only available when enabled."
+                    },
+                    {
+                      "type": "warning",
+                      "condition": "($additional.output_stage.ocref_clear.ocref_clear_source_etr) && ($value !== 1)",
+                      "message": "External trigger synchronous prescaler must be kept off (\u00F7 1) when ETR used as ocref clear source."
+                    }
+                  ],
+                  "oneOf": [
+                    {
+                      "title": "\u00F7 1",
+                      "const": 1
+                    },
+                    {
+                      "title": "\u00F7 2",
+                      "const": 2
+                    },
+                    {
+                      "title": "\u00F7 3",
+                      "const": 3
+                    },
+                    {
+                      "title": "\u00F7 4",
+                      "const": 4
+                    },
+                    {
+                      "title": "\u00F7 5",
+                      "const": 5
+                    },
+                    {
+                      "title": "\u00F7 6",
+                      "const": 6
+                    },
+                    {
+                      "title": "\u00F7 7",
+                      "const": 7
+                    },
+                    {
+                      "title": "\u00F7 8",
+                      "const": 8
+                    },
+                    {
+                      "title": "\u00F7 9",
+                      "const": 9
+                    },
+                    {
+                      "title": "\u00F7 10",
+                      "const": 10
+                    },
+                    {
+                      "title": "\u00F7 11",
+                      "const": 11
+                    },
+                    {
+                      "title": "\u00F7 12",
+                      "const": 12
+                    },
+                    {
+                      "title": "\u00F7 13",
+                      "const": 13
+                    },
+                    {
+                      "title": "\u00F7 14",
+                      "const": 14
+                    },
+                    {
+                      "title": "\u00F7 15",
+                      "const": 15
+                    },
+                    {
+                      "title": "\u00F7 16",
+                      "const": 16
+                    }
+                  ],
+                  "default": 1
+                }
+              }
+            },
             "hall_sensor_interface": {
               "type": "object",
               "title": "Hall sensor interface",
@@ -3880,6 +3950,31 @@
                               }
                             ],
                             "default": false
+                          },
+                          "labels": {
+                            "type": "array",
+                            "title": "Add a label",
+                            "items": {
+                              "type": "string",
+                              "actions": [
+                                {
+                                  "type": "error",
+                                  "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                                  "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                                }
+                              ],
+                              "minLength": 0,
+                              "maxLength": 32,
+                              "unique": "project",
+                              "default": ""
+                            },
+                            "actions": [
+                              {
+                                "type": "enable",
+                                "condition": "$item.use_break_line",
+                                "message": "Requires break input line usage."
+                              }
+                            ]
                           },
                           "break_input_configuration": {
                             "type": "object",
@@ -4827,6 +4922,136 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -5251,7 +5476,7 @@
               "properties": {
                 "enable_dma_upd": {
                   "type": "boolean",
-                  "title": "Update DMA request",
+                  "title": "Update request",
                   "actions" : [
                     {
                       "type": "enable",
@@ -5267,7 +5492,7 @@
                   "default": false
                 },
                 "dma_config_upd": {
-                  "title": "Update DMA request",
+                  "title": "Update request",
                   "actions": [
                     {
                       "type": "include",
@@ -5310,7 +5535,7 @@
                 },
                 "enable_dma_cc1": {
                   "type": "boolean",
-                  "title": "Capture/compare 1 DMA request",
+                  "title": "Capture/compare 1 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5330,7 +5555,7 @@
                   "default": false
                 },
                 "dma_config_cc1": {
-                  "title": "Capture/compare 1 DMA request",
+                  "title": "Capture/compare 1 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5371,7 +5596,7 @@
                 },
                 "enable_dma_cc2": {
                   "type": "boolean",
-                  "title": "Capture/compare 2 DMA request",
+                  "title": "Capture/compare 2 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5391,7 +5616,7 @@
                   "default": false
                 },
                 "dma_config_cc2": {
-                  "title": "Capture/compare 2 DMA request",
+                  "title": "Capture/compare 2 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5432,7 +5657,7 @@
                 },
                 "enable_dma_cc3": {
                   "type": "boolean",
-                  "title": "Capture/compare 3 DMA request",
+                  "title": "Capture/compare 3 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5452,7 +5677,7 @@
                   "default": false
                 },
                 "dma_config_cc3": {
-                  "title": "Capture/compare 3 DMA request",
+                  "title": "Capture/compare 3 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5493,7 +5718,7 @@
                 },
                 "enable_dma_cc4": {
                   "type": "boolean",
-                  "title": "Capture/compare 4 DMA request",
+                  "title": "Capture/compare 4 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5513,7 +5738,7 @@
                   "default": false
                 },
                 "dma_config_cc4": {
-                  "title": "Capture/compare 4 DMA request",
+                  "title": "Capture/compare 4 request",
                   "actions": [
                     {
                       "type": "include",
@@ -5554,7 +5779,7 @@
                 },
                 "enable_dma_trgi": {
                   "type": "boolean",
-                  "title": "Trigger DMA request",
+                  "title": "Trigger request",
                   "actions": [
                     {
                       "type": "include",
@@ -5574,7 +5799,7 @@
                   "default": false
                 },
                 "dma_config_trgi": {
-                  "title": "Trigger DMA request",
+                  "title": "Trigger request",
                   "actions": [
                     {
                       "type": "include",
@@ -5617,7 +5842,7 @@
                 },
                 "enable_dma_com": {
                   "type": "boolean",
-                  "title": "Commutation DMA request",
+                  "title": "Commutation request",
                   "actions": [
                     {
                       "type": "include",
@@ -5637,7 +5862,7 @@
                   "default": false
                 },
                 "dma_config_com": {
-                  "title": "Commutation DMA request",
+                  "title": "Commutation request",
                   "actions": [
                     {
                       "type": "include",

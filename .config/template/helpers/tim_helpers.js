@@ -334,40 +334,6 @@ function helper_tim_check_if_at_least_one_channel_in_input_trc(channels) {
 }
 
 /**
- * Check if at least one channel is in output mode or input mode
- * @param {object} channels list of configured channels
- * @returns true or false
- */
-function helper_tim_check_if_at_least_one_channel_in_input_or_output(channels) {
-  let result = false;
-  try {
-    /*console.info(`helper_tim_check_if_at_least_one_channel_in_input_or_output: channels=${JSON.stringify(
-        channels)}`
-    );*/
-    if (channels === undefined) {
-      return false;
-    }
-    for (let i = 0; i < channels.length; i++) {
-      if (
-        channels[i].use_channel !== undefined &&
-        channels[i].use_channel &&
-        (channels[i]._foreignKey === "CC1" ||
-          channels[i]._foreignKey === "CC2" ||
-          channels[i]._foreignKey === "CC3" ||
-          channels[i]._foreignKey === "CC4")
-      ) {
-        result = true;
-        /*console.info(`   Channel: ${channels[i]._foreignKey} found`);*/
-        break;
-      }
-    }
-  } catch (e) {
-    console.error(`helper_tim_check_if_at_least_one_channel_in_input_or_output: ${e}`);
-  }
-  return result;
-}
-
-/**
  * Check if at least one channel uses ocref clear
  * @param {object} channels list of configured channels
  * @returns true or false
@@ -585,60 +551,6 @@ function helper_tim_compute_frequency(
 }
 
 /**
- * Calculate the prescaler
- * @note  This api is used directly in the tim_parameters.json in basic view
- * @param {integer} input_clock_frequency System clock frequency in Hz
- * @param {integer} output_frequency output frequency in Hz
- * @returns Prescaler values
- */
-function helper_tim_compute_prescaler(input_clock_frequency, output_frequency) {
-  let result = 123456789;
-  try {
-    /*console.info(`helper_tim_compute_prescaler: input_clock_frequency=${input_clock_frequency}, output_frequency=${output_frequency}`);*/
-    if (input_clock_frequency === undefined || output_frequency === undefined) {
-      return false;
-    }
-
-    if (output_frequency != 0) {
-      /* Calculate the prescaler value */
-      var prescaler = input_clock_frequency / output_frequency - 1;
-
-      /* Return the prescale value */
-      result = Math.floor(prescaler);
-    }
-  } catch (e) {
-    console.error(`helper_tim_compute_prescaler: ${e}`);
-  }
-  return result;
-}
-
-/**
- * Calculate the period
- * @note  This api is used directly in the tim_parameters.json in basic view
- * @param {integer} input_clock_frequency System clock frequency in Hz
- * @param {integer} output_frequency output frequency in Hz
- * @returns Period values
- */
-function helper_tim_compute_period(input_clock_frequency, output_frequency) {
-  let result = 123456789;
-  try {
-    /*console.info(`helper_tim_compute_period: input_clock_frequency=${input_clock_frequency}, output_frequency=${output_frequency}`);*/
-    if (input_clock_frequency === undefined || output_frequency === undefined) {
-      return false;
-    }
-
-    /* Calculate the actual output frequency */
-    var period = output_frequency - 1;
-
-    /* Return the period value */
-    result = Math.floor(period);
-  } catch (e) {
-    console.error(`helper_tim_compute_period: ${e}`);
-  }
-  return result;
-}
-
-/**
  * Calculate the sampling clock frequency.
  * @note  This api is used directly in the tim_parameters.json in basic view
  * @param {integer} input_clock_frequency Input clock frequency in Hz
@@ -652,7 +564,34 @@ function helper_tim_compute_sampling_clock(input_clock_frequency, clock_divider)
     if (input_clock_frequency === undefined || clock_divider === undefined) {
       return false;
     }
+    if (typeof input_clock_frequency === "string") {
+      const match = (() => {
+        const parsed = input_clock_frequency
+          .trim()
+          .replace(",", ".")
+          .match(/^([+-]?\d+(?:\.\d+)?)\s*(Hz|kHz|MHz)?$/i);
 
+        if (!parsed) {
+          return null;
+        }
+
+        const unit = (parsed[2] || "Hz").toLowerCase();
+        const factor = unit === "mhz" ? 1e6 : unit === "khz" ? 1e3 : 1;
+        const valueHz = Number(parsed[1]) * factor;
+
+        return Number.isFinite(valueHz) ? [parsed[0], String(valueHz)] : null;
+      })();
+
+      if (!match) {
+        return false;
+      }
+
+      input_clock_frequency = Number(match[1]);
+    }
+
+    if (!Number.isFinite(input_clock_frequency)) {
+      return false;
+    }
     result = Math.floor(input_clock_frequency / clock_divider);
   } catch (e) {
     console.error(`helper_tim_compute_sampling_clock: ${e}`);
@@ -708,7 +647,10 @@ function helper_tim_convert_input_src(channel, source) {
       RCC_HSE_1MHZ: "HSE_RTC",
       RTC_WKUP_IT: "RTC_WUT_TRG"
     };
-    const source_map = /^(AFI|Input pins)$/i.test(source) ? "GPIO" : specials[s] ?? s.replace(/^RCC_/, "");
+    const normalized_source = s
+      .replace(/^RCC_/, "")
+      .replace(/I3C(\d+)_IBIACKTI/i, "I3C$1_IBI_ACK");
+    const source_map = /^(?:AFI(?:\s*\([^)]*\))?|Input pins)$/i.test(source) ? "GPIO" : specials[s] ?? normalized_source;
     const map_input = {
       CC1: "TI1",
       CC2: "TI2",
@@ -761,7 +703,7 @@ function helper_tim_convert_etr(etr) {
       RCC_HSE_1MHZ: "HSE_RTC",
       RTC_WKUP_IT: "RTC_WUT_TRG"
     };
-    const source_map = /^(AFI|Input pins)$/i.test(etr) ? "GPIO" : specials[s] ?? s.replace(/^RCC_/, "");
+    const source_map = /^(?:AFI(?:\s*\([^)]*\))?|Input pins)$/i.test(etr) ? "GPIO" : specials[s] ?? s.replace(/^RCC_/, "");
 
     return source_map;
   } catch (e) {
@@ -816,7 +758,7 @@ function helper_tim_synchronized_breaks(break_number, interconnect, mapping_gpio
         filterPattern.test(item.ip_signal)
       )
       .map(item => {
-        const normalizedSource = /^(AFI|Input pins)$/i.test(item.source) ? "GPIO" : item.source.toUpperCase();
+        const normalizedSource = /^(?:AFI(?:\s*\([^)]*\))?|Input pins)$/i.test(item.source) ? "GPIO" : item.source.toUpperCase();
         const base = {
           ...item,
           // configurable_polarity is true only if the ip_signal matches one of the patterns above
@@ -838,8 +780,8 @@ function helper_tim_synchronized_breaks(break_number, interconnect, mapping_gpio
 
 /**
  * Check if input_source string needs to enable HSE32EN
- * @param {string} input_source
- * @returns {boolean} true if "HSE_DIV32" is found, false otherwise
+ * @param {string} input_source Input source string (e.g., "HAL_TIM_INPUT_TIM16_TI1_HSE_DIV32", etc.)
+ * @returns {boolean} True if "HSE_DIV32" is found, false otherwise
  */
 function helper_tim_input_source_is_hse_div32(input_source) {
   try {
@@ -885,7 +827,7 @@ function helper_tim_input_channel_clock_source(channel, trigger_input) {
  * Check if any channel has a delayed break mode matching the given delay string
  * @param {string} delay_str Delay string ("DELAY1", "DELAY2", etc.)
  * @param {object} channels list of configured channels
- * @returns true if at least one break_mode matches delay_str
+ * @returns {boolean} True if at least one break_mode matches delay_str
  */
 function helper_tim_check_if_channel_delayed_break(delay_str, channels) {
   let result = false;
@@ -918,7 +860,7 @@ function helper_tim_check_if_channel_delayed_break(delay_str, channels) {
   * @param {object} exti_api Getter on EXTI api (not used)
   * @param {object} resource Current resource
   * @param {object} config current configuration of the TIM
-  * @returns {object}
+  * @returns {object} List of interruptions to be generated with their NVIC context and alias name for mx_hal_def.h
  */
 function helper_tim_get_irq_handler(nvic_api, exti_api, resource, config) {
   let result = [];
@@ -1004,8 +946,6 @@ module.exports = {
 
   helper_tim_check_if_at_least_one_channel_in_input_trc,
 
-  helper_tim_check_if_at_least_one_channel_in_input_or_output,
-
   helper_tim_check_if_at_least_one_channel_uses_ocref_clear,
 
   helper_tim_check_if_at_least_one_cc_dma_channel,
@@ -1019,10 +959,6 @@ module.exports = {
   helper_tim_find_channel_config,
 
   helper_tim_compute_frequency,
-
-  helper_tim_compute_prescaler,
-
-  helper_tim_compute_period,
 
   helper_tim_compute_sampling_clock,
 

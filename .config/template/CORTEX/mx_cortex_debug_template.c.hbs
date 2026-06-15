@@ -1,7 +1,7 @@
 {{!--
   ******************************************************************************
   * @file           : mx_cortex_debug_template.c.hbs
-  * @brief          : {{@root.current_resource}} Peripheral initialization
+  * @brief          : {{uppercase @root.current_resource}} Peripheral initialization
   ******************************************************************************
   * @attention
   *
@@ -19,28 +19,16 @@
 {{assign "cortex_id" @root.getConfigurablePeripheralsFromComponent.[0].associatedIps.[0] ~}}
 {{!log "CORTEX template cortex :" @root.cortex_id ~}}
 {{#helper_common_beautifier}}
-{{~assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{~log "strategy" @root.strategy~}}
-{{!#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'CORTEX_DEBUG'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:CORTEX DEBUG')~}}
-{{!else}}
-  {{!~assign "strategy" 'HW'~}}
-  {{!#get_myctx~}}
-    {{!#with _myctx~}}
-      {{!~log "CORTEX DEBUG template _myctx:" this~}}
-      {{!~assign 'current_resource' resource~}}
-      {{!~assign 'instances' instances~}}
-    {{!/with~}}
-  {{!/get_myctx~}}
-{{!/if}}
-{{~log "CORTEX DEBUG template current_resource:" @root.current_resource~}}
-{{~log "CORTEX DEBUG template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'CORTEX_DEBUG' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "CORTEX_DEBUG template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
-  * @brief          : {{@root.current_resource}} Peripheral initialization
+  * @brief          : {{uppercase @root.current_resource}} Peripheral initialization
 {{> LICENSE}}
 
 
@@ -54,15 +42,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-  {{!#if (eq @root.strategy "SW")}}
-    {{~assign 'cortex_debug_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+  {{~assign 'cortex_debug_cxt' config~}}
     {{~log "CORTEX DEBUG template cortex_debug_cxt:" (toJSON @root.cortex_debug_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+    {{~assign 'current_resource' current_resource~}}
     {{~assign 'current_layer' @root.cortex_debug_cxt.info.layer~}}
     {{~log "CORTEX DEBUG template current_resource:" @root.current_resource~}}
-  {{!else}}
-    {{!~assign 'current_layer' info.layer~}}
-  {{!/if}}
   {{#if (eq @root.current_layer 'HAL')}}
 {{> GPIO_HAL fct='gpio_exti_get_variables' resource=@root.cortex_id~}}
   {{/if}}
@@ -71,24 +55,17 @@
 {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 {{~assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-  {{!#if (eq @root.strategy "SW")}}
-    {{~assign 'cortex_debug_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.cortex_debug_cxt.name~}}
+  {{~assign 'cortex_debug_cxt' config~}}
+    {{~assign 'current_resource' current_resource~}}
     {{~assign 'current_layer' @root.cortex_debug_cxt.info.layer~}}
     {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{!else}}
-    {{!~assign 'name' name~}}
-    {{!~assign 'current_layer' info.layer~}}
-    {{!~assign 'cortex_debug_cxt' this}}
-  {{!/if}}
   {{! Initialize the context for LL code optimization ~}}
   {{!~assign 'lut_table' (helper_cortex_debug_get_lut_table 'CORTEX DEBUGV1')~}}
   {{!~helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
   {{~log "CORTEX DEBUG template instance:" (toJSON this)}}
 
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{uppercase @root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
   {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
   {{~assign 'current_index' (helper_common_inc_index @root.current_resource)}}

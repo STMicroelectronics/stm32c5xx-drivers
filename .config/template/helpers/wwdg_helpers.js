@@ -1,13 +1,15 @@
 /**
- * @file Helpers functions used for WWDG SW component
- * @license
- * Copyright (c) 2024 STMicroelectronics.
- * All rights reserved.
- *
- * This software is licensed under terms that can be found in the LICENSE file
- * in the root directory of this software component.
- * If no LICENSE file comes with this software, it is provided AS-IS.
- */
+  * @file Helpers functions used for WWDG SW component
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  */
 
 const WWDG_INTERNAL_DIVIDER = 4096;
 const WWDG_MAX_STEP_NUMBER = 64;

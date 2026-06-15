@@ -336,7 +336,13 @@ function helper_lptim_convert_input_src(source, layer = "HAL") {
         "MCG_SYS_CK/4096": "MCG256_1024",
         "MCG_AUDIO_CK /64": "MCG3072_128",
         "I3C2_IBIACKTI": "I3C2_IBIACK",
-        "I3C1_IBIACKTI": "I3C1_IBIACK"
+        "I3C1_IBIACKTI": "I3C1_IBIACK",
+        "LPTIM2_OC1": "LPTIM2_CH1",
+        "LPTIM3_OC1": "LPTIM3_CH1",
+        "SAI1_FS_A_IN": "SAI1_FS_A",
+        "SAI2_FS_A_IN": "SAI2_FS_A",
+        "SAI1_FS_B_IN": "SAI1_FS_B",
+        "SAI2_FS_B_IN": "SAI2_FS_B",
       },
       LL: {
         "AFI": "GPIO",
@@ -351,7 +357,13 @@ function helper_lptim_convert_input_src(source, layer = "HAL") {
         "MCG_SYS_CK/4096": "MCG256_1024",
         "MCG_AUDIO_CK /64": "MCG3072_128",
         "I3C2_IBIACKTI": "I3C2_IBIACK",
-        "I3C1_IBIACKTI": "I3C1_IBIACK"
+        "I3C1_IBIACKTI": "I3C1_IBIACK",
+        "LPTIM2_OC1": "LPTIM2_CH1",
+        "LPTIM3_OC1": "LPTIM3_CH1",
+        "SAI1_FS_A_IN": "SAI1_FS_A",
+        "SAI2_FS_A_IN": "SAI2_FS_A",
+        "SAI1_FS_B_IN": "SAI1_FS_B",
+        "SAI2_FS_B_IN": "SAI2_FS_B",
       }
     };
     // Select the correct map for the layer

@@ -529,6 +529,10 @@
                     {
                       "type": "disable",
                       "condition": "$config.additional.trigger_xfer.configuration==false"
+                    },
+                    {
+                      "type": "info",
+                      "message": "The selected interconnect must be configured manually."
                     }
                   ],
                   "type": "object",
@@ -1015,6 +1019,179 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+             {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "($get('swproject.getCurrentEngine').secure === 'Non-secure')",
+              "attributes": {
+                "title": "Privilege",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "title": "Security",
+              "type": "object",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('swproject.getCurrentEngine').secure === 'Secure-only'",
+                  "message": "In Secure-only engine, all items are Secure."
+                }
+              ],
+              "properties": {
+                "channel_sec": {
+                  "type": "string",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$isNeed",
+                      "computed": {
+                        "const": "$getRootParameter('security')"
+                      }
+                    }
+                  ],
+                  "title": "Channel security attribute",
+                  "oneOf": [
+                    {
+                      "title": "Secure",
+                      "const": "SEC"
+                    },
+                    {
+                      "title": "Non-secure",
+                      "const": "NSEC"
+                    }
+                  ],
+                  "default": "SEC"
+                },
+                "xfer_sec": {
+                  "title": "Transfer access security attributes",
+                  "type": "object",
+                  "properties": {
+                    "dest_sec": {
+                      "type": "string",
+                      "title": "Destination access security attribute",
+                      "oneOf": [
+                        {
+                          "title": "Secure",
+                          "const": "SEC"
+                        },
+                        {
+                          "title": "Non-secure",
+                          "const": "NSEC"
+                        }
+                      ],
+                      "default": "SEC"
+                    },
+                    "src_sec": {
+                      "type": "string",
+                      "title": "Source access security attribute",
+                      "oneOf": [
+                        {
+                          "title": "Secure",
+                          "const": "SEC"
+                        },
+                        {
+                          "title": "Non-secure",
+                          "const": "NSEC"
+                        }
+                      ],
+                      "default": "SEC"
+                    }
+                  }
+                }
+              }
+            },
+            "privilege": {
+              "title": "Privilege",
+              "type": "object",
+              "properties": {
+                "channel_priv": {
+                  "type": "string",
+                  "title": "Channel privilege attribute",
+                  "oneOf": [
+                    {
+                      "title": "Privileged",
+                      "const": "PRIV"
+                    },
+                    {
+                      "title": "Unprivileged",
+                      "const": "NPRIV"
+                    }
+                  ],
+                  "default": "PRIV"
+                }
+              }
+            },
+            "lock": {
+              "title": "Lock",
+              "type": "object",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "properties": {
+                "channel_lock": {
+                  "type": "boolean",
+                  "title": "Channel lock attribute",
+                  "default": false
+                }
+              }
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "type": "boolean",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "default": false,
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              }
+            },
+            "clock": {
+              "type": "boolean",
+              "default": false,
+              "title": "Clock management in the generated code",
+              "oneOf": [
+                  {
+                    "title": "Keep active after initialization",
+                    "const": false
+                  },
+                  {
+                    "title": "Deactivated at the end of sequence",
+                    "const": true
+                  }
+                ]
+            }
+          }
+        },
         "system": {
           "title": "System",
           "type": "object",
@@ -1024,16 +1201,14 @@
               "title": "NVIC",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
-                  "default": false,
                   "actions": [
                     {
                       "type": "set",
                       "computed": {
-                        "const": "true"
-                      },
-                      "condition": "$isNeed"
+                        "default": "$isNeed ? true : false"
+                      }
                     },
                     {
                       "type": "disable",

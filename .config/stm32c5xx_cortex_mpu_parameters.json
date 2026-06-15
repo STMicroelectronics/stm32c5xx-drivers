@@ -84,7 +84,7 @@
               "variables": [
                 {
                   "on": "update-value",
-                  "name": "HAL_CORTEX_MPU_CORE_ENABLED",
+                  "name": "HAL_CORTEX_CORE_ENABLED",
                   "value": true
                 }
               ],
@@ -102,7 +102,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This note is informational and cannot be edited."
                 }
               ]
             }
@@ -140,6 +141,35 @@
                 }
               ],
               "default": false
+            },
+            "enable_mem_management_fault": {
+              "title": "Memory management fault",
+              "type": "boolean",
+              "description": "The system escalates to hard fault if you do not enable it.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "path": "mem_management_fault",
+                "component": "CORTEX"
+              },
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "$basic.mpu_enabled"
+                },
+                {
+                  "type": "disable",
+                  "condition": "!$get('peripheral.isBound', 'SCB')",
+                  "message": "Memory management fault is automatically enabled by the drivers. To enable hard fault escalation, please bind the CORTEX SCB panel."
+                },
+                {
+                  "type": "set",
+                  "condition": "!$get('peripheral.isBound', 'SCB')",
+                  "attributes": {
+                    "const": true
+                  }
+                }
+              ],
+              "default": true
             }
           }
         },
@@ -304,7 +334,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "To modify this parameter, enable the corresponding region first."
                       },
                       {
                         "type": "warning",
@@ -326,7 +357,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "To modify this parameter, enable the corresponding region first."
                       },
                       {
                         "type": "warning",
@@ -353,7 +385,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "To modify this parameter, enable the corresponding region first."
                       }
                     ],
                     "description": "The index of the attribute to apply to this region.",
@@ -399,7 +432,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "To modify this parameter, enable the corresponding region first."
                       }
                     ],
                     "description": "This defines which types of accesses are allowed for the region.",
@@ -430,7 +464,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "To modify this parameter, enable the corresponding region first."
                       }
                     ]
                   }

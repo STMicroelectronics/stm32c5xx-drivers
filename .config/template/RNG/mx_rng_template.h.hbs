@@ -15,18 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'file_name' 'RNG'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:RNG')~}}
-{{else}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{assign 'current_resource' resource~}}
-{{assign 'file_name' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'RNG' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "RNG template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -43,19 +37,22 @@ extern "C" {
 #endif /* __cplusplus */
 
 /* Includes ------------------------------------------------------------------*/
+{{assign 'include_mx_def' false~}}
 {{assign 'only_ll' true~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'rng_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.rng_cxt.settings.parameters.info.layer~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
+{{assign 'rng_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.rng_cxt.info.layer~}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'only_ll' false~}}
 {{/if}}
 {{/each}}
+{{#with @root.rng_cxt.security_privilege}}
+{{#unless @root.include_mx_def}}
+{{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+{{/unless}}
+{{/with}}
 {{#if @root.only_ll}}
 #include "stm32_ll.h"
 {{else}}
@@ -65,13 +62,9 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{~assign 'rng_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{~assign 'rng_cxt' config~}}
+{{~assign 'current_resource' current_resource~}}
 {{~assign 'current_layer' @root.rng_cxt.info.layer~}}
-{{else}}
-{{~assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
 {{/if}}
@@ -82,15 +75,10 @@ extern "C" {
 /* Exported functions ------------------------------------------------------- */
 
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'rng_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.rng_cxt.settings.parameters.info.layer~}}
-{{assign 'configs' @root.rng_cxt.settings.parameters~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{/if}}
+{{assign 'rng_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.rng_cxt.info.layer~}}
+{{assign 'configs' @root.rng_cxt~}}
 /******************************************************************************/
 /* Exported functions for RNG in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -122,6 +110,21 @@ void {{@root.fct_name}}_deinit(void);
 hal_rng_handle_t *{{@root.fct_name}}_gethandle(void);
 
 {{/if}}
+{{#with security_privilege}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+{{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+{{/if}}
+{{/with}}
 {{/with}}
 {{/each}}
 

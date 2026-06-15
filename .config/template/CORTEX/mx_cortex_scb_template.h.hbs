@@ -15,28 +15,21 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{!#if (eq @root.strategy "SW")}}
-  {{~assign 'file_name' 'CORTEX_SCB'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:CORTEX SCB')~}}
-{{!else}}
-  {{!#get_myctx~}}
-    {{!#with _myctx~}}
-      {{!~assign 'current_resource' resource~}}
-      {{!~assign 'file_name' resource~}}
-      {{!~assign 'instances' instances~}}
-    {{!/with~}}
-  {{!/get_myctx~}}
-{{!/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'CORTEX_SCB' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "CORTEX_SCB template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
-  * @file           : mx_{{lowercase @root.file_name}}.h
-  * @brief          : Header for mx_{{lowercase @root.file_name}}.c file.
+  * @file           : mx_{{lowercase @root.current_resource}}.h
+  * @brief          : Header for mx_{{lowercase @root.current_resource}}.c file.
 {{> LICENSE}}
 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef MX_{{@root.file_name}}_H
-#define MX_{{@root.file_name}}_H
+#ifndef MX_{{uppercase @root.current_resource}}_H
+#define MX_{{uppercase @root.current_resource}}_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,13 +38,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 {{~assign 'only_ll' true~}}
 {{#each @root.instances~}}
-  {{!#if (eq @root.strategy "SW")}}
-    {{~assign 'cortex_scb_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+  {{~assign 'cortex_scb_cxt' config~}}
+    {{~assign 'current_resource' current_resource~}}
     {{~assign 'current_layer' @root.cortex_scb_cxt.info.layer~}}
-  {{!else}}
-    {{!~assign 'current_layer' info.layer~}}
-  {{!/if}}
   {{#if (eq @root.current_layer 'HAL')}}
     {{~assign 'only_ll' false}}
   {{/if}}
@@ -68,13 +57,9 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-  {{!#if (eq @root.strategy "SW")}}
-    {{~assign 'cortex_scb_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+  {{~assign 'cortex_scb_cxt' config~}}
+    {{~assign 'current_resource' current_resource~}}
     {{~assign 'current_layer' @root.cortex_scb_cxt.info.layer~}}
-  {{!else}}
-    {{!~assign 'current_layer' info.layer~}}
-  {{!/if}}
   {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
 
@@ -86,16 +71,12 @@ extern "C" {
 {{helper_common_initialize_index~}}
 {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 {{#each @root.instances}}
-  {{!#if (eq @root.strategy "SW")}}
-    {{~assign 'cortex_scb_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+  {{~assign 'cortex_scb_cxt' config~}}
+    {{~assign 'current_resource' current_resource~}}
     {{~assign 'current_layer' @root.cortex_scb_cxt.info.layer~}}
     {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{!else}}
-    {{!~assign 'current_layer' info.layer~}}
-  {{!/if}}
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
+/* Exported functions for {{uppercase @root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
   {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
   {{~assign 'current_index' (helper_common_inc_index @root.current_resource)}}
@@ -118,5 +99,5 @@ void mx_cortex_scb_deinit(void);
 }
 #endif /* __cplusplus */
 
-#endif /* MX_{{@root.file_name}}_H */
+#endif /* MX_{{uppercase @root.current_resource}}_H */
 {{/helper_common_beautifier}}

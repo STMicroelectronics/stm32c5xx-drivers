@@ -52,7 +52,7 @@ function i2s_getprescaler(configI2S) {
       ispcm = 0;
     }
 
-    if (data_format != "16BIT") {
+    if (data_format != "16_BIT") {
       channel_length = 2;
     } else {
       channel_length = 1;
@@ -124,7 +124,7 @@ function i2s_getrealaudiofrequency(configI2S, prescalerI2S) {
     ispcm = 0;
   }
 
-  if (data_format != "16BIT") {
+  if (data_format != "16_BIT") {
     /* Channel length is 32 bits */
     channel_length = 2;
   } else {

@@ -15,24 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'TAMP'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:TAMP')~}}
-  {{~assign 'dma_resource' 'STM32CubeMX2 Config:TAMP'~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "TAMP template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
-{{log "TAMP template current_resource:" @root.current_resource~}}
-{{log "TAMP template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'TAMP' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "TAMP template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign 'dma_resource' @root.codegen_ctxt.dma_resource~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -51,36 +39,26 @@
 /* Exported variables by reference--------------------------------------------*/
 {{assign 'hal_handle_exist' false~}}
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'tamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+  {{~assign 'tamp_cxt' config~}}
   {{~log "TAMP template tamp_cxt:" (toJSON @root.tamp_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
-    {{~log "TAMP template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
+  {{~log "TAMP template current_resource:" @root.current_resource~}}
 {{/each}}
 
 {{assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "HW")}}
-    {{~assign 'name' name~}}
-    {{~assign 'current_layer' info.layer~}}
-    {{~assign 'tamp_cxt' this}}
-  {{else}}
-    {{~assign 'tamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.tamp_cxt.name~}}
-    {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{/if}}
+  {{~assign 'tamp_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'name' @root.tamp_cxt.name~}}
+  {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
   {{~log "TAMP template instance:" (toJSON this)~}}
 {{! Initialize the context for LL code optimization ~}}
 {{!-- {{assign 'lut_table'   (helper_TAMP_get_lut_table 'V1')~}} --}}
 {{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
 {{assign 'current_index' (add @root.current_index 1)~}}
@@ -94,50 +72,8 @@
 {{else}}
 {{> TAMP_LL fct='exported_functions_init'}}
 {{/if}}
+{{> CORTEX fct='generate_irqhandler' type='implementation' component='TAMP'}}
 {{/with}}
 
-{{assign 'irq_info_list' (helper_cortex_nvic_get_irqline_info_list @root.NvicAPI @root.nvic_context 'TAMP')~}}
-{{#with system}}
-{{#with nvic}}
-{{#if irq_handler_generation}}
-{{#if use_unitary_irq_handlers}}
-void TAMP_IRQHandler(void)
-{
-{{#each unitary_apis}}
-{{#if (eq this.api_name 'HAL_TAMP_TamperIRQHandler')}}
-  HAL_TAMP_TamperIRQHandler();
-{{/if}}
-{{#if (eq this.api_name 'HAL_TAMP_InternalTamperIRQHandler')}}
-  HAL_TAMP_InternalTamperIRQHandler();
-{{/if}}
-{{/each}}
-}
-{{else}}
-{{#each @root.irq_info_list}}
-{{#if generate_handler}}
-/******************************************************************************/
-/*                     {{description}}                    */
-/******************************************************************************/
-void {{line}}_IRQHandler(void)
-{
-  HAL_{{component}}_IRQHandler();
-}
-
-{{else}}
-/******************************************************************************/
-/*    {{description}} is managed directly in user code.   */
-/*
-void {{line}}_IRQHandler(void)
-{
-}
-  */
-/******************************************************************************/
-{{/if}}
-{{/each}}
-
-{{/if}}
-{{/if}}
-{{/with}}
-{{/with}}
 {{/each}}
 {{/helper_common_beautifier}}

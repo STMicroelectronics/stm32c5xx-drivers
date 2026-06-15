@@ -19,12 +19,16 @@
   * - generate_disable_hsis
   * - generate_enable_hsidiv3
   * - generate_disable_hsidiv3
+  * - generate_enable_hsidiv4
+  * - generate_disable_hsidiv4
   * - generate_enable_hsik
   * - generate_disable_hsik
   * - generate_enable_psis
   * - generate_disable_psis
   * - generate_enable_psidiv3
   * - generate_disable_psidiv3
+  * - generate_enable_psidiv4
+  * - generate_disable_psidiv4
   * - generate_enable_psik
   * - generate_disable_psik
   * - generate_enable_lsi
@@ -101,6 +105,12 @@
 
     {{/with~}}
 
+    {{#with HSIDIV4}}
+{{>RCC_LOCAL fct='generate_clock_source_info' clock_source='HSIDIV4' frequency=frequency resources=resources}}
+{{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='hsidiv4' direct=@root.central nb_resources=(length resources) display_message=true}}
+
+    {{/with~}}
+
     {{#with HSIK}}
 {{>RCC_LOCAL fct='generate_clock_source_info' clock_source='HSIK' frequency=frequency resources=resources}}
 {{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='hsik' direct=@root.central nb_resources=(length resources) display_message=true}}
@@ -116,6 +126,12 @@
     {{#with PSIDIV3}}
 {{>RCC_LOCAL fct='generate_clock_source_info' clock_source='PSIDIV3' frequency=frequency resources=resources}}
 {{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='psidiv3' direct=@root.central nb_resources=(length resources) display_message=true}}
+
+    {{/with~}}
+
+    {{#with PSIDIV4}}
+{{>RCC_LOCAL fct='generate_clock_source_info' clock_source='PSIDIV4' frequency=frequency resources=resources}}
+{{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='psidiv4' direct=@root.central nb_resources=(length resources) display_message=true}}
 
     {{/with~}}
 
@@ -147,19 +163,25 @@
 {{>RCC_LOCAL fct='generate_clock_source_info' clock_source='ADC_DAC_DIV' frequency=frequency resources=resources}}
 {{>RCC_LOCAL fct='generate_set_divider' divider='ADC_DAC_DIV'}}
 
-    {{/with}}
+    {{/with~}}
 
     {{#with HSE_DIV}}
 {{>RCC_LOCAL fct='generate_clock_source_info' clock_source='HSE_DIV' frequency=frequency resources=resources}}
 {{>RCC_LOCAL fct='generate_set_divider' divider='HSE_DIV'}}
 
-    {{/with}}
+    {{/with~}}
 
     {{#with ETH1_DIV}}
 {{>RCC_LOCAL fct='generate_clock_source_info' clock_source='ETH1_DIV' frequency=frequency resources=resources}}
 {{>RCC_LOCAL fct='generate_set_divider' divider='ETH1_DIV'}}
 
-  	{{/with}}
+  	{{/with~}}
+
+    {{#with PLAY_DIV}}
+{{>RCC_LOCAL fct='generate_clock_source_info' clock_source='PLAY_DIV' frequency=frequency resources=resources}}
+{{>RCC_LOCAL fct='generate_set_divider' divider='PLAY_DIV'}}
+    {{/with~}}
+
   {{/with~}}
 
 {{else if (eq fct 'periph_deactivate')}}
@@ -167,7 +189,7 @@
 {{!      - Fill the function mx_rcc_pppi_clock_deactivate if mode set to controlled by periph~}}
 {{! > RCC fct='periph_deactivate' clock_config=@root.clock_config}}
   {{#with clock_config}}
-    {{#if (not (or HSIS HSIDIV3 HSIK PSIS PSIDIV3 PSIK HSE LSE LSI))}}
+    {{#if (not (or HSIS HSIDIV3 HSIDIV4 HSIK PSIS PSIDIV3 PSIDIV4 PSIK HSE LSE LSI))}}
   /* Nothing to do */
 
     {{/if~}}
@@ -181,6 +203,13 @@
 
     {{#with HSIDIV3}}
   if (mx_rcc_hsidiv3_clock_deactivate() != SYSTEM_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+    {{/with~}}
+
+    {{#with HSIDIV4}}
+  if (mx_rcc_hsidiv4_clock_deactivate() != SYSTEM_OK)
   {
     return SYSTEM_CLOCK_ERROR;
   }
@@ -202,6 +231,13 @@
 
     {{#with PSIDIV3}}
   if (mx_rcc_psidiv3_clock_deactivate() != SYSTEM_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+    {{/with~}}
+
+    {{#with PSIDIV4}}
+  if (mx_rcc_psidiv4_clock_deactivate() != SYSTEM_OK)
   {
     return SYSTEM_CLOCK_ERROR;
   }
@@ -249,14 +285,14 @@
 {{!> RCC fct='generate_enable_osc_with_checks' osc='hsis' direct={true|false} nb_resources=1 display_message=true~}}
   {{~#if direct}}
 
-    {{~#if (or (eq osc 'psis') (eq osc 'psik') (eq osc 'psidiv3'))}}
+    {{~#if (or (eq osc 'psis') (eq osc 'psik') (eq osc 'psidiv3') (eq osc 'psidiv4'))}}
 {{>RCC_LOCAL fct='generate_psi_src_enable_with_checks' psi_src=@root.system_config.psi_config.source_to_enable direct=direct}}
 {{>RCC_LOCAL fct='generate_psi_config_with_checks' direct=direct}}
     {{/if~}}
 
     {{~#if (not (helper_rcc_is_resource_enabled osc))}}
 {{>RCC_LOCAL fct='generate_enable_osc'}}
-      {{~#if (not (helper_rcc_is_central @root.rcc_cxt))}}
+      {{~#if (not (helper_rcc_is_central @root.rcc_ctx))}}
   RCC_CONSUME_RESOURCE({{osc}}, {{nb_resources}});
       {{/if~}}
       {{~helper_rcc_set_resource_enabled osc~}}
@@ -353,6 +389,47 @@
   {{else}}{{! No LL Optim}}
   LL_RCC_HSIDIV3_Disable();
   while(LL_RCC_HSIDIV3_IsReady() != 0U)
+  {
+  }
+
+  {{/if~}}
+
+{{else if (eq fct 'generate_enable_hsidiv4')}}
+{{!     Generate the enable of the HSIDIV4 ~}}
+{{!> RCC fct='generate_enable_hsidiv4' ~}}
+  {{~#if (eq @root.current_layer 'HAL')}}
+  if (HAL_RCC_HSIDIV4_Enable() != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
+  {{else if @root.do_rcc_ll_optim}}
+  /* LL_RCC_HSIDIV4_Enable();
+  while(LL_RCC_HSIDIV4_IsReady() != 1U)
+  {
+  }
+  */
+
+  {{else}}
+  LL_RCC_HSIDIV4_Enable();
+  while(LL_RCC_HSIDIV4_IsReady() != 1U)
+  {
+  }
+
+  {{/if~}}
+
+{{else if (eq fct 'generate_disable_hsidiv4')}}
+{{!     Generate the enable of the HSIDIV4 ~}}
+{{!> RCC fct='generate_disable_hsidiv4' ~}}
+  {{~#if (eq @root.current_layer 'HAL')}}
+  if (HAL_RCC_HSIDIV4_Disable() != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
+  {{else}}{{! No LL Optim}}
+  LL_RCC_HSIDIV4_Disable();
+  while(LL_RCC_HSIDIV4_IsReady() != 0U)
   {
   }
 
@@ -461,6 +538,40 @@
 
   {{/if~}}
 
+{{else if (eq fct 'generate_enable_psidiv4')}}
+{{!  Generate the enable of the PSIDIV4 ~}}
+{{!> RCC fct='generate_enable_psidiv4'~}}
+  {{~#if (eq @root.current_layer 'HAL')}}
+  if (HAL_RCC_PSIDIV4_Enable() != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
+  {{else}}{{! No LL Optim}}
+  LL_RCC_PSIDIV4_Enable();
+  while(LL_RCC_PSIDIV4_IsReady() != 1U)
+  {
+  }
+
+  {{/if~}}
+
+{{else if (eq fct 'generate_disable_psidiv4')}}
+{{!  Generate the enable of the PSIDIV4 ~}}
+{{!> RCC fct='generate_disable_psidiv4'~}}
+  {{~#if (eq @root.current_layer 'HAL')}}
+  if (HAL_RCC_PSIDIV4_Disable() != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
+  {{else}}
+  LL_RCC_PSIDIV4_Disable();
+  while(LL_RCC_PSIDIV4_IsReady() != 0U)
+  {
+  }
+
+  {{/if~}}
+
 {{else if (eq fct 'generate_enable_psik')}}
 {{!  Generate the enable of the PSIK ~}}
 {{!> RCC fct='generate_enable_psik' ~}}
@@ -534,19 +645,22 @@
 {{else if (eq fct 'generate_enable_hse')}}
 {{!  Generate the enable of the HSE ~}}
 {{!> RCC fct='generate_enable_hse' ~}}
-  {{~#if (eq @root.rcc_cxt.basic.hse.state 'OFF')}}
-#warning "HSE cannot be enabled. No source configured in CubeMx RCC panel"
+  {{#if (not @root.rcc_ctx.basic.hse) }}
+#warning "HSE not available on this package - Change mux clock source selection"
+
+  {{else if (eq @root.rcc_ctx.basic.hse.state 'OFF')}}
+#warning "Configured a HSE source in CubeMx RCC panel"
   {{else}}
     {{#if (eq @root.current_layer 'HAL')}}
-  if (HAL_RCC_HSE_Enable(HAL_RCC_HSE_{{@root.rcc_cxt.basic.hse.state}}) != HAL_OK)
+  if (HAL_RCC_HSE_Enable(HAL_RCC_HSE_{{@root.rcc_ctx.basic.hse.state}}) != HAL_OK)
   {
     return SYSTEM_CLOCK_ERROR;
   }
 
     {{else}}
-      {{#if (eq @root.rcc_cxt.basic.hse.state "BYPASS")}}
+      {{#if (eq @root.rcc_ctx.basic.hse.state "BYPASS")}}
   LL_RCC_HSE_ConfigBypass(LL_RCC_HSE_ANALOG_MODE);
-      {{else if (eq @root.rcc_cxt.basic.hse.state "BYPASS_DIGITAL")}}
+      {{else if (eq @root.rcc_ctx.basic.hse.state "BYPASS_DIGITAL")}}
   LL_RCC_HSE_ConfigBypass(LL_RCC_HSE_DIGITAL_MODE);
       {{/if}}
   LL_RCC_HSE_Enable();
@@ -560,7 +674,7 @@
 {{else if (eq fct 'generate_disable_hse')}}
 {{!  Generate the disable of the HSE ~}}
 {{!> RCC fct='generate_disable_hse' ~}}
-  {{~#if (eq @root.rcc_cxt.basic.hse.state 'OFF')}}
+  {{~#if (eq @root.rcc_ctx.basic.hse.state 'OFF')}}
 #warning "HSE cannot be disabled. No source configured in CubeMx RCC panel"
 
   {{else}}
@@ -582,44 +696,13 @@
 {{else if (eq fct 'generate_enable_lse')}}
 {{!  Generate the enable of the LSE ~}}
 {{!> RCC fct='generate_enable_lse' ~}}
-  {{#if (eq @root.rcc_cxt.basic.lse.state 'OFF')}}
-#warning "LSE enable cannot be generated. No source configured in CubeMx RCC panel"
 
-  {{else}}
-    {{~#if (eq @root.current_layer 'HAL')}}
-{{>PWR_HAL fct='generate_write_protection_disable'}}
-  if (HAL_RCC_LSE_Enable(HAL_RCC_LSE_{{@root.rcc_cxt.basic.lse.state}}, HAL_RCC_LSE_DRIVE_{{@root.rcc_cxt.basic.lse.drive_capability}}) != HAL_OK)
-  {
-  {{>PWR_HAL fct='generate_write_protection_enable'}}
-    return SYSTEM_CLOCK_ERROR;
-  }
-{{>PWR_HAL fct='generate_write_protection_enable'}}
-
-    {{~else}}
-{{>PWR_LL fct='generate_write_protection_disable'}}
-      {{#if (eq @root.rcc_cxt.basic.lse.state "BYPASS")}}
-  LL_RCC_LSE_ConfigBypass(LL_RCC_LSE_ANALOG_MODE);
-      {{else if (eq @root.rcc_cxt.basic.lse.state "BYPASS_DIGITAL")}}
-  LL_RCC_LSE_ConfigBypass(LL_RCC_LSE_DIGITAL_MODE);
-      {{/if}}
-
-      {{#if @root.do_rcc_ll_optim}}
-  {{helper_common_gen_ll_code "LL_RCC_LSE_SetDriveCapability" (concat 'LL_RCC_LSEDRIVE_' @root.rcc_cxt.basic.lse.drive_capability)}}
-      {{else}}
-  LL_RCC_LSE_SetDriveCapability(LL_RCC_LSEDRIVE_{{@root.rcc_cxt.basic.lse.drive_capability}});
-      {{/if}}
-  LL_RCC_LSE_Enable();
-  while(LL_RCC_LSE_IsReady() != 1U)
-  {
-  }
-{{>PWR_LL fct='generate_write_protection_enable'}}
-    {{/if}}
-  {{/if~}}
+{{>RCC fct='generate_enable_lse_with_write_protection' wp_disable=true wp_enable=true css=false}}
 
 {{else if (eq fct 'generate_disable_lse')}}
 {{!  Generate the enable of the LSE ~}}
 {{!> RCC fct='generate_disable_lse' ~}}
-  {{#if (eq @root.rcc_cxt.basic.lse.state 'OFF')}}
+  {{#if (eq @root.rcc_ctx.basic.lse.state 'OFF')}}
 #warning "LSE disable cannot be generated. No source configured in CubeMx RCC panel"
 
   {{else}}
@@ -647,7 +730,7 @@
 {{!  Generate the psi source enable code ~}}
 {{!> RCC fct='generate_psi_src_enable_with_checks' psi_src=@root.system_config.psi_config.source_to_enable direct=true/false display_message=false~}}
 
-  {{~#if (eq psi_src 'HSIS')}}
+  {{#if (eq psi_src 'HSIS')}}
 {{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='hsis' direct=direct nb_resources=1 display_message=false}}
   {{/if~}}
 
@@ -665,7 +748,7 @@
   {{~#if direct }}
     {{~#if (not (helper_rcc_is_resource_enabled 'psi'))}}
 {{>RCC_LOCAL fct='generate_psi_config'}}
-      {{~#if (not (helper_rcc_is_central @root.rcc_cxt))}}
+      {{~#if (not (helper_rcc_is_central @root.rcc_ctx))}}
   RCC_CONSUME_RESOURCE(psi_config, 1);
       {{/if~}}
       {{~helper_rcc_set_resource_enabled 'psi'}}
@@ -681,7 +764,7 @@
   {{#if (not @root.system_config.psi_config.valid_LSE)}}
 #warning "LSE frequency does not permit PSI lock (Only 32768Hz is supported)"
   {{/if}}
-  {{~#if (eq @root.current_layer 'HAL')}}
+  {{#if (eq @root.current_layer 'HAL')}}
   hal_rcc_psi_config_t config_psi;
   config_psi.psi_source = HAL_RCC_PSI_SRC_{{@root.system_config.psi_config.source_hal}};
   config_psi.psi_ref = HAL_RCC_PSI_REF_{{@root.system_config.psi_config.ref}};
@@ -704,7 +787,12 @@
 {{!> RCC fct='generate_set_system_clock'}}
   {{~assign 'system_clock_name' @root.system_config.clock_source.name~}}
   {{#if default }}
-    {{~assign 'system_clock_name' 'HSIDIV3'~}}
+    {{~assign 'c5_feature_group' (helper_rcc_detect_feature_group)~}}
+    {{#if (eq @root.c5_feature_group "GROUP2")}}
+      {{~assign 'system_clock_name' 'HSIDIV4'~}}
+    {{else}}
+      {{~assign 'system_clock_name' 'HSIDIV3'~}}
+    {{/if}}
   {{/if}}
 
   {{#if (eq @root.current_layer 'HAL')}}
@@ -714,7 +802,7 @@
   }
 
   {{else}}
-    {{#if (and @root.do_rcc_ll_optim (eq @root.system_clock_name 'HSIDIV3'))}}
+    {{#if (and @root.do_rcc_ll_optim (or (eq @root.system_clock_name 'HSIDIV3') (eq @root.system_clock_name 'HSIDIV4')))}}
   /* LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_{{@root.system_clock_name}}); */
   /* Wait till System clock is ready */
   /* while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_{{@root.system_clock_name}})
@@ -846,19 +934,28 @@
 {{!     Generate the setting of one divider ~}}
 {{!> RCC fct='generate_set_divider' divider='ADC_DAC_DIV'~}}
   {{#if (eq divider 'ADC_DAC_DIV')}}
+    {{~assign 'c5_feature_group' (helper_rcc_detect_feature_group)~}}
     {{#if (eq @root.current_layer 'HAL')}}
+      {{#if (eq @root.c5_feature_group "GROUP2")}}
+  if (HAL_RCC_ADCDAC_SetKernelClkPrescaler({{@root.system_config.divider.adc}}) != HAL_OK)
+      {{else}}
   if (HAL_RCC_ADCDAC_SetKernelClkPrescaler(HAL_RCC_ADCDAC_PRESCALER{{@root.system_config.divider.adc}}) != HAL_OK)
+      {{/if}}
   {
     return SYSTEM_CLOCK_ERROR;
   }
 
     {{else }}
+      {{#if (eq @root.c5_feature_group "GROUP2")}}
+  {{helper_common_gen_ll_code "LL_RCC_SetADCDACPrescaler" @root.system_config.divider.adc}}
+      {{else}}
   {{helper_common_gen_ll_code "LL_RCC_SetADCDACPrescaler" (concat 'LL_RCC_ADCDAC_PRESCALER_' @root.system_config.divider.adc)}}
+      {{/if}}
 
     {{/if}}
 
   {{else if (eq divider 'HSE_DIV')}}
-    {{~#if (eq @root.rcc_cxt.basic.hse.state 'OFF')}}
+    {{~#if (eq @root.rcc_ctx.basic.hse.state 'OFF')}}
 #warning "HSE prescaler cannot be set. No source configured in CubeMx RCC panel"
     {{else}}
       {{assign 'rtc_divider' @root.system_config.divider.rtc}}
@@ -882,10 +979,22 @@
 
     {{/if}}
 
+  {{else if (eq divider 'PLAY_DIV')}}
+    {{#if (eq @root.current_layer 'HAL')}}
+  if (HAL_RCC_PLAY1_SetKernelClkPrescaler(HAL_RCC_PLAY1_PRESCALER{{@root.system_config.divider.play}}) != HAL_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+
+    {{else}}
+  {{helper_common_gen_ll_code "LL_RCC_SetPLAY1Prescaler" (concat 'LL_RCC_PLAY1_PRESCALER_' @root.system_config.divider.play)}}
+
+    {{/if}}
+
   {{/if~}}
 
 {{else if (eq fct 'generate_config_clock_outputs')}}
-  {{#with @root.rcc_cxt}}
+  {{#with @root.rcc_ctx}}
 
     {{~#if (or additional.clk_outputs.mco1 additional.clk_outputs.mco2)}}
   /** Configure MCO (clock source, IO and divider) */
@@ -937,6 +1046,12 @@
       {{#if (eq @root.system_config.clk_outputs.mco2.src 'HSIDIV3')}}
 {{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='hsidiv3' direct=true nb_resources=1}}
       {{/if}}
+      {{#if (eq @root.system_config.clk_outputs.mco2.src 'PSIDIV4')}}
+{{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='psidiv4' direct=true nb_resources=1}}
+      {{/if}}
+      {{#if (eq @root.system_config.clk_outputs.mco2.src 'HSIDIV4')}}
+{{>RCC_LOCAL fct='generate_enable_osc_with_checks' osc='hsidiv4' direct=true nb_resources=1}}
+      {{/if}}
     {{/if}}
 
     {{#if additional.clk_outputs.lsco}}
@@ -959,7 +1074,11 @@
       {{/if}}
       {{#if additional.clk_outputs.lsco}}
 {{>PWR_HAL fct='generate_write_protection_disable'}}
+        {{#if (eq @root.c5_feature_group "GROUP2")}}
+  if (HAL_RCC_EnableLSCO(HAL_RCC_LSCO_SRC_{{@root.system_config.clk_outputs.lsco.src}}, HAL_RCC_LSCO_OUT_{{@root.system_config.clk_outputs.lsco.pin}}) != HAL_OK)
+        {{else}}
   if (HAL_RCC_EnableLSCO(HAL_RCC_LSCO_SRC_{{@root.system_config.clk_outputs.lsco.src}}) != HAL_OK)
+        {{/if}}
   {
 {{>PWR_HAL fct='generate_write_protection_enable'}}
     return SYSTEM_CLOCK_ERROR;
@@ -970,33 +1089,21 @@
     {{else}}
 {{> GPIO_LL fct='init_resource' resource=@root.current_resource}}
 
-      {{~#if @root.do_rcc_ll_optim}}
-        {{#if additional.clk_outputs.mco1}}
+      {{#if additional.clk_outputs.mco1}}
   {{helper_common_gen_ll_code "LL_RCC_ConfigMCO" (concat 'LL_RCC_MCO1SOURCE_' @root.system_config.clk_outputs.mco1.src) (concat 'LL_RCC_MCO1_PRESCALER_' @root.system_config.clk_outputs.mco1.div)}}
-        {{/if}}
-        {{#if additional.clk_outputs.mco2}}
+      {{/if}}
+      {{#if additional.clk_outputs.mco2}}
   {{helper_common_gen_ll_code "LL_RCC_ConfigMCO" (concat 'LL_RCC_MCO2SOURCE_' @root.system_config.clk_outputs.mco2.src) (concat 'LL_RCC_MCO2_PRESCALER_' @root.system_config.clk_outputs.mco2.div)}}
-        {{/if}}
-        {{#if additional.clk_outputs.lsco}}
+      {{/if}}
+      {{#if additional.clk_outputs.lsco}}
 {{>PWR_LL fct='generate_write_protection_disable'}}
+        {{#if (eq @root.c5_feature_group "GROUP2")}}
+  {{helper_common_gen_ll_code "LL_RCC_ConfigLSCO" (concat 'LL_RCC_LSCO_CLKSOURCE_' @root.system_config.clk_outputs.lsco.src) (concat 'LL_RCC_LSCO_OUTPUT_' @root.system_config.clk_outputs.lsco.pin)}}
+        {{else}}
   {{helper_common_gen_ll_code "LL_RCC_ConfigLSCO" (concat 'LL_RCC_LSCO_CLKSOURCE_' @root.system_config.clk_outputs.lsco.src)}}
+        {{/if}}
   LL_RCC_LSCO_Enable();
 {{>PWR_LL fct='generate_write_protection_enable'}}
-        {{/if}}
-
-      {{else}}
-        {{#if additional.clk_outputs.mco1}}
-  LL_RCC_ConfigMCO(LL_RCC_MCO1SOURCE_{{@root.system_config.clk_outputs.mco1.src}}, LL_RCC_MCO1_PRESCALER_{{@root.system_config.clk_outputs.mco1.div}});
-        {{/if}}
-        {{#if additional.clk_outputs.mco2}}
-  LL_RCC_ConfigMCO(LL_RCC_MCO2SOURCE_{{@root.system_config.clk_outputs.mco2.src}}, LL_RCC_MCO2_PRESCALER_{{@root.system_config.clk_outputs.mco2.div}});
-        {{/if}}
-        {{#if additional.clk_outputs.lsco}}
-{{>PWR_LL fct='generate_write_protection_disable'}}
-  LL_RCC_ConfigLSCO(LL_RCC_LSCO_CLKSOURCE_{{@root.system_config.clk_outputs.lsco.src}});
-  LL_RCC_LSCO_Enable();
-{{>PWR_LL fct='generate_write_protection_enable'}}
-        {{/if}}
       {{/if}}
 
     {{/if~}}
@@ -1004,7 +1111,7 @@
 
 {{else if (eq fct 'generate_enable_css')}}
 
-  {{~#if @root.rcc_cxt.basic.hse.enable_css}}
+  {{~#if @root.rcc_ctx.basic.hse.enable_css}}
   /*
    *  Enable the Clock Security System: The CSSI is linked to
    *  the Cortex-M33 NMI (Non-Maskable Interrupt) exception vector.
@@ -1017,7 +1124,7 @@
 
   {{/if}}
 
-  {{~#if @root.rcc_cxt.basic.lse.enable_css}}
+  {{~#if @root.rcc_ctx.basic.lse.enable_css}}
 {{>PWR_LL fct='generate_write_protection_disable'}}
   /* Enable the LSE Clock Security System */
     {{#if (eq @root.current_layer 'HAL')}}
@@ -1032,7 +1139,7 @@
 
 {{else if (eq fct 'generate_enable_in_stop_mode')}}
 
-  {{~#if @root.rcc_cxt.additional.hsi.enable_in_stop_mode}}
+  {{~#if @root.rcc_ctx.additional.hsi.enable_in_stop_mode}}
     {{#if (eq @root.current_layer 'HAL')}}
   if (HAL_RCC_HSI_EnableInStopMode() != HAL_OK)
   {
@@ -1043,7 +1150,7 @@
     {{/if}}
   {{/if}}
 
-  {{~#if @root.rcc_cxt.additional.psi.enable_in_stop_mode}}
+  {{~#if @root.rcc_ctx.additional.psi.enable_in_stop_mode}}
     {{#if (eq @root.current_layer 'HAL')}}
   if (HAL_RCC_PSI_EnableInStopMode() != HAL_OK)
   {

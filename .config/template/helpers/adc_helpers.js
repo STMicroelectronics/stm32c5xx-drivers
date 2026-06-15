@@ -1,4 +1,4 @@
-/**
+/*
  * @file Helpers functions used for ADC SW component
  * @license
  * Copyright (c) 2024 STMicroelectronics.
@@ -134,6 +134,219 @@ function helper_adc_find_channel_enable(channels, channel_id) {
     return false;
   }
 }
+
+/**
+ * Check whether an interconnect entry is a valid ADC analog input candidate.
+ * Keep the common exclusion rules here so they can be updated in one place.
+ * @param {object} entry - Interconnect entry coming from resource.interconnect.
+ * @returns {boolean} True when the entry passes the generic ADC input filters.
+ */
+function helper_adc_is_valid_analog_input_entry(entry) {
+  return Boolean(
+    entry &&
+    entry.type === 'analog input' &&
+    typeof entry.source === 'string' &&
+    typeof entry.id === 'string' &&
+    !/gnd/i.test(entry.source) &&
+    entry.source !== 'VREF-' &&
+    !entry.source.startsWith('DFT')
+  );
+}
+
+/**
+ * Check whether an analog input entry is connected to the positive ADC path.
+ * Negative-only inputs such as Vinnx must not be exposed in channel pickers.
+ * @param {object} entry - Interconnect entry coming from resource.interconnect.
+ * @returns {boolean} True when the entry targets a positive ADC input.
+ */
+function helper_adc_is_positive_analog_input_entry(entry) {
+  const entryId = entry?.id;
+  const entrySource = entry?.source;
+
+  return Boolean(
+    entry &&
+    typeof entryId === 'string' &&
+    !/vinn/i.test(entryId) &&
+    !/vinn/i.test(entrySource || '') &&
+    /vinp/i.test(entryId)
+  );
+}
+
+/**
+ * Check whether an input is a supported internal ADC source.
+ * Update this function when a new internal source naming rule must be accepted.
+ * @param {string} source - Interconnect source name.
+ * @returns {boolean} True when the source is treated as an internal ADC channel.
+ */
+function helper_adc_is_supported_internal_source(source) {
+  if (typeof source !== 'string') {
+    return false;
+  }
+
+  const normalizedSource = source.toLowerCase();
+
+  return (
+    ['vsens', 'vrefint', 'vddcore', 'vddarray', 'vbat'].includes(normalizedSource) ||
+    /^opamp/i.test(source) ||
+    /^dac_/i.test(source) ||
+    /^dac\d+_out\d+$/i.test(source) ||
+    /^vcore/i.test(source) ||
+    /^vsens/i.test(source) ||
+    /^vbat(\/4)?$/i.test(source)
+  );
+}
+
+/**
+ * Check whether the current entity is the first source occurrence exposed by
+ * the positive analog-input list. Query selectors use this to avoid duplicated
+ * entries when several positive analog-input nodes share the same source name,
+ * without letting a negative input hide its positive counterpart.
+ * @param {object} entity - Query entity being evaluated.
+ * @param {object} resource - Current ADC resource.
+ * @returns {boolean} True when the entity is the first occurrence for its source.
+ */
+function helper_adc_is_first_query_source_occurrence(entity, resource) {
+  if (!entity || !resource?.interconnect) {
+    return true;
+  }
+
+  const matchingIds = resource.interconnect
+    .filter(entry => (
+      helper_adc_is_valid_analog_input_entry(entry) &&
+      helper_adc_is_positive_analog_input_entry(entry) &&
+      entry.source === entity.source
+    ))
+    .map(entry => entry.id)
+    .sort();
+
+  return matchingIds[0] === entity.id;
+}
+
+/**
+ * Check whether an entity matches the STM32V8 query filter.
+ * Keep this logic in JavaScript so the JSON query stays easy to maintain.
+ * @param {object} entity - Query entity being evaluated.
+ * @param {object} resource - Current ADC resource.
+ * @returns {boolean} True when the entity can be proposed by the query.
+ */
+function helper_adc_is_v8_query_channel(entity, resource) {
+  try {
+    return (
+      helper_adc_is_valid_analog_input_entry(entity) &&
+      helper_adc_is_positive_analog_input_entry(entity) &&
+      helper_adc_is_first_query_source_occurrence(entity, resource)
+    );
+  } catch (e) {
+    console.error(`helper_adc_is_v8_query_channel: ${e}`);
+    return false;
+  }
+}
+
+/**
+ * Check whether an entity matches the standard ADC query filter.
+ * The rule is split from the JSON file so internal-source and pin-mapping
+ * updates can be handled in one place only.
+ * @param {object} entity - Query entity being evaluated.
+ * @param {object} resource - Current ADC resource.
+ * @param {Function} getValue - Getter function provided by the template engine.
+ * @returns {boolean} True when the entity can be proposed by the query.
+ */
+function helper_adc_is_standard_query_channel(entity, resource, getValue) {
+  try {
+    return (
+      helper_adc_is_valid_analog_input_entry(entity) &&
+      helper_adc_is_positive_analog_input_entry(entity) &&
+      (
+        helper_adc_is_supported_internal_source(entity.source) ||
+        helper_adc_is_mappable_external_source(entity, resource, getValue)
+      ) &&
+      helper_adc_is_first_query_source_occurrence(entity, resource)
+    );
+  } catch (e) {
+    console.error(`helper_adc_is_standard_query_channel: ${e}`);
+    return false;
+  }
+}
+
+/**
+ * Check whether an input is a mappable external ADC pin for the current instance.
+ * Keep the pin-mapping rule isolated here so it is easy to adapt later.
+ * @param {object} entry - Interconnect entry coming from resource.interconnect.
+ * @param {object} resource - Current ADC resource.
+ * @param {Function} getValue - Getter function provided by the template engine.
+ * @returns {boolean} True when the entry maps to a valid ADC pin.
+ */
+function helper_adc_is_mappable_external_source(entry, resource, getValue) {
+  if (!entry || !resource || typeof getValue !== 'function') {
+    return false;
+  }
+
+  const resourcePrefix = `${resource.name}_`;
+  if (!/vinp/i.test(entry.id) || !entry.source.startsWith(resourcePrefix)) {
+    return false;
+  }
+
+  const signalName = entry.source.replace(resourcePrefix, '');
+  return getValue('pinout.peripheralCanBeMapped', resource.name, signalName) === true;
+}
+
+/**
+ * Keep only the first occurrence of each source name.
+ * This avoids duplicate channel tabs when several interconnect entries point
+ * to the same ADC source.
+ * @param {object} entry - Current interconnect entry.
+ * @param {number} index - Current entry index.
+ * @param {Array} entries - Full entries list.
+ * @returns {boolean} True when the entry is the first occurrence for its source.
+ */
+function helper_adc_is_first_source_occurrence(entry, index, entries) {
+  return index === entries.findIndex(candidate => candidate.source === entry.source);
+}
+
+/**
+ * Return the channel source list used by STM32V8 ADC templates.
+ * The V8 flow only exposes VINP signals after the generic exclusions.
+ * @param {object} resource - Current ADC resource.
+ * @returns {Array} Filtered list of ADC channel sources.
+ */
+function helper_adc_get_v8_channel_sources(resource) {
+  try {
+    return (resource?.interconnect || [])
+      .filter(entry => (
+        helper_adc_is_valid_analog_input_entry(entry) &&
+        helper_adc_is_positive_analog_input_entry(entry)
+      ))
+      .filter(helper_adc_is_first_source_occurrence);
+  } catch (e) {
+    console.error(`helper_adc_get_v8_channel_sources: ${e}`);
+    return [];
+  }
+}
+
+/**
+ * Return the channel source list used by the standard ADC templates.
+ * The filtering rules are intentionally split into small helpers so future
+ * updates can be done without touching the JSON expression.
+ * @param {object} resource - Current ADC resource.
+ * @param {Function} getValue - Getter function provided by the template engine.
+ * @returns {Array} Filtered list of ADC channel sources.
+ */
+function helper_adc_get_standard_channel_sources(resource, getValue) {
+  try {
+    return (resource?.interconnect || [])
+      .filter(helper_adc_is_valid_analog_input_entry)
+      .filter(helper_adc_is_positive_analog_input_entry)
+      .filter(entry => (
+        helper_adc_is_supported_internal_source(entry.source) ||
+        helper_adc_is_mappable_external_source(entry, resource, getValue)
+      ))
+      .filter(helper_adc_is_first_source_occurrence);
+  } catch (e) {
+    console.error(`helper_adc_get_standard_channel_sources: ${e}`);
+    return [];
+  }
+}
+
 /**
  * Increment the given value by 1.
  * @param {number} value - The value to be incremented.
@@ -144,6 +357,26 @@ function helper_adc_increment(value) {
     return value + 1;
   } catch (e) {
     console.error(`increment: ${e}`);
+    return null;
+  }
+}
+
+/**
+ * Return the absolute numeric value.
+ * @param {number|string} value - The value to normalize.
+ * @returns {number|null} The absolute value, or null when the input is not numeric.
+ */
+function helper_adc_absolute_value(value) {
+  try {
+    const numericValue = Number(value);
+
+    if (Number.isNaN(numericValue)) {
+      return null;
+    }
+
+    return Math.abs(numericValue);
+  } catch (e) {
+    console.error(`helper_adc_absolute_value: ${e}`);
     return null;
   }
 }
@@ -164,11 +397,14 @@ function helper_adc_transform_channel_name(channel) {
       'VSENS': 'ADC_CHANNEL_TEMPSENSOR',
       'VSENSE': 'ADC_CHANNEL_TEMPSENSOR',
       'VBAT/4': 'ADC_CHANNEL_VBAT',
+      'VCORE': 'ADC_CHANNEL_VDDCORE',
       'VDDCORE': 'ADC_CHANNEL_VDDCORE',
       'OPAMP1_INT': 'ADC_CHANNEL_OPAMP1_OUT',
       'OPAMP2_INT': 'ADC_CHANNEL_OPAMP2_OUT',
       'OPAMP3_INST': 'ADC_CHANNEL_OPAMP3_OUT',
-      'DAC_INT1': 'ADC_CHANNEL_DAC1CH1'
+      'DAC_INT1': 'ADC_CHANNEL_DAC1CH1',
+      'DAC1_OUT1': 'ADC_CHANNEL_DAC1CH1',
+      'DAC1_OUT2': 'ADC_CHANNEL_DAC1CH2',
     };
     if (specialCases[channelUpper]) {
       return specialCases[channelUpper];
@@ -538,8 +774,26 @@ function helper_adc_get_irq_handler(nvic_api, exti_api, resource, config) {
   return result;
 }
 
+/**
+ * Get the gain value for LL API based on the input gain string.
+ */
+function helper_adc_get_ll_gain_value(gain) {
+  try {
+    const gainValue = Number(gain);
+
+    if (Number.isNaN(gainValue)) {
+      return 0;
+    }
+
+    return Math.trunc((gainValue * 4096) / 1000);
+  } catch (e) {
+    console.error(`helper_adc_get_ll_gain_value: ${e}`);
+  }
+}
+
 module.exports = {
   helper_adc_increment,
+  helper_adc_absolute_value,
   helper_adc_lookup_channel,
   helper_adc_transform_channel_name,
   helper_adc_common_path_internal_channels_combination,
@@ -552,10 +806,15 @@ module.exports = {
   helper_adc_compute_frequency,
   helper_adc_get_param_in_channel_config,
   helper_adc_find_channel_enable,
+  helper_adc_get_v8_channel_sources,
+  helper_adc_get_standard_channel_sources,
+  helper_adc_is_v8_query_channel,
+  helper_adc_is_standard_query_channel,
   helper_adc_boolean_to_enable_disable,
   helper_adc_get_awd_panels,
   helper_adc_get_offset_panels,
   helper_adc_is_sequencer_not_empty,
   helper_adc_remove_suffix,
-  helper_adc_get_irq_handler
+  helper_adc_get_irq_handler,
+  helper_adc_get_ll_gain_value
 };

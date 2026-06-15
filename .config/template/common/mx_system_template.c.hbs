@@ -104,6 +104,16 @@ system_status_t mx_system_init(void)
   /*
     Clock system section
   */
+  {{#if @root.object_cxt.system_cxt.system_configuration.rcc_rst}}
+
+  /* Reset of RCC clock configuration to the default reset state */
+  if (mx_rcc_deinit() != SYSTEM_OK)
+  {
+    return SYSTEM_CLOCK_ERROR;
+  }
+  {{/if}}
+
+  /* Initialize RCC peripheral */
   if (mx_rcc_init() != SYSTEM_OK)
   {
     return SYSTEM_CLOCK_ERROR;
@@ -144,7 +154,7 @@ system_status_t mx_system_init(void)
   /*
     Peripheral init section
   */
-{{!--
+
 {{#each @root.object_cxt.system_cxt.generated_function_calls}}
   {{#unless generated}}
   /** {{_foreignKey}}: {{name}}() has not been generated */
@@ -156,54 +166,27 @@ system_status_t mx_system_init(void)
     return SYSTEM_PERIPHERAL_ERROR;
   }
     {{else}}
+      {{~assign 'get_rtc_wakeup_resource' (@root.EnvVarAPI.getVariableValue 'CORE_RTC_WAKEUP_TIMEBASE')}}
+      {{~assign 'get_rtc_alarm_resource' (@root.EnvVarAPI.getVariableValue 'CORE_RTC_ALARM_TIMEBASE')}}
+      {{~assign 'get_tim_resource' (@root.EnvVarAPI.getVariableValue 'CORE_TIM_TIMEBASE')}}
+      {{#if (or (eq @root.get_rtc_alarm_resource _foreignKey) (eq @root.get_rtc_wakeup_resource _foreignKey) (eq @root.get_tim_resource _foreignKey))}}
+        {{~assign 'get_timebase' (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_TIMEBASE')}}
+  /** {{name}}() has been generated,
+    * but {{_foreignKey}} is used as timebase
+    * then it is initialized in stm32_hal_timebase_{{lowercase @root.get_timebase}}.c.
+    */
+      {{else}}
   /** {{_foreignKey}}: {{name}}() has been generated,
     * but it is expected that application will call it when best needed
     * according to application needs.
     * See Cube code generator options: Generate and call Initialization function
     */
+      {{/if}}
 
     {{/if}}
   {{/unless}}
 
-{{/each}} ~--}}
-{{#each @root.object_cxt.periphs}}
-  {{#if generated}}
-    {{#if default}}
-  /*
-      {{#each fct_name_aliases}}
-    {{this}}_init
-      {{/each}}
-  */
-  if ({{fct_name}}_init(){{{helper_common_get_function_return_type component layer}}})
-  {
-    return SYSTEM_PERIPHERAL_ERROR;
-  }
-
-    {{else}}
-      {{~assign 'get_rtc_wakeup_resource' (@root.EnvVarAPI.getVariableValue 'CORE_RTC_WAKEUP_TIMEBASE')}}
-      {{~assign 'get_rtc_alarm_resource' (@root.EnvVarAPI.getVariableValue 'CORE_RTC_ALARM_TIMEBASE')}}
-      {{~assign 'get_tim_resource' (@root.EnvVarAPI.getVariableValue 'CORE_TIM_TIMEBASE')}}
-      {{#if (or (eq @root.get_rtc_alarm_resource resource) (eq @root.get_rtc_wakeup_resource resource) (eq @root.get_tim_resource resource))}}
-      {{~assign 'get_timebase' (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_TIMEBASE')}}
-  /** {{fct_name}}_init()has been generated,
-    * but {{resource}} is used as timebase
-    * then it is initialized in stm32_hal_timebase_{{lowercase @root.get_timebase}}.c.
-    */
-      {{else}}
-  /** {{fct_name}}_init()has been generated,
-    {{#each fct_name_aliases}}
-    * ({{this}}_init)
-    {{/each}}
-    * but it is expected that application will call it when best needed
-    * according to application needs.
-    * See Cube code generator options: Generate and call Initialization function
-    */
-      {{/if}}
-    {{/if}}
-
-  {{/if}}
 {{/each}}
-
   if (post_system_init_hook() != SYSTEM_OK)
   {
     return SYSTEM_POSTSYSTEM_ERROR;

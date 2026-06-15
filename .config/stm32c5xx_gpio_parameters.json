@@ -109,6 +109,7 @@
                 ],
                   "minLength": 0,
                   "maxLength": 32,
+                  "unique": "project",
                   "default": ""
                 }
               },

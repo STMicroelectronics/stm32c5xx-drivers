@@ -52,7 +52,16 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$common.helper_common_display_object($resource)"
+                  "condition": "true",
+                  "message": "This setting is fixed to HAL for this component."
+                }
+              ],
+              "variables": [
+                {
+                  "on": "update-value",
+                  "name": "HAL_ETH_PROJECT_USE_HAL",
+                  "condition": "$common.helper_common_display_object($resource) && ($value === 'HAL')",
+                  "semaphore": true
                 }
               ],
               "default": "HAL"
@@ -93,7 +102,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "The clock source is determined by the selected clock source in the clock tree and cannot be directly edited here. Please modify the clock tree configuration to change the Ethernet kernel clock source."
                 },
                 {
                   "type": "set",
@@ -112,7 +122,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "The clock frequency is determined by the selected clock source in the clock tree and cannot be directly edited here. Please modify the clock tree configuration to change the Ethernet kernel clock frequency."
                 },
                 {
                   "type": "set",
@@ -123,8 +134,8 @@
                 },
                 {
                   "type": "warning",
-                  "condition": "($value !== '25 MHz') && ($value !== '50 MHz') && ($value !== '100 MHz')",
-                  "message": "The internal clock provided to the Ethernet IP should be 25, 50 or 100 MHz depending of the selected media interface."
+                  "condition": "($value !== '25 MHz') && ($value !== '50 MHz') && ($value !== '100 MHz') && ($value !== '125 MHz')",
+                  "message": "The internal clock provided to the Ethernet IP should be 25, 50, 100, or 125 MHz depending on the selected media interface."
                 }
               ],
               "default": ""
@@ -181,7 +192,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$resource.features.ETH_RGMII_EN === 1 && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_CLK125') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_GTX_CLK') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD0') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD1') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD2') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD3') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CLK') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CTL') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD0') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD1') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD2') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD3')"
+                      "condition": "$resource.features.ETH_RGMII_EN === 1 && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_CLK125') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_GTX_CLK') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TX_CTL') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD0') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD1') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD2') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD3') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CLK') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CTL') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD0') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD1') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD2') && $get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD3')"
                     }
                   ]
                 }
@@ -267,6 +278,7 @@
             "max_tx_ch_nb": {
               "type": "integer",
               "title": "User defined number of transmit channels",
+              "description": "Provides the user defined number of transmit channels to be used by the application. The maximum number of channels that can be configured is limited by the ETH_NUM_TXQ feature of the selected device.",
               "minimum": 1,
               "display_format": [
                 "dec"
@@ -289,6 +301,7 @@
             "max_rx_ch_nb": {
               "type": "integer",
               "title": "User defined number of receive channels",
+              "description": "Provides the user defined number of receive channels to be used by the application. The maximum number of channels that can be configured is limited by the ETH_NUM_RXQ feature of the selected device.",
               "minimum": 1,
               "display_format": [
                 "dec"
@@ -331,7 +344,6 @@
               "use_channel": {
                 "type": "boolean",
                 "title": "Use channel",
-                "description": "Use and configure the channel.",
                 "actions": [
                   {
                     "type": "set",
@@ -393,7 +405,8 @@
                     "actions": [
                       {
                         "type": "include",
-                        "condition": "$item.basic.align_desc_size"
+                        "condition": "$item.basic.align_desc_size",
+                        "message": "This value is only relevant if 'Memory alignment constraint' is enabled."
                       },
                       {
                         "type": "set",
@@ -415,7 +428,7 @@
                       },
                       {
                         "type": "info",
-                        "condition": "$item.basic.align_desc_size",
+                        "condition": "true",
                         "message": "The application can request specific descriptor size alignment to implement proper CACHE maintenance."
                       }
                     ],
@@ -423,8 +436,7 @@
                       "dec"
                     ],
                     "unit": "Bytes",
-                    "minimum": 1,
-                    "maximum": 44
+                    "minimum": 1
                   },
                   "event_mode": {
                     "type": "string",
@@ -433,7 +445,7 @@
                       {
                         "title": "Disabled",
                         "const": "HAL_ETH_FIFO_EVENT_NONE",
-                        "description": "ETH Interrupt is disabled - Polling mode, no interrupt."
+                        "description": "ETH interrupt is disabled - Polling mode, no interrupt."
                       },
                       {
                         "title": "Always",
@@ -443,7 +455,7 @@
                       {
                         "title": "Cyclic",
                         "const": "HAL_ETH_FIFO_EVENT_CYCLIC",
-                        "description": "ETH Interrupt after every N buffers. This mode reduces interrupt load for high-throughput operation."
+                        "description": "ETH interrupt after every N buffers. This mode reduces interrupt load for high-throughput operation."
                       }
                     ],
                     "default": "HAL_ETH_FIFO_EVENT_ALWAYS"
@@ -529,24 +541,25 @@
                       "tx_pbl_x8_mode": {
                         "type": "boolean",
                         "title": "PBL multiplication by eight",
-                        "description": "Enables or disables the PBL multiplication by eight.",
                         "default": false
                       },
                       "tx_second_pkt_operate": {
                         "type": "boolean",
-                        "title": "Operate on Second Packet",
-                        "description": "Enables or disables the Operate on second Packet mode, which allows the DMA to process a second Packet of Transmit data even before obtaining the status for the first one.",
+                        "title": "Operate on second packet",
+                        "description": "Allows the DMA to process a second packet of transmit data even before obtaining the status for the first one.",
                         "default": true
                       }
                     }
                   },
                   "mtl_queue_config": {
                     "title": "MTL Queue",
+                    "description": "Allows to configure the media transaction layer parameters for the transmit queue.",
                     "type": "object",
                     "properties": {
                       "enable_av_mode": {
                         "type": "boolean",
                         "title": "AV Mode",
+                        "description": "Enable Audio and video mode for the transmit queue. In this mode, the queue operates with specific scheduling and flow control mechanisms optimized for audio and video traffic.",
                         "default": false,
                         "actions": [
                           {
@@ -558,188 +571,180 @@
                       "queue_size_byte": {
                         "type": "string",
                         "title": "Size",
-                        "description": "Specifies the Queue Size.",
                         "actions": [
                           {
                             "type": "disable",
-                            "condition": "$resource.features.ETH_NUM_TXQ <= 1"
+                            "condition": "$resource.features.ETH_NUM_TXQ <= 1",
+                            "message": "The transmit queue size cannot be configured for the selected device as only one transmit queue is available."
                           }
                         ],
                         "oneOf": [
                           {
                             "title": "256 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_256_BYTE",
-                            "description": "Transmit Queue Size 256 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "512 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_512_BYTE",
-                            "description": "Transmit Queue Size 512 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "768 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_768_BYTE",
-                            "description": "Transmit Queue Size 768 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "1024 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_1024_BYTE",
-                            "description": "Transmit Queue Size 1024 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "1280 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_1280_BYTE",
-                            "description": "Transmit Queue Size 1280 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "1536 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_1536_BYTE",
-                            "description": "Transmit Queue Size 1536 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "1792 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_1792_BYTE",
-                            "description": "Transmit Queue Size 1792 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1",
+                                "message": "This value is only supported for devices with more than one transmit queue."
                               }
                             ]
                           },
                           {
                             "title": "2048 Bytes",
-                            "const": "HAL_ETH_MTL_TX_QUEUE_SZ_2048_BYTE",
-                            "description": "Transmit Queue Size 2048 bytes.",
-                            "actions": [
-                              {
-                                "type": "info",
-                                "condition": "$resource.features.ETH_NUM_TXQ <= 1",
-                                "message": "Only this value is supported for the selected device."
-                              }
-                            ]
+                            "const": "HAL_ETH_MTL_TX_QUEUE_SZ_2048_BYTE"
                           },
                           {
                             "title": "2304 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_2304_BYTE",
-                            "description": "Transmit Queue Size 2304 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2304"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2304",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "2560 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_2560_BYTE",
-                            "description": "Transmit Queue Size 2560 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2560"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2560",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "2816 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_2816_BYTE",
-                            "description": "Transmit Queue Size 2816 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2816"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 2816",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3072 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_3072_BYTE",
-                            "description": "Transmit Queue Size 3072 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3072"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3072",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3328 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_3328_BYTE",
-                            "description": "Transmit Queue Size 3328 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3328"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3328",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3584 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_3584_BYTE",
-                            "description": "Transmit Queue Size 3584 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3584"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3584",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3840 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_3840_BYTE",
-                            "description": "Transmit Queue Size 3840 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3840"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 3840",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "4096 Bytes",
                             "const": "HAL_ETH_MTL_TX_QUEUE_SZ_4096_BYTE",
-                            "description": "Transmit Queue Size 4096 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 4096"
+                                "condition": "$resource.features.ETH_NUM_TXQ > 1 && $resource.features.ETH_TXFIFO_SIZE >= 4096",
+                                "message": "This value is only supported for devices with more than one transmit queue and sufficient TX FIFO size."
                               }
                             ]
                           }
@@ -748,56 +753,71 @@
                       },
                       "transmit_queue_mode": {
                         "type": "string",
-                        "title": "Transmit Queue operating mode",
+                        "title": "Operating mode",
                         "description": "Specifies the Transmit Queue operating mode.",
                         "oneOf": [
                           {
                             "title": "Store and Forward",
-                            "const": "HAL_ETH_MTL_TX_Q_STORE_AND_FORWARD",
-                            "description": "Transmit Store and Forward Mode."
+                            "const": "HAL_ETH_MTL_TX_Q_STORE_AND_FORWARD"
                           },
                           {
                             "title": "Threshold Control 32 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_32_BYTE",
-                            "description": "Transmit Threshold Control 32 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_32_BYTE"
                           },
                           {
                             "title": "Threshold Control 64 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_64_BYTE",
-                            "description": "Transmit Threshold Control 64 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_64_BYTE"
                           },
                           {
                             "title": "Threshold Control 96 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_96_BYTE",
-                            "description": "Transmit Threshold Control 96 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_96_BYTE"
                           },
                           {
                             "title": "Threshold Control 128 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_128_BYTE",
-                            "description": "Transmit Threshold Control 128 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_128_BYTE"
                           },
                           {
                             "title": "Threshold Control 192 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_192_BYTE",
-                            "description": "Transmit Threshold Control 192 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_192_BYTE"
                           },
                           {
                             "title": "Threshold Control 256 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_256_BYTE",
-                            "description": "Transmit Threshold Control 256 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_256_BYTE"
                           },
                           {
                             "title": "Threshold Control 384 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_384_BYTE",
-                            "description": "Transmit Threshold Control 384 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_384_BYTE"
                           },
                           {
                             "title": "Threshold Control 512 bytes",
-                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_512_BYTE",
-                            "description": "Transmit Threshold Control 512 bytes."
+                            "const": "HAL_ETH_MTL_TX_Q_THRESHOLD_512_BYTE"
                           }
                         ],
                         "default": "HAL_ETH_MTL_TX_Q_STORE_AND_FORWARD"
+                      },
+                      "queue_av_algo": {
+                        "type": "string",
+                        "title": "Transmit Queue AV algorithm",
+                        "description": "Specifies the Transmit Queue AV algorithm.",
+                        "actions": [
+                          {
+                            "type": "include",
+                            "condition": "($basic.max_tx_ch_nb > 1)"
+                          },
+                          {
+                            "type": "disable",
+                            "condition": "$channel.id === 0",
+                            "message": "Only the Strict Priority (SP) algorithm is supported for the first channel."
+                          }
+                        ],
+                        "oneOf": [
+                          {
+                            "title": "Strict Priority (SP)",
+                            "const": "HAL_ETH_TX_QUEUE_AV_ALGO_SP",
+                            "description": "In fixed priority, Channel 0 has the lowest priority and the last channel has the highest priority."
+                          }
+                        ],
+                        "default": "HAL_ETH_TX_QUEUE_AV_ALGO_SP"
                       }
                     }
                   }
@@ -852,7 +872,6 @@
               "use_channel": {
                 "type": "boolean",
                 "title": "Use channel",
-                "description": "Use and configure the channel.",
                 "actions": [
                   {
                     "type": "set",
@@ -942,7 +961,8 @@
                     "actions": [
                       {
                         "type": "include",
-                        "condition": "$item.basic.align_desc_size"
+                        "condition": "$item.basic.align_desc_size",
+                        "message": "The application can request specific descriptor size alignment to implement proper CACHE maintenance."
                       },
                       {
                         "type": "set",
@@ -964,7 +984,7 @@
                       },
                       {
                         "type": "info",
-                        "condition": "$item.basic.align_desc_size",
+                        "condition": "true",
                         "message": "The application can request specific descriptor size alignment to implement proper CACHE maintenance."
                       }
                     ],
@@ -972,18 +992,16 @@
                       "dec"
                     ],
                     "unit": "Bytes",
-                    "minimum": 1,
-                    "maximum": 44
+                    "minimum": 1
                   },
                   "event_mode": {
                     "type": "string",
                     "title": "FIFO Event Mode",
-                    "description": "ETH FIFO Event Mode.",
                     "oneOf": [
                       {
                         "title": "Disabled",
                         "const": "HAL_ETH_FIFO_EVENT_NONE",
-                        "description": "ETH Interrupt is disabled - Polling mode, no interrupt."
+                        "description": "ETH interrupt is disabled - Polling mode, no interrupt."
                       },
                       {
                         "title": "Always",
@@ -1080,193 +1098,186 @@
                   },
                   "mtl_queue_config": {
                     "title": "MTL Queue",
+                    "description": "Allows to configure the media transaction layer parameters for the receive queue.",
                     "type": "object",
                     "properties": {
                       "queue_size_byte": {
                         "type": "string",
                         "title": "Size",
-                        "description": "Specifies the Queue size.",
                         "actions": [
                           {
                             "type": "disable",
-                            "condition": "$resource.features.ETH_NUM_RXQ <= 1"
+                            "condition": "$resource.features.ETH_NUM_RXQ <= 1",
+                            "message": "The receive queue size cannot be configured for the selected device as only one receive queue is available."
                           }
                         ],
                         "oneOf": [
                           {
                             "title": "256 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_256_BYTE",
-                            "description": "Receive Queue Size 256 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "512 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_512_BYTE",
-                            "description": "Receive Queue Size 512 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "768 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_768_BYTE",
-                            "description": "Receive Queue Size 768 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "1024 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_1024_BYTE",
-                            "description": "Receive Queue Size 1024 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "1280 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_1280_BYTE",
-                            "description": "Receive Queue Size 1280 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "1536 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_1536_BYTE",
-                            "description": "Receive Queue Size 1536 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "1792 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_1792_BYTE",
-                            "description": "Receive Queue Size 1792 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1",
+                                "message": "This value is only supported for devices with more than one receive queue."
                               }
                             ]
                           },
                           {
                             "title": "2048 Bytes",
-                            "const": "HAL_ETH_MTL_RX_QUEUE_SZ_2048_BYTE",
-                            "description": "Receive Queue Size 2048 bytes.",
-                            "actions": [
-                              {
-                                "type": "info",
-                                "condition": "$resource.features.ETH_NUM_RXQ <= 1",
-                                "message": "Only this value is supported for the selected device."
-                              }
-                            ]
+                            "const": "HAL_ETH_MTL_RX_QUEUE_SZ_2048_BYTE"
                           },
                           {
                             "title": "2304 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_2304_BYTE",
-                            "description": "Receive Queue Size 2304 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2304"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2304",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "2560 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_2560_BYTE",
-                            "description": "Receive Queue Size 2560 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2560"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2560",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "2816 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_2816_BYTE",
-                            "description": "Receive Queue Size 2816 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2816"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 2816",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3072 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_3072_BYTE",
-                            "description": "Receive Queue Size 3072 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3072"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3072",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3328 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_3328_BYTE",
-                            "description": "Receive Queue Size 3328 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3328"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3328",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3584 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_3584_BYTE",
-                            "description": "Receive Queue Size 3584 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3584"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3584",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "3840 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_3840_BYTE",
-                            "description": "Receive Queue Size 3840 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3840"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 3840",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           },
                           {
                             "title": "4096 Bytes",
                             "const": "HAL_ETH_MTL_RX_QUEUE_SZ_4096_BYTE",
-                            "description": "Receive Queue Size 4096 bytes.",
                             "actions": [
                               {
                                 "type": "include",
-                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 4096"
+                                "condition": "$resource.features.ETH_NUM_RXQ > 1 && $resource.features.ETH_RXFIFO_SIZE >= 4096",
+                                "message": "This value is only supported for devices with more than one receive queue and sufficient RX FIFO size."
                               }
                             ]
                           }
@@ -1275,7 +1286,7 @@
                       },
                       "receive_queue_mode": {
                         "type": "string",
-                        "title": "Receive Queue operating mode",
+                        "title": "Operating mode",
                         "description": "Specifies the Receive Queue operating mode.",
                         "oneOf": [
                           {
@@ -1384,6 +1395,219 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "configuration_access_level": {
+              "title": "Access level",
+              "description": "Manage security and privileged access levels attributes.",
+              "type": "object",
+              "properties": {
+                "security": {
+                  "type": "string",
+                  "title": "Security attribute",
+                  "description": "Set the security attribute of the securable peripheral.",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                    },
+                    {
+                      "type": "set",
+                      "attributes": {
+                        "const": "SEC"
+                      },
+                      "condition": "$get('peripheral.isBound', $resource.id)"
+                    },
+                    {
+                      "type": "set",
+                      "attributes": {
+                        "const": "NSEC"
+                      },
+                      "condition": "!$get('peripheral.isBound', $resource.id)"
+                    },
+                    {
+                      "type": "disable",
+                      "condition": "$get('peripheral.isBound', $resource.id)",
+                      "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                    }
+                  ],
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "component": "ST-HAL",
+                    "path": "rif-risc-peripheral-sec-attr",
+                    "custom": "$resource.id"
+                  },
+                  "oneOf": [
+                    {
+                      "title": "Secure",
+                      "const": "SEC"
+                    },
+                    {
+                      "title": "Non-secure",
+                      "const": "NSEC"
+                    }
+                  ],
+                  "default": "NSEC"
+                },
+                "privilege": {
+                  "type": "string",
+                  "title": "Privileged attribute",
+                  "description": "Set the privileged attribute of a securable RISC peripheral.",
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "component": "ST-HAL",
+                    "path": "rif-risc-peripheral-priv-attr",
+                    "custom": "$resource.id"
+                  },
+                  "oneOf": [
+                    {
+                      "title": "Privileged",
+                      "const": "PRIV"
+                    },
+                    {
+                      "title": "Unprivileged",
+                      "const": "NPRIV"
+                    }
+                  ],
+                  "default": "PRIV"
+                },
+                "lock": {
+                  "type": "boolean",
+                  "title": "Lock",
+                  "description": "Optional. Lock security and privilege attributes to prevent changes.",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                    }
+                  ],
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "component": "ST-HAL",
+                    "path": "rif-risc-peripheral-lock-attr",
+                    "custom": "$resource.id"
+                  },
+                  "default": false
+                }
+              }
+            },
+            "transaction_access_level": {
+              "title": "Transaction access level",
+              "description": "Manage security and privileged transaction access levels attributes.",
+              "type": "object",
+              "properties": {
+                "security": {
+                  "type": "string",
+                  "title": "Security attribute",
+                  "description": "Set the security attribute of the securable peripheral.",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                    },
+                    {
+                      "type": "set",
+                      "attributes": {
+                        "const": "SEC"
+                      },
+                      "condition": "$get('peripheral.isBound', $resource.id)"
+                    },
+                    {
+                      "type": "set",
+                      "attributes": {
+                        "const": "NSEC"
+                      },
+                      "condition": "!$get('peripheral.isBound', $resource.id)"
+                    },
+                    {
+                      "type": "disable",
+                      "condition": "$get('peripheral.isBound', $resource.id)",
+                      "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                    }
+                  ],
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "component": "ST-HAL",
+                    "path": "rif-rimc-peripheral-sec-attr",
+                    "custom": "$resource.id"
+                  },
+                  "oneOf": [
+                    {
+                      "title": "Secure",
+                      "const": "SEC"
+                    },
+                    {
+                      "title": "Non-secure",
+                      "const": "NSEC"
+                    }
+                  ],
+                  "default": "NSEC"
+                },
+                "privilege": {
+                  "type": "string",
+                  "title": "Privileged attribute",
+                  "description": "Set the privileged attribute of a securable RISC peripheral.",
+                  "synchronize": true,
+                  "synchronizeOn": {
+                    "component": "ST-HAL",
+                    "path": "rif-rimc-peripheral-priv-attr",
+                    "custom": "$resource.id"
+                  },
+                  "oneOf": [
+                    {
+                      "title": "Privileged",
+                      "const": "PRIV"
+                    },
+                    {
+                      "title": "Unprivileged",
+                      "const": "NPRIV"
+                    }
+                  ],
+                  "default": "PRIV"
+                }
+              }
+            },
+            "illegal_access": {
+              "type": "boolean",
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "default": false
+            }
+          }
+        },
         "system": {
           "title": "System",
           "type": "object",
@@ -1397,6 +1621,14 @@
                   "type": "object",
                   "description": "ETH CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
@@ -1432,6 +1664,14 @@
                   "type": "object",
                   "description": "ETH MDC GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
@@ -1467,6 +1707,14 @@
                   "type": "object",
                   "description": "ETH MDIO GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
@@ -1502,15 +1750,19 @@
                   "type": "object",
                   "description": "MII_COL GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_COL')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_COL') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1541,15 +1793,19 @@
                   "type": "object",
                   "description": "MII_CRS GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_CRS')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_CRS') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1580,15 +1836,19 @@
                   "type": "object",
                   "description": "MII_RXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1619,15 +1879,19 @@
                   "type": "object",
                   "description": "MII_RXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1658,15 +1922,19 @@
                   "type": "object",
                   "description": "MII_RXD2 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD2')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD2') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1697,15 +1965,19 @@
                   "type": "object",
                   "description": "MII_RXD3 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD3')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RXD3') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1736,15 +2008,19 @@
                   "type": "object",
                   "description": "MII_RX_CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_CLK')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_CLK') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1775,15 +2051,19 @@
                   "type": "object",
                   "description": "MII_RX_DV GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_DV')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_DV') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1814,15 +2094,19 @@
                   "type": "object",
                   "description": "MII_RX_ER GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_ER')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_RX_ER') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1853,15 +2137,19 @@
                   "type": "object",
                   "description": "MII_TXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1892,15 +2180,19 @@
                   "type": "object",
                   "description": "MII_TXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1931,15 +2223,19 @@
                   "type": "object",
                   "description": "MII_TXD2 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD2')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD2') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -1970,15 +2266,19 @@
                   "type": "object",
                   "description": "MII_TXD3 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD3')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TXD3') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -2009,15 +2309,19 @@
                   "type": "object",
                   "description": "MII_TX_CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_CLK')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_CLK') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -2048,15 +2352,19 @@
                   "type": "object",
                   "description": "MII_TX_EN GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_EN')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_EN') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -2087,15 +2395,19 @@
                   "type": "object",
                   "description": "MII_TX_ER GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_ER')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'MII_TX_ER') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_MII')"
                     }
                   ],
                   "needs": [
@@ -2126,15 +2438,19 @@
                   "type": "object",
                   "description": "GMII_CRS_DV GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_GMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'GMII_CRS_DV')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'GMII_CRS_DV') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_GMII')"
                     }
                   ],
                   "needs": [
@@ -2165,15 +2481,19 @@
                   "type": "object",
                   "description": "RMII_CRS_DV GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_CRS_DV')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_CRS_DV') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2204,15 +2524,19 @@
                   "type": "object",
                   "description": "RMII_REF_CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_REF_CLK')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_REF_CLK') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2243,15 +2567,19 @@
                   "type": "object",
                   "description": "RMII_RXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_RXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_RXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2282,15 +2610,19 @@
                   "type": "object",
                   "description": "RMII_RXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_RXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_RXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2321,15 +2653,19 @@
                   "type": "object",
                   "description": "RMII_TXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2360,15 +2696,19 @@
                   "type": "object",
                   "description": "RMII_TXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2399,15 +2739,19 @@
                   "type": "object",
                   "description": "RMII_TX_EN GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TX_EN')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RMII_TX_EN') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RMII')"
                     }
                   ],
                   "needs": [
@@ -2438,15 +2782,19 @@
                   "type": "object",
                   "description": "RGMII_CLK125 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_CLK125')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_CLK125') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2477,15 +2825,19 @@
                   "type": "object",
                   "description": "RGMII_GTX_CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_GTX_CLK')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_GTX_CLK') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2516,15 +2868,19 @@
                   "type": "object",
                   "description": "RGMII_RXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2555,15 +2911,19 @@
                   "type": "object",
                   "description": "RGMII_RXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2594,15 +2954,19 @@
                   "type": "object",
                   "description": "RGMII_RXD2 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD2')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD2') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2633,15 +2997,19 @@
                   "type": "object",
                   "description": "RGMII_RXD3 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD3')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RXD3') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2672,15 +3040,19 @@
                   "type": "object",
                   "description": "RGMII_RX_CLK GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CLK')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CLK') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2711,15 +3083,19 @@
                   "type": "object",
                   "description": "RGMII_RX_CTL GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CTL')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_RX_CTL') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2750,15 +3126,19 @@
                   "type": "object",
                   "description": "RGMII_TXD0 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD0')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD0') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2789,15 +3169,19 @@
                   "type": "object",
                   "description": "RGMII_TXD1 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD1')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD1') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2828,15 +3212,19 @@
                   "type": "object",
                   "description": "RGMII_TXD2 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD2')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD2') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2867,15 +3255,19 @@
                   "type": "object",
                   "description": "RGMII_TXD3 GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.name",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD3')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TXD3') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
                     }
                   ],
                   "needs": [
@@ -2901,20 +3293,67 @@
                     }
                   ]
                 },
+                "gpio_rgmii_tx_ctl": {
+                  "title": "GPIO RGMII_TX_CTL",
+                  "type": "object",
+                  "description": "RGMII_TX_CTL GPIO settings.",
+                  "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.name",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'RGMII_TX_CTL') && ($basic.media_interface === 'HAL_ETH_MEDIA_IF_RGMII')"
+                    }
+                  ],
+                  "needs": [
+                    {
+                      "selector": "RGMII_TX_CTL",
+                      "constraints": {
+                        "pull": {
+                          "allow": [
+                            "UP",
+                            "NO"
+                          ]
+                        },
+                        "mode": {
+                          "const": "ALTERNATE"
+                        },
+                        "output_type": {
+                          "const": "PUSHPULL"
+                        },
+                        "speed": {
+                          "default": "HIGH"
+                        }
+                      }
+                    }
+                  ]
+                },
                 "gpio_phy_intn": {
                   "title": "GPIO PHY_INTN",
                   "type": "object",
                   "description": "PHY_INTN GPIO settings.",
                   "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
                   "owner": "$resource.id",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$additional.enable_phy_interrupt"
-                    },
-                    {
-                      "type": "exclude",
-                      "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'PHY_INTN')"
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.id, 'PHY_INTN') && ($additional.enable_phy_interrupt)"
                     }
                   ],
                   "needs": [

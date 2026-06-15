@@ -20,6 +20,15 @@
   {{~assign 'parent_resource' (get 'peripheral')~}}
   {{~assign 'instances' (get 'context')~}}
   {{~log "PCD template mapping_context:" (get '')~}}
+  {{#if (eq @root.parent_resource "USB_OTG_FS")}}
+    {{~assign "old_resource_name" 'OTG_FS'~}}
+  {{/if}}
+  {{#if (eq @root.parent_resource "USB_OTG_HS")}}
+    {{~assign "old_resource_name" 'OTG_HS'~}}
+  {{/if}}
+  {{#if (eq @root.parent_resource "USB_DRD_FS")}}
+    {{~assign "old_resource_name" 'USB'~}}
+  {{/if}}
 {{else}}
 #warning "To be implemented"
 {{/if}}
@@ -48,11 +57,12 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-{{helper_gpio_generate_aliases @root.pinoutAPI @root.parent_resource @root.current_layer~}}
+{{helper_gpio_generate_aliases @root.pinoutAPI @root.old_resource_name @root.current_layer~}}
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
+{{assign 'nvic_context' 'undefined'~}}
 {{assign 'hal_handle_exist' 0~}}
 {{assign 'nvic_needs' 'undefined'~}}
 {{assign 'nvic_generate_handler' true~}}
@@ -85,6 +95,8 @@ void {{@root.fct_name}}_deinit(void);
   */
 hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_gethandle(void);
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.old_resource_name type='prototype'}} 
+
 {{/each}}
 {{/each}}
 
@@ -112,7 +124,7 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_gethandle(void);
   */
 void {{@root.parent_resource}}_IRQHandler(void);
 {{/if}}
-
+{{> CORTEX fct='generate_irqhandler' type='prototype' component=@root.old_resource_name}}
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

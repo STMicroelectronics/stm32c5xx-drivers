@@ -1,7 +1,7 @@
 {{!--
   ******************************************************************************
   * @file           : mx_pwr_template.c.hbs
-  * @brief          : {{@root.current_resource}} Peripheral initialization
+  * @brief          : PWR Peripheral initialization
   ******************************************************************************
   * @attention
   *
@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{~assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{~log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'PWR'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:PWR')~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx}}
-    {{#with _myctx}}
-      {{~log "PWR template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with}}
-  {{/get_myctx}}
-{{/if}}
-{{~log "PWR template current_resource:" @root.current_resource~}}
-{{~log "PWR template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'PWR' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "PWR template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 {{~assign 'pwr_lut_table' (helper_pwr_get_lut_table 'V1')~}}
 {{~helper_common_initialize_ll_code @root.optim_enable @root.pwr_lut_table 'undefined'~}}
@@ -45,6 +33,12 @@
 #include "mx_{{lowercase @root.current_resource}}.h"
 {{~assign 'nvic_context' 'undefined'}}
 {{#each @root.instances}}
+  {{~assign 'PWR_ctx' config~}}
+  {{~log "PWR template PWR_ctx:" (toJSON @root.PWR_ctx)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.PWR_ctx.info.layer~}}
+  {{~log "PWR template current_resource:" @root.current_resource~}}
+  {{#with @root.PWR_ctx}}
   {{~assign "modules_activated" (@root.peripheralsResourceManagerAPI.getPeripheralsBoundToSoftwareInstances)~}}
   {{#if (and runtime.enable runtime.lp_exit (inArray @root.modules_activated 'RCC'))}}
 #include "mx_rcc.h"
@@ -60,15 +54,6 @@
 {{!
     GLOBAL ASSIGNMENT for HAL & LL
 ~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'PWR_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "PWR template PWR_cxt:" (toJSON @root.PWR_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.PWR_cxt.info.layer~}}
-    {{~log "PWR template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
   {{#if (eq @root.current_layer 'HAL')}}
     {{#> GPIO_HAL fct='gpio_exti_get_variables' resource=@root.current_resource}}
     {{/GPIO_HAL}}
@@ -90,7 +75,7 @@
   {{/if}}
 
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance PWR) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
   {{~assign 'pwr_root_fct_name' (helper_common_get_generated_function_name 'PWR' @root.current_layer)~}}
   {{~assign 'current_config' this}}
@@ -145,8 +130,10 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
   /****************************************************************************/
           {{#with pvd_configuration}}
             {{#if level_selection}}
+              {{~assign 'voltage_reference' (helper_pwr_get_pvdin_or_vdd_level level_selection (@root.peripheralsResourceManagerAPI.getHardwareIpDescription "PWR"))~}}
+              {{!~ Line break because of the helper above}}
   /* Configure PVD Level */
-  HAL_PWR_SetProgrammableVoltageDetectorLevel(HAL_PWR_PVD_LEVEL_{{level_selection}});
+  HAL_PWR_SetProgrammableVoltageDetectorLevel(HAL_PWR_PVD_{{@root.voltage_reference}});
 
             {{/if}}
   /* Enable PVD */
@@ -169,7 +156,7 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
           {{#with avd_configuration}}
             {{#if level_selection}}
   /* Configure AVD Level */
-  HAL_PWR_SetAnalogVoltageDetectorLevel(HAL_PWR_AVD_LEVEL_{{level_selection}});
+  HAL_PWR_SetAnalogVoltageDetectorLevel(HAL_PWR_AVD_VDDA_LEVEL_{{level_selection}});
 
             {{/if}}
   /* Enable AVD */
@@ -261,20 +248,16 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
   HAL_PWR_LP_EnableNVMLowPWRMode();
 
       {{/if}}
-      {{#if (or (eq battery_configuration.battery_charging_resistor_selection '1_5K') (eq battery_configuration.enable_battery_charging true))}}
+      {{#if battery_configuration.enable_battery_charging}}
   /****************************************************************************/
-  /* Configuration of the Battery Charging management                         */
+  /* Configuration of the battery charging management                         */
   /****************************************************************************/
-        {{#unless (eq battery_configuration.battery_charging_resistor_selection '5K')}}
-  /* Configure Battery charging resistor value */
+  /* Configure battery charging resistor value */
   HAL_PWR_SetConfigBatteryCharging(HAL_PWR_BATTERY_CHARGING_RES_{{battery_configuration.battery_charging_resistor_selection}});
 
-        {{/unless}}
-        {{#if battery_configuration.enable_battery_charging}}
-  /* Enable Battery charging */
+  /* Enable battery charging */
   HAL_PWR_EnableBatteryCharging();
 
-        {{/if}}
       {{/if}}
       {{#if (or (eq ucpd_configuration.enable_dead_battery_mode true) (eq ucpd_configuration.enable_ucpd_config_retention true))}}
         {{#with ucpd_configuration}}
@@ -471,6 +454,8 @@ system_status_t {{@root.pwr_root_fct_name}}_deinit(void)
   return SYSTEM_OK;
 }
 
+    {{#> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
+    {{/GPIO_HAL}}
   {{else}}
     {{#> PWR_LL fct='exported_functions_deinit'}}
     {{/PWR_LL}}
@@ -541,12 +526,16 @@ system_status_t mx_pwr_exit_low_power(void)
 }
 
         {{/if}}
-        {{#if (and (eq lp_check true)(or (eq mode 'STOP_MODE')(eq mode 'STOP0_MODE')(eq mode 'STOP1_MODE')(eq mode 'STOP2_MODE')(eq mode 'STOP3_MODE')(eq mode 'STANDBY_MODE')))}}
+        {{#if (eq lp_check true)}}
 uint32_t mx_pwr_system_was_low_power(void)
 {
+          {{#if (not (or (eq mode 'SLEEP_MODE') (eq mode 'SHUTDOWN_MODE')))}}
   return ((HAL_PWR_GetPreviousSystemPowerMode() == HAL_PWR_SYSTEM_{{mode}}) ? 1 : 0);
+          {{else}}
+  /* This API returns 0 as the MCU does not have hardware flags to indicate {{mode}}. */
+  return 0;
+          {{/if}}
 }
-
         {{/if}}
       {{/if}}
     {{/with}}
@@ -581,5 +570,6 @@ void {{line}}_IRQHandler(void)
       {{/if}}
     {{/each}}
   {{/unless}}
+{{/with}}
 {{/each}}
 {{/helper_common_beautifier}}

@@ -15,18 +15,13 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'file_name' 'LPTIM'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:LPTIM')~}}
-{{else}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'file_name' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-    {{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'LPTIM' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "LPTIM template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign 'dma_resource' @root.codegen_ctxt.dma_resource~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -45,17 +40,20 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
 {{assign "_define_" "#define"~}}
+{{assign 'include_mx_def' false~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'current_layer' info.layer~}}
-{{else}}
-{{assign 'lptim_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.lptim_cxt.settings.parameters.info.layer~}}
-{{/if}}
+{{assign 'lptim_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.lptim_cxt.info.layer~}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'only_ll' false~}}
 {{/if}}
+{{#with @root.lptim_cxt.security_privilege}}
+  {{#unless @root.include_mx_def}}
+      {{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+    {{/unless}}
+  {{/with}}
 {{/each}}
 {{#if @root.only_ll}}
 #include "stm32_ll.h"
@@ -66,66 +64,64 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'lptim_ctx' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.lptim_ctx.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'lptim_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
   {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
   {{/if}}
 
-{{assign 'desc_labels' 0~}}
-{{#each channels as |channel|}}
-{{assign 'channel_id' (helper_lptim_get_channel_id _foreignKey)~}}
-{{#with output_configuration}}
-{{#each labels}}
-{{#if (length this)}}
-{{#if (eq @root.desc_labels 0)}}
-{{assign 'desc_labels' 1~}}
+  {{#with @root.lptim_cxt}}
+    {{~assign 'desc_labels' 0~}}
+    {{#each channels as |channel|}}
+      {{~assign 'channel_id' (helper_lptim_get_channel_id _foreignKey)~}}
+      {{#with output_configuration}}
+        {{#each labels}}
+          {{#if (length this)}}
+            {{#if (eq @root.desc_labels 0)}}
+              {{~assign 'desc_labels' 1~}}
 /* Aliases of channels labels */
-{{/if}}{{!desc_labels~}}
-{{#if (eq @root.current_layer 'HAL')}}
+            {{/if}}
+            {{#if (eq @root.current_layer 'HAL')}}
 {{@root._define_}} {{uppercase this}}_CHANNEL  HAL_LPTIM_CHANNEL_{{@root.channel_id}}
-{{else}}
+            {{else}}
 {{@root._define_}} {{uppercase this}}_CHANNEL  LL_LPTIM_CHANNEL_CH{{@root.channel_id}}
-{{/if}}{{!HAL~}}
-{{/if}}{{!length~}}
-{{/each}}{{!labels~}}
-{{/with}}{{!output_configuration~}}
-{{#with input_configuration}}
-{{#each labels}}
-{{#if (length this)}}
-{{#if (eq @root.desc_labels 0)}}
-{{assign 'desc_labels' 1~}}
+            {{/if}}
+          {{/if}}
+        {{/each}}
+      {{/with}}
+      {{#with input_configuration}}
+        {{#each labels}}
+          {{#if (length this)}}
+            {{#if (eq @root.desc_labels 0)}}
+              {{~assign 'desc_labels' 1~}}
 /* Aliases of channels labels */
-{{/if}}{{!desc_labels~}}
-{{#if (eq @root.current_layer 'HAL')}}
+            {{/if}}
+            {{#if (eq @root.current_layer 'HAL')}}
 {{@root._define_}} {{uppercase this}}_CHANNEL  HAL_LPTIM_CHANNEL_{{@root.channel_id}}
-{{else}}
+            {{else}}
 {{@root._define_}} {{uppercase this}}_CHANNEL  LL_LPTIM_CHANNEL_CH{{@root.channel_id}}
-{{/if}}{{!HAL~}}
-{{/if}}{{!length~}}
-{{/each}}{{!labels~}}
-{{/with}}{{!input_configuration~}}
-{{/each}}{{!channels~}}
+            {{/if}}
+          {{/if}}
+        {{/each}}
+      {{/with}}
+    {{/each}}
 
 {{helper_gpio_generate_aliases @root.pinoutAPI @root.current_resource @root.current_layer~}}
 
-  {{~assign 'labels' (arrayify '')~}}
-  {{#if (and info.labels (gt (length info.labels) 0))}}
-    {{~assign 'labels' info.labels~}}
-    {{~assign 'found_irq' false~}}
-    {{~assign 'lptim_needs' 'undefined'~}}
-  {{/if}}
-  {{~assign 'labels' (helper_common_concatenate_elt_in_array name @root.labels)~}}
-  {{#with system.nvic}}
-    {{#if enable_interruption_global}}
-      {{~assign 'lptim_needs' (helper_common_concatenate_needs nvic_config_global.needs @root.lptim_needs)~}}
+    {{~assign 'labels' (arrayify '')~}}
+    {{#if (and info.labels (gt (length info.labels) 0))}}
+      {{~assign 'labels' info.labels~}}
+      {{~assign 'found_irq' false~}}
+      {{~assign 'lptim_needs' 'undefined'~}}
     {{/if}}
-    {{> CORTEX fct='cortex_create_aliases' hw_resource=@root.current_resource labels=@root.labels needs=@root.lptim_needs}}
+    {{~assign 'labels' (helper_common_concatenate_elt_in_array name @root.labels)~}}
+    {{#with system.nvic}}
+      {{#if enable_interruption_global}}
+        {{~assign 'lptim_needs' (helper_common_concatenate_needs nvic_config_global.needs @root.lptim_needs)~}}
+      {{/if}}
+{{> CORTEX fct='cortex_create_aliases' hw_resource=@root.current_resource labels=@root.labels needs=@root.lptim_needs}}
+    {{/with}}
   {{/with}}
 {{/each}}
 /* Exported macros -----------------------------------------------------------*/
@@ -135,14 +131,10 @@ extern "C" {
 {{assign 'current_index' 0~}}
 {{assign 'hal_handle_lptim_exist' 0~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'lptim_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'lptim_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 /******************************************************************************/
 /* Exported functions for SW instance{{index}} in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -164,6 +156,22 @@ LPTIM_TypeDef *{{@root.fct_name}}_init(void);
   */
 void {{@root.fct_name}}_deinit(void);
 
+{{#with @root.lptim_cxt.security_privilege}}
+  {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+  {{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+  {{/if}}
+{{/with}}
+
 {{#if (eq @root.current_layer 'HAL')}}
 {{#if (eq @root.hal_handle_lptim_exist 0)}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
@@ -172,13 +180,14 @@ void {{@root.fct_name}}_deinit(void);
   * @retval Pointer on the {{@root.fct_name}} Handle
   */
 hal_lptim_handle_t *{{@root.fct_name}}_gethandle(void);
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
 {{assign 'hal_handle_lptim_exist' 1~}}
 {{/if}}
 {{/if}}
 {{#if (eq @root.current_layer 'LL')}}
 
 {{> DMA_LL fct='get_dma_lli_reg' resource=@root.dma_resource strategy=@root.strategy type='prototype'}}
-{{/if}} 
+{{/if}}
 {{/each}}
 {{> CORTEX fct='generate_irqhandler' type='prototype' component='LPTIM'}}
 #ifdef __cplusplus

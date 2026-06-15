@@ -224,19 +224,20 @@ void {{@root.fct_name}}_deinit(void)
 }
 
 {{else if (eq fct 'exported_functions_gethandle')}}
-{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_function @root.from_where)~}}
 hal_smartcard_handle_t *{{@root.fct_name}}_gethandle(void)
 {
   return &h{{@root.current_resource}};
 }
+
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
 {{else if (eq fct 'exported_functions_gethandle_prototype')}}
-{{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_function @root.from_where)~}}
 /**
   * @brief  Get the {{@root.current_resource}}{{addConfigLC @root.current_function}} object.
   * @retval Pointer on the {{@root.current_resource}} Handle
   */
 hal_smartcard_handle_t *{{@root.fct_name}}_gethandle(void);
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
 {{else}}
 #warning "step {{fct}} in partial SMARTCARD_HAL not managed"
 {{/if}}

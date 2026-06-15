@@ -13,7 +13,7 @@
  */
 
 /**
- * Calculate the wakeup minimum period based on RTC clock frequency, wakeup divider, 
+ * Calculate the wakeup minimum period based on RTC clock frequency, wakeup divider,
  * asynchronous predivider and synchronous predivider
  * @param {integer} rtc_clock_frequency System clock frequency in Hz
  * @param {string} divider Wakeup divider choose by the user
@@ -67,14 +67,14 @@ function helper_rtc_compute_wakeup_minimum_period(
         period = divider / rtc_clock_frequency;
         break;
       default:
-        console.log("Wrong divider.");
+        console.info("Wrong divider.");
         break;
     }
 
     /* Return the output frequency */
     result = parseFloat(period.toFixed(3));
   } catch (e) {
-    console.log(`[ERROR] helper_rtc_compute_wakeup_minimum_period: ${e}`);
+    console.error(`helper_rtc_compute_wakeup_minimum_period: ${e}`);
   }
   return result;
 }
@@ -146,7 +146,117 @@ function helper_rtc_get_irq_handler(nvic_api, exti_api, resource, config) {
   return result;
 }
 
+/**
+ * Classifies attribute settings across all access level entries.
+ * Returns an object with three booleans:
+ *  - allPositive: true only if every entry is 1
+ *  - allNegative: true only if every entry is 0
+ *  - allConsistent: true if all entries are either allPositive or allNegative
+ * Empty or invalid inputs return all flags false to avoid vacuous truth.
+ * @param {object} access_levels
+ * @returns {{allPositive: boolean, allNegative: boolean, allConsistent: boolean}}
+ */
+function helper_rtc_attribute_all_states(access_levels) {
+  const result = { allPositive: false, allNegative: false, allConsistent: false };
+  const map_attribute = {
+    SEC: 1,
+    PRIV: 1,
+    NSEC: 0,
+    NPRIV: 0,
+  };
+  try {
+    const values = Object.values(access_levels ?? {});
+
+    let allPositive = true;
+    let allNegative = true;
+    for (let v of values) {
+      if (typeof v === "boolean") {
+        v = Number(v);
+      }
+      if (typeof v === "string") {
+        v = map_attribute[v];
+      }
+      if (v !== 1) {
+        allPositive = false;
+      }
+      if (v !== 0) {
+        allNegative = false;
+      }
+      if (!allPositive && !allNegative) {
+        break;
+      }
+    }
+
+    result.allPositive = allPositive;
+    result.allNegative = allNegative;
+    result.allConsistent = allPositive || allNegative;
+    console.info(`helper_rtc_attribute_all_states result = ${JSON.stringify(result)}`);
+    return result;
+  } catch (e) {
+    console.error(`helper_rtc_attribute_all_states: ${e}`);
+    return result;
+  }
+}
+
+/**
+ * Get security, privilege, public and lock items based on layer, security privilege, and access levels.
+ * @param {string} layer
+ * @param {string} attribute PRIV or SEC
+ * @param {Array<string>} access_levels
+ * @returns {Array<string>} The selected attribute items
+ */
+function helper_rtc_get_attribute_items(
+  layer,
+  attribute,
+  access_levels
+) {
+  try {
+    console.info("helper_rtc_get_attribute_items:", access_levels);
+
+    let result = "";
+    const map_defined_attribute_items = {
+      global_protection: layer + "_RTC_" + attribute + "_ITEM_PRIV",
+      initialization_protection: layer + "_RTC_" + attribute + "_ITEM_INITPRIV",
+      calibration_and_time_adjustment_protection: layer + "_RTC_" + attribute + "_ITEM_CALPRIV",
+      timestamp_protection: layer + "_RTC_" + attribute + "_ITEM_TSPRIV",
+      wake_up_timer_protection: layer + "_RTC_" + attribute + "_ITEM_WUTPRIV",
+      alarm_b_protection: layer + "_RTC_" + attribute + "_ITEM_ALRBPRIV",
+      alarm_a_protection: layer + "_RTC_" + attribute + "_ITEM_ALRAPRIV",
+    };
+    const map_attribute = {
+      SEC: 1,
+      PRIV: 1,
+      NSEC: 0,
+      NPRIV: 0
+    };
+    let next_element = 0;
+    for (const key in access_levels) {
+      if (!Object.hasOwn(access_levels, key)) continue;
+      let element = access_levels[key];
+      if (typeof element === "boolean") {
+        element = Number(element);
+      }
+      if (typeof element === "string") {
+        element = map_attribute[element];
+      }
+      if (element > 0) {
+        if (next_element > 0) {
+          result += " | ";
+        }
+        result += map_defined_attribute_items[key];
+        next_element = 1;
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error(`[ERROR] helper_ltdc_get_attribute_items: ${error.message}`);
+    return false;
+  }
+}
+
 module.exports = {
   helper_rtc_compute_wakeup_minimum_period,
-  helper_rtc_get_irq_handler
+  helper_rtc_get_irq_handler,
+  helper_rtc_attribute_all_states,
+  helper_rtc_get_attribute_items
 };

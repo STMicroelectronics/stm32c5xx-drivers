@@ -24,6 +24,15 @@
   {{~assign 'parent_resource' (get 'peripheral')~}}
   {{~assign 'instances' (get 'context')~}}
   {{~log "PCD template mapping_context:" (get '')~}}
+  {{#if (eq @root.parent_resource "USB_OTG_FS")}}
+   {{~assign "old_resource_name" 'OTG_FS'~}}
+  {{/if}}
+  {{#if (eq @root.parent_resource "USB_OTG_HS")}}
+   {{~assign "old_resource_name" 'OTG_HS'~}}
+  {{/if}}
+  {{#if (eq @root.parent_resource "USB_DRD_FS")}}
+   {{~assign "old_resource_name" 'USB'~}}
+  {{/if}}
 {{else}}
 #warning "To be implemented"
 {{/if}}
@@ -43,6 +52,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
+{{assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances~}}
   {{~log "@root.instances:" this~}}
   {{~assign 'sw_instance_ids' (@root.peripheralsResourceManagerAPI.getSoftwareInstancesBoundToPeripheral this)~}}
@@ -52,6 +62,7 @@
   {{~log "USB template usb_ctxt:" (toJSON @root.usb_ctxt)~}}
   {{~assign 'usb_mode' @root.usb_ctxt.info.usb_mode~}}
 static hal_{{lowercase @root.usb_mode}}_handle_t h{{@root.parent_resource}}_{{@root.usb_mode}};
+{{> GPIO_HAL fct='gpio_exti_get_variables' resource=@root.old_resource_name~}}
 {{/each}}
 {{/each}}
 
@@ -92,8 +103,8 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_init(void)
 {{!==================== Enable clock for PCD ====================}}
 
   /* Peripheral USB clock enable */
-{{> RCC fct='generate_peripheral_clock_activation' hw_resource='USB'}}
-{{> RCC fct='generate_kernel_clock' hw_resource='USB' sw_resource='PCD'}}
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.parent_resource}}
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.parent_resource sw_resource='PCD'}}
 
 {{!==================== Config parameters ====================}}
 
@@ -101,6 +112,12 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_init(void)
   {{~assign 'found_PCD_SetConfig' true}}
   {{lowercase @root.usb_mode}}_config.phy_interface = HAL_{{@root.usb_mode}}_{{phy_interface}};
   {{lowercase @root.usb_mode}}_config.{{lowercase @root.usb_mode}}_speed = HAL_{{@root.usb_mode}}_{{core_speed}};
+
+  {{#if sof_state}}
+  {{lowercase @root.usb_mode}}_config.sof_enable = HAL_{{@root.usb_mode}}_SOF_ENABLED;
+  {{else}}
+  {{lowercase @root.usb_mode}}_config.sof_enable = HAL_{{@root.usb_mode}}_SOF_DISABLED;
+  {{/if}}
   {{/with}}
   {{#with additional}}
   {{#if bcd_state}}
@@ -147,30 +164,12 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_init(void)
 {{/with}}
 
 
-{{!#with system}}
+{{#with system}}
 {{!==================== GPIO ====================}}
-{{!#with gpio}}
-{{!assign 'gpio_needs' 'undefined'~}}
-{{!#if dp.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs dp.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if dm.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs dm.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if sof.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs sof.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if vbus.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs vbus.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if id.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs id.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!assign 'found_pcd_gpio' true}}
-{{!> GPIO_HAL fct='init' needs=@root.gpio_needs resource='USB'}}
-{{!/with}}{{! gpio}}
-
-{{!/with}}{{! System }}
+{{#with gpio}}
+{{> GPIO_HAL fct='init_resource' resource=@root.old_resource_name return_if_failed='NULL'}}
+{{/with}}{{! gpio}}
+{{/with}}{{! System }}
 
 {{!==================== NVIC for PCD ====================}}
 {{! Check if interrupts enabled!}}
@@ -210,8 +209,8 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_init(void)
 {{!==================== Enable clock for HCD ====================}}
 
   /* Peripheral USB clock enable */
-{{> RCC fct='generate_peripheral_clock_activation' hw_resource='USB'}}
-{{> RCC fct='generate_kernel_clock' hw_resource='USB' sw_resource='HCD'}}
+{{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.parent_resource}}
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.parent_resource sw_resource='HCD'}}
 
 {{!==================== Config parameters ====================}}
 
@@ -226,34 +225,18 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_init(void)
 
   HAL_{{@root.usb_mode}}_SetConfig(&h{{@root.parent_resource}}_{{@root.usb_mode}}, &{{lowercase @root.usb_mode}}_config);
 
-{{!#with system}}
+{{#with system}}
 {{!==================== GPIO ====================}}
-{{!#with gpio}}
-{{!assign 'gpio_needs' 'undefined'~}}
-{{!#if dp.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs dp.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if dm.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs dm.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if sof.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs sof.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if vbus.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs vbus.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!#if id.needs}}
-{{!assign 'gpio_needs' (helper_common_concatenate_needs id.needs @root.gpio_needs)~}}
-{{!/if}}
-{{!assign 'found_hcd_gpio' true~}}
-{{!> GPIO_HAL fct='init' needs=@root.gpio_needs resource='USB'}}
-{{!/with}}{{! gpio ~}}
+{{#with gpio}}
+{{> GPIO_HAL fct='init_resource' resource=@root.old_resource_name return_if_failed='NULL'}}
+{{/with}}{{! gpio}}
 
-{{!/with}}{{! System ~}}
+{{/with}}{{! System }}
 
 {{!==================== NVIC for HCD ====================}}
 {{! Check if interrupts enabled or no!}}
 {{#if system.nvic.enable_interruption}}
+  {{~assign 'usb_irq_enable' true~}}
 {{! Check if interrupts generation is enabled or no!}}
 {{#if system.nvic.irq_handler_generation}}
   {{~assign 'usb_irq_handler_needed' 1~}}
@@ -279,10 +262,6 @@ void {{@root.fct_name}}_deinit(void)
   /* Deinititialize h{{@root.parent_resource}}_{{@root.usb_mode}} */
   HAL_{{@root.usb_mode}}_DeInit(&h{{@root.parent_resource}}_{{@root.usb_mode}});
 }
-
-{{/with}}
-
-
 {{!
     Generation of getHandle functions used in HAL
 ~}}
@@ -297,6 +276,9 @@ hal_{{lowercase @root.usb_mode}}_handle_t *{{@root.fct_name}}_gethandle(void)
   return &h{{@root.parent_resource}}_{{@root.usb_mode}};
 }
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.old_resource_name type='implementation'}}
+
+{{/with}}{{! usb_ctxt }}
   {{/each}}
 {{/each}}
 
@@ -332,5 +314,6 @@ void {{@root.parent_resource}}_IRQHandler(void)
 */
   {{/if}}
 {{/if}}
+{{> CORTEX fct='generate_irqhandler' type='implementation' component=@root.old_resource_name}}
 
 {{/helper_common_beautifier}}

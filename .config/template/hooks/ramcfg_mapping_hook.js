@@ -135,7 +135,7 @@ function hw_grouping_hook(
   my_hw_instances = get_hw_instances(component_id, cfg_data);
   // Keep only the child HW resource (change RAMCFG1.RAMCFG1_A to RAMCFG1_A)
   // my_hw_instances = my_hw_instances.map(item => item.split('.')[1]);
-  console.log("my_hw_instances" + JSON.stringify(my_hw_instances))
+  console.info("my_hw_instances" + JSON.stringify(my_hw_instances))
 
   /**
     *   DomainGettersAPI { resourceManagerGettersAPI, pinoutGettersAPI, clockGettersAPI, swProjectLevelGettersAPI, swConfigGettersAPI, dmaGettersAPI, nvicGettersAPI, extiGettersAPI, envVarGettersAPI, hwPlateformGetters}
@@ -157,7 +157,7 @@ function hw_grouping_hook(
   const peripheralsResourceManagerAPI = globalGetters?.resourceManagerGettersAPI?.peripheralsResourceManagerAPI;
 
   const periphMappingFromComp = peripheralsResourceManagerAPI?.getConfigurablePeripheralsFromComponent(component_id);
-  console.log("periphMappingFromComp" + JSON.stringify(periphMappingFromComp))
+  console.info("periphMappingFromComp" + JSON.stringify(periphMappingFromComp))
 
   //step[2.3] ##LUT purpose##:
   // Iterate over the returned structure to extract the mapping peripherals for the current component.
@@ -240,7 +240,7 @@ function hw_grouping_hook(
       delete peripheralMappingConfig[key];
     }
   }
-  console.log("peripheralMappingConfig" + JSON.stringify(peripheralMappingConfig))
+  console.info("peripheralMappingConfig" + JSON.stringify(peripheralMappingConfig))
 
   /*
    * All hw instances code must end-up in the same file

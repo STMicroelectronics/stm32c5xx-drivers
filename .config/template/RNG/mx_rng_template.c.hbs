@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'current_resource' 'RNG'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:RNG')~}}
-{{else}}
-{{assign "strategy" 'HW'~}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{log "RNG template _myctx:" this~}}
-{{assign 'current_resource' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
-{{log "RNG template current_resource:" @root.current_resource~}}
-{{log "RNG template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'RNG' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "RNG template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -50,15 +38,11 @@
 /* Exported variables by reference--------------------------------------------*/
 {{assign 'hal_handle_exist' 0~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'rng_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
+{{assign 'rng_cxt' config~}}
 {{log "RNG template rng_cxt:" (toJSON @root.rng_cxt)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.rng_cxt.settings.parameters.info.layer~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.rng_cxt.info.layer~}}
 {{log "RNG template current_resource:" @root.current_resource~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{#if (eq @root.hal_handle_exist 0)}}
 static hal_rng_handle_t h{{@root.current_resource}};
@@ -71,20 +55,15 @@ static hal_rng_handle_t h{{@root.current_resource}};
 {{assign 'hal_handle_exist' 0~}}
 {{~assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'name' name~}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{else}}
-{{assign 'rng_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'rng_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'name' @root.rng_cxt.name~}}
-{{assign 'current_layer' @root.rng_cxt.settings.parameters.info.layer~}}
-{{assign 'configs' @root.rng_cxt.settings.parameters~}}
-{{/if}}
+{{assign 'current_layer' @root.rng_cxt.info.layer~}}
+{{assign 'configs' @root.rng_cxt~}}
 /******************************************************************************/
-/* Exported functions for RNG in {{@root.current_layer}} layer (SW instance {{#if (eq name undefined)}}{{instanceIndex}}{{else}}{{name}}{{/if}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
+{{#with @root.rng_cxt}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
 {{!
     Generation of initialization function used in HAL
@@ -115,7 +94,7 @@ hal_rng_handle_t *{{@root.fct_name}}_init(void)
   rng_config.config_3              = {{config_3}};
   rng_config.clock_divider         = HAL_RNG_CLOCK_DIVIDER_BY_{{clock_divider}};
   rng_config.standard              = HAL_RNG_{{standard}};
-  {{#if clock_error_detection.default}}
+  {{#if clock_error_detection}}
   rng_config.clock_error_detection = HAL_RNG_CLOCK_ERROR_DETECTION_ENABLED;
   {{else}}
   rng_config.clock_error_detection = HAL_RNG_CLOCK_ERROR_DETECTION_DISABLED;
@@ -146,7 +125,7 @@ hal_rng_handle_t *{{@root.fct_name}}_init(void)
 {{/if~}}
 {{/with}}
 {{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
-  /* Enable the interruption for HASH */
+  /* Enable the interruption for RNG */
 {{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.irq_config.needs @root.current_resource system.nvic.irq_handler_generation)~}}
 {{> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
 {{/if}}
@@ -221,7 +200,7 @@ RNG_TypeDef *{{@root.fct_name}}_init(void)
 {{/if}}
 {{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='RNG'}}
 {{#if (and system.nvic.enable_interruption (eq system.nvic.enable_interruption true))}}
-  /* Enable the interruption for HASH */
+  /* Enable the interruption for RNG */
 {{assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.irq_config.needs @root.current_resource system.nvic.irq_handler_generation)~}}
 {{> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config.needs}}
 {{/if}}
@@ -255,6 +234,27 @@ hal_rng_handle_t *{{@root.fct_name}}_gethandle(void)
 {{assign 'hal_handle_exist' 1~}}
 {{/if}}
 {{/if}}
+{{#with security_privilege}}
+
+{{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                      Privileged attribute management                       */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+{{else}}
+/******************************************************************************/
+/*                Security and privileged attributes management               */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+{{/if}}
+{
+{{> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}
+
+  return SYSTEM_OK;
+}
+{{/with}}
+{{/with}}
 {{/each}}
 
 {{> CORTEX fct='generate_irqhandler' type='implementation' component='RNG'}}

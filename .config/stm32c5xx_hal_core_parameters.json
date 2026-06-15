@@ -89,7 +89,7 @@
             },
             "hal_osal_selection": {
               "type": "string",
-              "title": "HAL OSAL Selection",
+              "title": "HAL OSAL selection",
               "actions": [
                 {
                   "type": "include",
@@ -107,7 +107,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$get('swproject.hasRTOSenabled')"
+                      "condition": "$get('swproject.hasRTOSenabled')",
+                      "message": "FreeRTOS must be enabled before selecting 'HAL OS FreeRTOS'."
                     }
                   ]
                 }
@@ -145,13 +146,28 @@
                     {
                       "title": "Timer",
                       "const": "TIM"
+                    },
+                    {
+                      "title": "Custom",
+                      "description": "User has to implement the related functions: HAL_IncTick, HAL_GetTick, HAL_Delay, HAL_Delay_NoISR, HAL_SuspendTick and HAL_ResumeTick.",
+                      "const": "CUSTOM"
                     }
                   ],
                   "actions": [
                     {
-                      "type": "error",
+                      "type": "warning",
                       "condition": "($value === 'SYSTICK') && $get('swproject.hasRTOSenabled')",
                       "message": "SysTick is already used by FreeRTOS. Pick a different timebase source."
+                    },
+                    {
+                      "type": "warning",
+                      "condition": "($value === 'TIM') && (!$common.timebase_feature.timer_selection?.selection)",
+                      "message": "No timer instance is selected. Pick one in 'Timer selection'. If there is no timer instance available, activate one in the peripherals view."
+                    },
+                    {
+                      "type": "warning",
+                      "condition": "(($value === 'RTC_ALARM') || ($value === 'RTC_WAKEUP')) && (!$common.timebase_feature.rtc_selection?.selection)",
+                      "message": "No RTC instance is selected. Pick one in 'RTC selection'. If there is no RTC instance available, activate one in the peripherals view."
                     }
                   ],
                   "variables": [
@@ -246,22 +262,10 @@
               "description": "Enable/Disable DMA code in HAL ADC (USE_HAL_ADC_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the ADC instance. Change it in the ADC panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:ADC') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:ADC') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -319,22 +323,10 @@
               "description": "Enable/Disable DMA code in HAL AES (USE_HAL_AES_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the AES instance. Change it in the AES panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:AES') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:AES') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -454,6 +446,12 @@
               ],
               "default": false
             },
+            "use_hal_aes_rng_recovery": {
+              "type": "boolean",
+              "title": "Rng recovery",
+              "description": "Enable the RNG recovery in the HAL AES.",
+              "default": true
+            },
             "use_hal_aes_suspend_resume": {
               "type": "boolean",
               "title": "Use suspend/resume mode for AES",
@@ -489,6 +487,12 @@
               "title": "Get last errors",
               "description": "Enable the get last errors in the HAL CCB.",
               "default": false
+            },
+            "use_hal_ccb_rng_recovery": {
+              "type": "boolean",
+              "title": "Rng recovery",
+              "description": "Enable the RNG recovery in the HAL CCB.",
+              "default": true
             },
             "clk_enable_model": {
               "type": "string",
@@ -553,14 +557,14 @@
               "actions": [
                 {
                   "type": "set",
-                  "condition": "$get('envVar.value', 'COMP_USE_HAL_COMP_EXTI') == true",
+                  "condition": "$get('envVar.value', 'COMP_CORE_USE_HAL_COMP_EXTI') == true",
                   "attributes": {
                     "const": true
                   }
                 },
                 {
                   "type": "disable",
-                  "condition": "$get('envVar.value', 'COMP_USE_HAL_COMP_EXTI') == true",
+                  "condition": "$get('envVar.value', 'COMP_CORE_USE_HAL_COMP_EXTI') == true",
                   "message": "EXTI is enabled in a COMP SW instance"
                 }
               ],
@@ -573,14 +577,14 @@
               "actions": [
                 {
                   "type": "set",
-                  "condition": "$get('envVar.value', 'COMP_USE_HAL_COMP_WINDOW_MODE') == true",
+                  "condition": "$get('envVar.value', 'COMP_CORE_USE_HAL_COMP_WINDOW_MODE') == true",
                   "attributes": {
                     "const": true
                   }
                 },
                 {
                   "type": "disable",
-                  "condition": "$get('envVar.value', 'COMP_USE_HAL_COMP_WINDOW_MODE') == true",
+                  "condition": "$get('envVar.value', 'COMP_CORE_USE_HAL_COMP_WINDOW_MODE') == true",
                   "message": "Window mode is enabled in a COMP SW instance"
                 }
               ],
@@ -604,22 +608,10 @@
               "description": "Enable/Disable DMA code in HAL CORDIC (USE_HAL_CORDIC_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the CORDIC instance. Change it in the CORDIC panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:CORDIC') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:CORDIC') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -757,22 +749,10 @@
               "description": "Enable/Disable DMA code in HAL DAC (USE_HAL_DAC_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the DAC instance. Change it in the DAC panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:DAC') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:DAC') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -888,13 +868,41 @@
               "type": "boolean",
               "description": "Enable register callback in the HAL EXTI.",
               "default": false,
-              "title": "Use register callback"
+              "title": "Use register callback",
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "$get('envVar.value', 'HAL_SYSTEM_CORE_EXTI_CALLBACK_USER_DATA') == true",
+                  "attributes": {
+                    "const": true
+                  }
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('envVar.value', 'HAL_SYSTEM_CORE_EXTI_CALLBACK_USER_DATA') == true",
+                  "message": "'EXTI callback and user data upon activation' is enabled, then EXTI register callback is forced to be enabled"
+                }
+              ]
             },
             "user_data": {
               "type": "boolean",
               "description": "Enable the user data function in the HAL EXTI.",
               "default": false,
-              "title": "User data"
+              "title": "User data",
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "$get('envVar.value', 'HAL_SYSTEM_CORE_EXTI_CALLBACK_USER_DATA') == true",
+                  "attributes": {
+                    "const": true
+                  }
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('envVar.value', 'HAL_SYSTEM_CORE_EXTI_CALLBACK_USER_DATA') == true",
+                  "message": "'EXTI callback and user data upon activation' is enabled, then EXTI user data is forced to be enabled"
+                }
+              ]
             }
           }
         },
@@ -944,7 +952,7 @@
             },
             "use_hal_eth_atomic_channel_lock": {
               "type": "boolean",
-              "title": "Use atomic access to Channel resources",
+              "title": "Use atomic access to channel resources",
               "description": "Enable atomic access to Channel resources (USE_HAL_ETH_ATOMIC_CHANNEL_LOCK).",
               "default": false
             },
@@ -952,7 +960,6 @@
               "type": "integer",
               "title": "User defined number of transmit channels",
               "description": "Define the USE_HAL_ETH_MAX_TX_CH_NB switch.",
-              "default": 1,
               "minimum": 1,
               "display_format": [
                 "dec"
@@ -966,6 +973,7 @@
                 {
                   "type": "set",
                   "computed": {
+                    "default": "$get('peripheral.hardwareIpDescription', 'ETH1')?.features?.ETH_NUM_TXQ ?? 1",
                     "maximum": "$get('peripheral.hardwareIpDescription', 'ETH1')?.features?.ETH_NUM_TXQ ?? 1"
                   }
                 },
@@ -980,7 +988,6 @@
               "type": "integer",
               "title": "User defined number of receive channels",
               "description": "Define the USE_HAL_ETH_MAX_RX_CH_NB switch.",
-              "default": 1,
               "minimum": 1,
               "display_format": [
                 "dec"
@@ -994,6 +1001,7 @@
                 {
                   "type": "set",
                   "computed": {
+                    "default": "$get('peripheral.hardwareIpDescription', 'ETH1')?.features?.ETH_NUM_RXQ ?? 1",
                     "maximum": "$get('peripheral.hardwareIpDescription', 'ETH1')?.features?.ETH_NUM_RXQ ?? 1"
                   }
                 },
@@ -1272,22 +1280,10 @@
               "description": "Enable/Disable DMA code in HAL HASH (USE_HAL_HASH_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the HASH instance. Change it in the HASH panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:HASH') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:HASH') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -1394,22 +1390,10 @@
               "description": "Enable/Disable DMA code in HAL I2C (USE_HAL_I2C_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the I2C instance. Change it in the I2C panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I2C') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I2C') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -1467,22 +1451,10 @@
               "description": "Enable/Disable DMA code in HAL I3C (USE_HAL_I3C_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the I3C instance. Change it in the I3C panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I3C') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I3C') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -1540,22 +1512,10 @@
               "description": "Enable/Disable DMA code in HAL I2S (USE_HAL_I2S_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the I2S instance. Change it in the I2S panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I2S') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:I2S') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -1709,22 +1669,10 @@
               "description": "Enable/Disable DMA code in HAL LPTIM (USE_HAL_LPTIM_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the LPTIM instance. Change it in the LPTIM panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:LPTIM') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:LPTIM') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -1891,6 +1839,12 @@
               "default": false,
               "title": "Get last errors"
             },
+            "use_hal_pka_rng_recovery": {
+              "type": "boolean",
+              "title": "Rng recovery",
+              "description": "Enable the RNG recovery in the HAL PKA.",
+              "default": true
+            },
             "clk_enable_model": {
               "type": "string",
               "description": "Enable the gating of the peripheral clock in the HAL_PKA_Init.",
@@ -1923,7 +1877,7 @@
               "type": "boolean",
               "description": "Peripherals clock enable and source selection reset.",
               "default": false,
-              "title": "Use HAL RCC reset periph clock management"
+              "title": "Use HAL RCC reset peripheral clock management"
             },
             "use_hal_rcc_reset_rtc_domain": {
               "type": "boolean",
@@ -1995,22 +1949,10 @@
               "description": "Enable/Disable DMA code in HAL SMARTCARD (USE_HAL_SMARTCARD_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the SMARTCARD instance. Change it in the SMARTCARD panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:SMARTCARD') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:SMARTCARD') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -2134,22 +2076,10 @@
               "description": "Enable/Disable DMA code in HAL SPI (USE_HAL_SPI_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the SPI instance. Change it in the SPI panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:SPI') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:SPI') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -2227,22 +2157,10 @@
               "description": "Enable/Disable DMA code in HAL TIM (USE_HAL_TIM_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the TIM instance. Change it in the TIM panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:TIM') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:TIM') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -2300,22 +2218,10 @@
               "description": "Enable/Disable DMA code in HAL UART (USE_HAL_UART_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the UART instance. Change it in the UART panel."
-                },
-                {
                   "type": "set",
                   "condition": "(($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:UART') == true) || ($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:IRDA') == true))",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "((!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:UART') == true)) && (!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:IRDA') == true)))",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -2373,22 +2279,10 @@
               "description": "Enable/Disable DMA code in HAL USART (USE_HAL_USART_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the USART instance. Change it in the USART panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:USART') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:USART') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],
@@ -2542,22 +2436,10 @@
               "description": "Enable/Disable DMA code in HAL XSPI (USE_HAL_XSPI_DMA).",
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true",
-                  "message": "DMA is enabled in the XSPI instance. Change it in the XSPI panel."
-                },
-                {
                   "type": "set",
                   "condition": "$get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:XSPI') == true",
                   "attributes": {
                     "const": true
-                  }
-                },
-                {
-                  "type": "set",
-                  "condition": "!($get('dma.isAnyDmaResourceAllocated', 'STMicroelectronics::Device:STM32CubeMX2 Config:XSPI') == true)",
-                  "attributes": {
-                    "const": false
                   }
                 }
               ],

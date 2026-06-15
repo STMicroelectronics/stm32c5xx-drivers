@@ -2,12 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:HCD",
-  "grammarVersion": "3.1",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
-      "path": ".config/template/helpers/common_helpers.js",
-      "accessor": "com"
+      "path": ".config/template/helpers/usb_helpers.js",
+      "accessor": "common"
     }
   ],
   "properties": {
@@ -44,7 +44,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$com.helper_common_display_object($resource)"
+                  "message": "Only HAL layer is supported for this component",
+                  "condition": "true"
                 }
               ],
               "variables": [
@@ -86,6 +87,7 @@
               "actions": [
                 {
                   "type": "disable",
+                  "message": "Only Host mode is supported for this component",
                   "condition": "true"
                 }
               ],
@@ -97,25 +99,73 @@
           "title": "Main features",
           "type": "object",
           "properties": {
-            "core_speed": {
+             "core_speed": {
               "type": "string",
-              "title": "USB core speed",
-              "default": "SPEED_FS",
+              "title": "Core speed",
+              "oneOf": [
+                {
+                  "title": "Full speed",
+                  "const": "SPEED_FS"
+                },
+                {
+                  "title": "High speed",
+                  "const": "SPEED_HS",
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "($resource.name === 'OTG_FS') || ($resource.name === 'USB')"
+                    }
+                  ]
+                },
+                {
+                  "title": "High speed in full speed",
+                  "const": "SPEED_HS_IN_FS",
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "($resource.name === 'OTG_FS')||($resource.name === 'USB')"
+                    }
+                  ]
+                }
+              ],
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true"
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "default": "$common.helper_usb_get_speed_by_ip($resource.name)"
+                  }
                 }
               ]
             },
             "phy_interface": {
               "title": "PHY interface",
               "type": "string",
-              "default": "PHY_EMBEDDED_FS",
+
               "actions": [
                 {
-                  "type": "disable",
+                  "type": "set",
+                    "computed": {
+                      "default": "$common.helper_usb_get_phy_interface_by_ip($resource.name)",
+                      "title" : "$common.helper_usb_get_phy_interface_title_by_ip($resource.name)"
+                    },
                   "condition": "true"
+                },
+                {
+                  "type": "disable",
+                  "message": "PHY interface is automatically set based on the selected IP and cannot be modified.",
+                  "condition": "true"
+                }
+              ]
+            },
+            "dma_state": {
+              "type": "boolean",
+              "title": "DMA state",
+              "default": false,
+              "actions": [
+                {
+                  "type": "exclude",
+                  "condition": "($resource.name == 'OTG_FS')||($resource.name == 'USB')"
                 }
               ]
             }
@@ -124,12 +174,10 @@
         "system": {
           "type": "object",
           "title": "System",
-          "description": "HCD Global Configuration Structure definition.",
           "properties": {
             "gpio": {
               "type": "object",
               "title": "GPIO",
-              "description": "GPIO settings.",
               "properties": {
                 "dp": {
                   "type": "object",
@@ -148,27 +196,11 @@
                     {
                       "type": "exclude",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.name, 'DP')"
-                    },
-                    {
-                      "type": "warning",
-                      "message": "This parameter's basic configuration is automatically done",
-                      "condition": "$resource.name === 'OTG_FS'"
                     }
                   ],
                   "needs": [
                     {
-                      "selector": "DP",
-                      "constraints": {
-                        "mode": {
-                          "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "No pull-up and no pull-down"
-                        },
-                        "speed": {
-                          "const": "Very High"
-                        }
-                      }
+                      "selector": "DP"
                     }
                   ]
                 },
@@ -189,27 +221,11 @@
                     {
                       "type": "exclude",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.name, 'DM')"
-                    },
-                    {
-                      "type": "warning",
-                      "message": "This parameter's basic configuration is automatically done",
-                      "condition": "$resource.name === 'OTG_FS'"
                     }
                   ],
                   "needs": [
                     {
-                      "selector": "DM",
-                      "constraints": {
-                        "mode": {
-                          "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "No pull-up and no pull-down"
-                        },
-                        "speed": {
-                          "const": "Very High"
-                        }
-                      }
+                      "selector": "DM"
                     }
                   ]
                 }
@@ -248,14 +264,14 @@
                   ]
                 },
                 "nvic_config": {
-                  "title": "NVIC USB global",
+                  "type": "object",
+                  "title": "Global",
                   "actions": [
                     {
                       "type": "include",
                       "condition": "$system.nvic.enable_interruption"
                     }
                   ],
-                  "type": "object",
                   "objectType": "need.interrupt.lines",
                   "variables": [
                     {

@@ -15,18 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'file_name' 'RTC'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:RTC')~}}
-{{else}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'file_name' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'RTC' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "RTC template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -45,16 +39,18 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'RTC_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.RTC_cxt.settings.parameters.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'rtc_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.rtc_cxt.info.layer~}}
   {{#if (eq @root.current_layer 'HAL')}}
     {{~assign 'only_ll' false~}}
   {{/if}}
+  {{#with @root.rtc_cxt.security_privilege}}
+    {{#unless @root.include_mx_def}}
+      {{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+    {{/unless}}
+  {{/with}}
 {{/each}}
 {{#if @root.only_ll}}
 #include "stm32_ll.h"
@@ -67,13 +63,9 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{~assign 'rtc_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{~assign 'rtc_cxt' config~}}
+{{~assign 'current_resource' current_resource~}}
 {{~assign 'current_layer' @root.rtc_cxt.info.layer~}}
-{{else}}
-{{~assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
 {{/if}}
@@ -83,13 +75,9 @@ extern "C" {
 {{#each @root.instances~}}
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'RTC_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.RTC_cxt.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'rtc_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.rtc_cxt.info.layer~}}
 /******************************************************************************/
 /* Exported functions for RTC in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -104,26 +92,32 @@ system_status_t {{@root.fct_name}}_init(void);
   * @brief  De-initialize {{lowercase @root.current_resource}} instance and return it.
   */
 void {{@root.fct_name}}_deinit(void);
-  {{#if (eq @root.current_layer 'HAL')}}
-    {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined 'RTC')~}}
-  {{/if}}
-{{/each}}
-{{~assign 'irq_info_list' (helper_cortex_nvic_get_irqline_info_list @root.NvicAPI @root.nvic_context 'RTC')}}
-{{#each @root.irq_info_list}}
-  {{#if generate_handler}}
-/******************************************************************************/
-/*                     {{description}}                    */
-/******************************************************************************/
-void {{line}}_IRQHandler(void);
 
-  {{else}}
-/******************************************************************************/
-/*    {{description}} is managed directly in user code.   */
-/******************************************************************************/
-/* void {{line}}_IRQHandler(void); */
+  {{#with @root.rtc_cxt.security_privilege}}
+    {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
 
-  {{/if}}
+    {{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+
+    {{/if}}
+  {{/with}}
 {{/each}}
+
+{{#if (eq @root.current_layer 'HAL')}}
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
+{{/if}} {{! @root.current_layer 'HAL'}}
+
+{{> CORTEX fct='generate_irqhandler' type='prototype' component='RTC'}}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -28,11 +28,6 @@
   hal_opamp_config_t opamp_config;
   hal_opamp_config_input_connection_t config_input_connection;
 
-  if (HAL_OPAMP_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
-  {
-    return NULL;
-  }
-
 {{#with basic}}
 {{#if power_mode}}
   opamp_config.power_mode          = HAL_OPAMP_POWER_MODE_{{power_mode}};

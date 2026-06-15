@@ -1,5 +1,5 @@
 /**
- * @file Helpers functions used to optimize the LL code in I2C
+ * @file Helpers functions used to optimize the LL code in ADC
  * @license
  * Copyright (c) 2024 STMicroelectronics.
  * All rights reserved.
@@ -16,8 +16,10 @@ const LL_ADC_functionsV1 = {
   LL_ADC_REG_SetOverrun: ["LL_ADC_REG_OVR_DATA_PRESERVED"],
   LL_ADC_SetResolution: ["LL_ADC_RESOLUTION_12B"],
   LL_ADC_SetLeftBitShift: ["LL_ADC_LEFT_BIT_SHIFT_NONE"],
+  LL_ADC_SetLeftBitShiftReg: ["LL_ADC_LEFT_BIT_SHIFT_NONE"],
+  LL_ADC_SetLeftBitShiftInj: ["LL_ADC_LEFT_BIT_SHIFT_NONE"],
   LL_ADC_SetLowPowerMode: ["LL_ADC_LP_MODE_NONE"],
-  LL_ADC_SetGainCompensation: ["0"],
+  LL_ADC_SetGainCompensation: [4096],
   LL_ADC_SetSamplingMode: ["LL_ADC_SAMPLING_MODE_NORMAL"],
   LL_ADC_REG_SetSequencerLength:["LL_ADC_REG_SEQ_SCAN_DISABLE"],
   LL_ADC_REG_SetDataTransferMode: ["LL_ADC_REG_DR_TRANSFER"],
@@ -28,6 +30,8 @@ const LL_ADC_functionsV1 = {
   LL_ADC_SetOverSamplingScope: ["LL_ADC_OVS_DISABLE"],
   LL_ADC_SetOverSamplingInstScope: ["LL_ADC_OVS_1","LL_ADC_OVS_DISABLE"],
   LL_ADC_SetOverSamplingDiscont: ["LL_ADC_OVS_CONT"],
+  LL_ADC_SetOverSamplingInjDiscont: ["LL_ADC_OVS_CONT"],
+  LL_ADC_SetOverSamplingInjIntermAcc: ["LL_ADC_OVS_INTERM_ACC_DISABLE"],
   LL_ADC_SetAnalogWDFiltering: ["LL_ADC_AWD_1","LL_ADC_AWD_FILTERING_NONE"],
   LL_ADC_SetAnalogWDFiltering: ["LL_ADC_AWD_2","LL_ADC_AWD_FILTERING_NONE"],
   LL_ADC_SetAnalogWDFiltering: ["LL_ADC_AWD_3","LL_ADC_AWD_FILTERING_NONE"]

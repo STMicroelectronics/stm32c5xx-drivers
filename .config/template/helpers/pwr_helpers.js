@@ -71,9 +71,9 @@ function helper_pwr_get_ll_wkup_pin_codegen_init(series)
       polrefpos:"LL_PWR_WAKEUP_PIN_REF_POS", pullrefpos:"LL_PWR_WAKEUP_PIN_PULL_REF_POS"};
 
   Wkup_LUT['H7P'] = {conf:"pol_pull", reg:"WKUPEPR",
-      polref:"LL_PWR_WAKEUP_PIN_PP_REF", pullref:"LL_PWR_WAKEUP_PIN_PULL_REF",
+      polref:"LL_PWR_WAKEUP_PIN_POLARITY_REF", pullref:"LL_PWR_WAKEUP_PIN_PULL_REF",
       pullshift:"LL_PWR_WAKEUP_PINS_PULL_SHIFT_OFFSET",
-      polrefpos:"LL_PWR_WAKEUP_PIN_PP_REF_POS", pullrefpos:"LL_PWR_WAKEUP_PIN_PULL_REF_POS"};
+      polrefpos:"LL_PWR_WAKEUP_PIN_POLARITY_REF_POS", pullrefpos:"LL_PWR_WAKEUP_PIN_PULL_REF_POS"};
 
   Wkup_LUT['V8'] = {conf:"pol_pull", reg:"WKUPCR",
       polref:"LL_PWR_WAKEUP_PIN_POLARITY_REF", pullref:"LL_PWR_WAKEUP_PIN_PULL_REF",
@@ -974,6 +974,25 @@ function helper_pwr_isPeriph_independent_supply_activated(hw_resource, action) {
   return pwr_periph_independent_supply;
 }
 
+/**
+ * Returns the appropriate voltage reference string for a given PVD level selection.
+ * If the selected level matches the PVDIN reference, returns "PVDIN_VREFINT" ; otherwise,
+ * returns the corresponding "VDD_LEVEL_X".
+ * @param {string} level - Selected voltage level
+ * @param {object} ip_description - PWR description containing all DFP features
+ * @returns {string} - The appropriate voltage reference string
+ */
+function helper_pwr_get_pvdin_or_vdd_level(level, ip_description) {
+  try {
+    const pvdin_ref = `PVDIN_VREFINT`;
+    const vdd_level = `VDD_LEVEL_${level}`;
+    const pvdin_level = ip_description?.features?.pvd_level_pvdin;
+    return (pvdin_level === `LEVEL_${level}`) ? pvdin_ref : vdd_level;
+  } catch (error) {
+    console.error(`[ERROR] helper_pwr_get_pvdin_or_vdd_level: ${error}`);
+  }
+}
+
 module.exports = {
   helper_pwr_get_lut_table,
   helper_pwr_get_ll_wkup_pin_codegen_init,
@@ -996,5 +1015,6 @@ module.exports = {
   helper_pwr_is_voltage_scaling_compatible,
   helper_pwr_breakpoint,
   helper_pwr_get_irq_handler,
-  helper_pwr_isPeriph_independent_supply_activated
+  helper_pwr_isPeriph_independent_supply_activated,
+  helper_pwr_get_pvdin_or_vdd_level
 };

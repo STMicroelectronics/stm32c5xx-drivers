@@ -45,7 +45,7 @@ const IRQ_HANDLER_GETTER = {
   ADC: { file: './adc_helpers.js', func: 'helper_adc_get_irq_handler', dma_need_support: true, gpio_need_support: false },
   AES: { file: './aes_helpers.js', func: 'helper_aes_get_irq_handler', dma_need_support: true, gpio_need_support: false },
   COMP: { file: './comp_helpers.js', func: 'helper_comp_get_irq_handler', dma_need_support: false, gpio_need_support: true },
-  CORTEX_DEBUG: { file: './cortex_debug_helpers.js', func: 'helper_cortex_debug_get_irq_handler', dma_need_support: false, gpio_need_support: true },
+  "CORTEX DEBUG": { file: undefined, func: undefined, dma_need_support: false, gpio_need_support: true },
   CRS: { file: './crs_helpers.js', func: 'helper_crs_get_irq_handler', dma_need_support: false, gpio_need_support: true },
   DAC: { file: './dac_helpers.js', func: 'helper_dac_get_irq_handler', dma_need_support: true, gpio_need_support: false },
   DMA: { file: './dma_helpers.js', func: 'helper_dma_get_irq_handler', dma_need_support: false, gpio_need_support: false },
@@ -159,15 +159,21 @@ function common_get_resource_name(resource, current_component) {
     || (resource === 'DEBUG') || (resource === 'SCB') || (resource === 'Systick')) {
     new_resource = 'Cortex_' + new_resource;
   }
-  if (current_component === "RAMCFG") {
-    /* Change the name of resource for RAMCFG */
-    new_resource = 'RAMCFG_' + new_resource;
-  }
-  if ( (current_component === "PCD" || current_component === "HCD"
-    || current_component === "NOR" || current_component === "SRAM"
-    || current_component === "NAND" || current_component === "SDRAM")) {
-    /* Change the name of resource for USB and FMC*/
-    new_resource = new_parent + '_' + new_resource;
+  else {
+    if (current_component === "RAMCFG") {
+      /* Change the name of resource for RAMCFG */
+      new_resource = 'RAMCFG_' + new_resource;
+    }
+    else if ( (current_component === "PCD" || current_component === "HCD"
+      || current_component === "NOR" || current_component === "SRAM"
+      || current_component === "NAND" || current_component === "SDRAM")) {
+      /* Change the name of resource for USB and FMC*/
+      new_resource = new_parent + '_' + new_resource;
+    }
+    else if (current_component === "GPIO") {
+      /** Replace default_gpio_group_id" by "gpio_default" */
+      new_resource = resource.replace(/^([^_]+)_([^_]+)_group_id$/, (_, item1, item2) => item2 + "_" + item1);
+    }
   }
   return {new_resource, new_parent};
 }
@@ -302,6 +308,17 @@ function common_gen_ll_code(ppp_function, ...args) {
   try {
     var prefix_comment;
     var suffix_comment;
+    const isLutArgMatch = (expected, actual) => {
+      if (expected === actual) {
+        return true;
+      }
+
+      if (expected instanceof RegExp) {
+        return expected.test(String(actual));
+      }
+
+      return false;
+    };
 
     /* Add 1st comma after PPP_Instance or Sub-instances*/
     if (OptimEnabled) {
@@ -335,9 +352,9 @@ function common_gen_ll_code(ppp_function, ...args) {
             - list of reset values is in array*/
           if (
             (Array.isArray(current_function[index]) &&
-              !current_function[index].includes(arg)) ||
+              !current_function[index].some((expected_arg) => isLutArgMatch(expected_arg, arg))) ||
             (!Array.isArray(current_function[index]) &&
-              current_function[index] !== arg)
+              !isLutArgMatch(current_function[index], arg))
           ) {
             /* one of the argument is not identical */
             prefix_comment = "";
@@ -497,19 +514,23 @@ function helper_common_get_generated_function_calls(sw_config_object) {
      - name (format: mx_<label>_init)
      - retrieve the SW component thanks a regular expression which to retrieve the Csub block between STM32CubeMX2 Config: and @
      */
-    list_functions = list_functions.map((ins) => ({
-      index: common_get_resource_name(ins.resourceId, ins.componentId.match(/STM32CubeMX2 Config:(.*?)@/)[1]).new_resource,
-      name: helper_common_get_generated_function_name(
-        common_get_resource_name(ins.resourceId, ins.componentId.match(/STM32CubeMX2 Config:(.*?)@/)[1]).new_resource,
-        ins.values.layer || '',
-        0,
-        ins.values.function_type
-      ) + '_init',
-      sw_instance: ins.componentId.match(/STM32CubeMX2 Config:(.*?)@/)[1],
-      layer: ins.values.layer,
-      init: ins.values.init,
-      function_type: ins.values.function_type,
-    }));
+    list_functions = list_functions.map((ins) => {
+      const sw_instance = ins.componentId.match(/STM32CubeMX2 Config:(.*?)@/)[1];
+      const new_resource = common_get_resource_name(ins.resourceId, sw_instance).new_resource;
+      return {
+        index: new_resource,
+        name: helper_common_get_generated_function_name(
+          new_resource,
+          ins.values.layer || '',
+          0,
+          ins.values.function_type
+        ) + '_init',
+        sw_instance: sw_instance,
+        layer: ins.values.layer,
+        init: ins.values.init,
+        function_type: ins.values.function_type,
+      };
+    });
 
     console.info(`helper_common_get_generated_function_calls: list_functions ${JSON.stringify(
         list_functions)}`
@@ -652,7 +673,7 @@ function helper_common_if_value_is_enabled(Settings, Module) {
 }
 
 /**
- * Return if SW component has been enabled in the project (or at least its dependancies)
+ * Return if SW component has been enabled in the project (or at least its dependencies)
  * @note  use hal_conf.h for USE_HAL_PPP_MODULE
  * @param {object} used_components used components returned by SWProjectAPI.getUsedComponents getter
  * @param {string} component component to be check
@@ -953,7 +974,11 @@ function helper_common_get_sw_config_ctxt(
                   exti_handle.aliases.push(label);
                 });
                 if (layer === "HAL") {
-                  exti_handle.name_gethandle = "mx_" + current_resource.toLowerCase() + "_" + exti_resource.resourceId.toLowerCase() + "_gethandle";
+                  if (exti_resource.componentId.includes("Config:GPIO@") || (current_resource === exti_resource.owner)) {
+                    exti_handle.name_gethandle = "mx_" + current_resource.toLowerCase() + "_" + exti_resource.resourceId.toLowerCase() + "_gethandle";
+                  } else {
+                  exti_handle.name_gethandle = "mx_" + current_resource.toLowerCase() + "_gpio_" + exti_resource.resourceId.toLowerCase() + "_gethandle";
+                  }
                 }
                 exti_handles.push(exti_handle);
               });
@@ -1073,7 +1098,7 @@ function helper_common_get_irq_handler(
           if ((resource === 'MPU') || (resource === 'NVIC') || (resource === 'IDAU/SAU')
             || (resource === 'IDAU/SAU') || (resource === 'DEBUG') || (resource === 'SCB')
             || (resource === 'Systick')) {
-            resource = 'Cortex_' + resource;
+            resource = 'CM33';
           }
           /* For dummy parameters, there are no layer inside info block */
           if (
@@ -1082,9 +1107,11 @@ function helper_common_get_irq_handler(
           ) {
             if (current_component in IRQ_HANDLER_GETTER) {
               const helper = IRQ_HANDLER_GETTER[current_component];
-              let all_functions = require(helper.file);
-              if (typeof all_functions[helper.func] === "function") {
-                result = result.concat(all_functions[helper.func](nvic_api, exti_api, resource, config, parent));
+              if (helper.file !== undefined && helper.func !== undefined) {
+                let all_functions = require(helper?.file);
+                if (typeof all_functions[helper.func] === "function") {
+                  result = result.concat(all_functions[helper.func](nvic_api, exti_api, resource, config, parent));
+                }
               }
 
               /** Check the DMA interruptions have been generated or not */
@@ -1379,6 +1406,16 @@ function helper_common_beautifier (options) {
   }
 }
 
+/**
+ * List of include files to be generated in mx_hal_def.h based on the SW configuration of the project
+ * @param {object} sw_project_api Access to SW project getters
+ * @param {object} dma_api Access to DMA API
+ * @param {object} sw_config_api Access to SW configuration API
+ * @param {object} pinout_api Access to pinout API
+ * @param {object} periph_api Access to peripheral API
+ * @param {string} strategy Strategy type
+ * @returns {Array} List of include files
+ */
 function helper_common_find_include_files(sw_project_api, dma_api, sw_config_api, pinout_api, periph_api, strategy) {
   let includes = [];
   let components = [];
@@ -1451,6 +1488,174 @@ function helper_common_find_include_files(sw_project_api, dma_api, sw_config_api
   return includes;
 }
 
+/**
+ * Prepare the codegen context used in the codegen templates
+ * @param   {string} component SW component name (ex: 'I2C')
+ * @param   {object} context Context returned by mapping_hook.js (though get '')
+ * @param   {object} env_api Getters of 'Environment Variable'
+ * @param   {object} periph_sw_api Getters of 'Peripheral Software'
+ * @param   {object} sw_config_api Getters of 'Software Configuration'
+ * @returns {object} Codegen context like
+ *                  PPP template codegen_ctxt: {
+ *                    strategy: 'SW',
+ *                    component: 'STMicroelectronics::Device:STM32CubeMX2 Config:I2C@0.1.3',
+ *                    parent_resource: '',
+ *                    current_resource: 'PPP',
+ *                    dma_resource: 'STMicroelectronics::Device:STM32CubeMX2 Config:I2C@0.1.3',
+ *                    instances: [
+ *                    { current_resource: 'I2C1', config: [Object] },
+ *                      { current_resource: 'I2C2', config: [Object] }
+ *                    ]
+ *                  }
+ */
+function helper_common_get_codegen_context(component, context, env_api, periph_sw_api, sw_config_api) {
+  let result = {
+    strategy: '',
+    component: '',
+    parent_resource: '',
+    current_resource: '',
+    dma_resource: '',
+    instances: []
+  };
+  try {
+    result.strategy = env_api.getVariableValue('SYSTEM_PROJECT_CODEGEN_STRATEGY');
+    result.component = context.component;
+    if (result.strategy === 'SW') {
+      result.dma_resource = result.component;
+      result.current_resource = component;
+      let instance_ids = sw_config_api.getInstances(result.component);
+      instance_ids.forEach((instance_id) => {
+        let config_instance = {
+          current_resource: periph_sw_api.getPeripheralBoundToSoftwareInstance(instance_id),
+          config: sw_config_api.getSwInstanceConfiguration(instance_id)
+        };
+        result.instances.push(config_instance);
+      });
+    } else {
+      result.parent_resource = context.resource;
+      result.current_resource = context.hw_resource;
+      result.dma_resource = context.hw_resource;
+      let instance_ids = periph_sw_api.getSoftwareInstancesBoundToPeripheral(context.resource);
+      instance_ids.forEach((instance_id) => {
+        let config_instance = {
+          current_resource: result.current_resource,
+          config: sw_config_api.getSwInstanceConfiguration(instance_id)
+        };
+        result.instances.push(config_instance);
+      });
+    }
+  } catch (e) {
+    console.error(`helper_common_get_codegen_context: ${e}`);
+  }
+  return result;
+}
+
+/**
+ * Prepare the codegen context used in the DMA codegen templates
+ * @param   {string} component SW component name (ex: 'DMA')
+ * @param   {object} context Context returned by mapping_hook.js (though get '')
+ * @param   {object} env_api Getters of 'Environment Variable'
+ * @param   {object} periph_sw_api Getters of 'Peripheral Software'
+ * @param   {object} dma_api Getters of 'DMA'
+ * @returns {object} Codegen context for DMA
+ */
+function helper_common_get_codegen_context_dma(component, context, env_api, periph_sw_api, dma_api) {
+  let result = {
+    strategy: '',
+    component: '',
+    parent_resource: '',
+    current_resource: '',
+    dma_resource: '',
+    instances: []
+  };
+  try {
+    result.strategy = env_api.getVariableValue('SYSTEM_PROJECT_CODEGEN_STRATEGY');
+    result.component = context.component;
+    if (result.strategy === 'SW') {
+      result.dma_resource = result.component;
+      result.current_resource = component;
+      let hw_instances = dma_api.getAllAllocatedDMAResourcesBoundToStandalone(context.component);
+      hw_instances.forEach((hw_instance) => {
+        let instance_ids = dma_api.getSoftwareInstancesBoundToStandalone(context.component, hw_instance.resourceId);
+        instance_ids.forEach((instance_id) => {
+          let config_instance = {
+            current_resource: hw_instance.resourceId,
+            config: instance_id.configuration
+          };
+          result.instances.push(config_instance);
+        });
+      });
+    } else {
+      result.parent_resource = context.resource;
+      result.current_resource = context.hw_resource;
+      result.dma_resource = context.hw_resource;
+      let instance_ids = dma_api.getSoftwareInstancesBoundToStandalone(context.component, context.resource);
+      instance_ids.forEach((instance_id) => {
+        let config_instance = {
+          current_resource: result.current_resource,
+          config: instance_id.configuration
+        };
+        result.instances.push(config_instance);
+      });
+    }
+  } catch (e) {
+    console.error(`helper_common_get_codegen_context_dma: ${e}`);
+  }
+  return result;
+}
+
+/**
+ * Prepare the codegen context used in the GPIO codegen templates
+ * @param   {string} component SW component name (ex: 'GPIO')
+ * @param   {object} context Context returned by mapping_hook.js (though get '')
+ * @param   {object} env_api Getters of 'Environment Variable'
+ * @param   {object} periph_sw_api Getters of 'Peripheral Software'
+ * @param   {object} gpio_api Getters of 'GPIO'
+ * @returns {object} Codegen context for GPIO
+ */
+function helper_common_get_codegen_context_gpio(component, context, env_api, periph_sw_api, gpio_api) {
+  let result = {
+    strategy: '',
+    component: '',
+    parent_resource: '',
+    current_resource: '',
+    dma_resource: '',
+    instances: []
+  };
+  try {
+    result.strategy = env_api.getVariableValue('SYSTEM_PROJECT_CODEGEN_STRATEGY');
+    result.component = context.component;
+    if (result.strategy === 'SW') {
+      result.dma_resource = result.component;
+      result.current_resource = component;
+      let instance_ids = gpio_api.getGpioGroupSoftwareConfigurations("default_gpio_group_id", context.component);
+      instance_ids.forEach((instance_id) => {
+        let config_instance = {
+          current_resource: result.current_resource,
+          config: instance_id.settings.parameters
+        };
+        result.instances.push(config_instance);
+      });
+    } else {
+      result.parent_resource = context.resource;
+      result.current_resource = context.hw_resource;
+      result.dma_resource = context.hw_resource;
+      let instance_ids = gpio_api.getGpioGroupSoftwareConfigurations("default_gpio_group_id", context.component);
+      instance_ids.forEach((instance_id) => {
+        let config_instance = {
+          current_resource: result.current_resource,
+          config: instance_id.settings.parameters
+        };
+        result.instances.push(config_instance);
+      });
+    }
+  } catch (e) {
+    console.error(`helper_common_get_codegen_context_dma: ${e}`);
+  }
+  return result;
+}
+
+
 module.exports = {
   helper_common_initialize_index,
 
@@ -1500,5 +1705,12 @@ module.exports = {
 
   helper_common_get_ll_dma_instance_used_for_needs,
 
-  helper_common_find_include_files
+  helper_common_find_include_files,
+
+  helper_common_get_codegen_context,
+
+  helper_common_get_codegen_context_dma,
+
+  helper_common_get_codegen_context_gpio
+
 };

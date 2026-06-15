@@ -53,6 +53,7 @@ extern "C" {
 {{assign 'EXTI_component' (helper_common_if_component_is_enabled @root.used_components 'EXTI')~}}
 {{assign 'FDCAN_component' (helper_common_if_component_is_enabled @root.used_components 'FDCAN')~}}
 {{assign 'FLASH_component' (helper_common_if_component_is_enabled @root.used_components 'FLASH')~}}
+{{assign 'FLASH_ITF_component' (helper_common_if_component_is_enabled @root.used_components 'FLASH_ITF')~}}
 {{assign 'GPIO_component' (helper_common_if_component_is_enabled @root.used_components 'GPIO')~}}
 {{assign 'HASH_component' (helper_common_if_component_is_enabled @root.used_components 'HASH')~}}
 {{assign 'HCD_component' (helper_common_if_component_is_enabled @root.used_components 'HCD')~}}
@@ -182,6 +183,7 @@ extern "C" {
 #define USE_HAL_AES_GCM_GMAC_ALGO               {{#if aes_feature.use_hal_aes_gcm_gmac_algo}}1{{else}}0{{/if}}U
 #define USE_HAL_AES_CCM_ALGO                    {{#if aes_feature.use_hal_aes_ccm_algo}}1{{else}}0{{/if}}U
 #define USE_HAL_AES_SUSPEND_RESUME              {{#if aes_feature.use_hal_aes_suspend_resume}}1{{else}}0{{/if}}U
+#define USE_HAL_AES_RNG_RECOVERY                {{#if aes_feature.use_hal_aes_rng_recovery}}1{{else}}0{{/if}}U
 /**
   * @}
   */
@@ -194,6 +196,7 @@ extern "C" {
 #define USE_HAL_CCB_CLK_ENABLE_MODEL            {{#if ccb_feature.clk_enable_model}}{{ccb_feature.clk_enable_model}}{{else}}HAL_CLK_ENABLE_NO{{/if}}
 #define USE_HAL_CCB_USER_DATA                   {{#if ccb_feature.user_data}}1{{else}}0{{/if}}U
 #define USE_HAL_CCB_GET_LAST_ERRORS             {{#if ccb_feature.get_last_errors}}1{{else}}0{{/if}}U
+#define USE_HAL_CCB_RNG_RECOVERY                {{#if ccb_feature.use_hal_ccb_rng_recovery}}1{{else}}0{{/if}}U
 /**
   * @}
   */
@@ -323,8 +326,8 @@ extern "C" {
 #define USE_HAL_ETH_USER_DATA                   {{#if eth_feature.user_data}}1{{else}}0{{/if}}U
 #define USE_HAL_ETH_GET_LAST_ERRORS             {{#if eth_feature.get_last_errors}}1{{else}}0{{/if}}U
 #define USE_HAL_ETH_ATOMIC_CHANNEL_LOCK         {{#if eth_feature.use_hal_eth_atomic_channel_lock}}1{{else}}0{{/if}}U
-#define USE_HAL_ETH_MAX_TX_CH_NB                {{#if eth_feature.use_hal_eth_max_tx_ch_nb}}1{{else}}0{{/if}}U
-#define USE_HAL_ETH_MAX_RX_CH_NB                {{#if eth_feature.use_hal_eth_max_rx_ch_nb}}1{{else}}0{{/if}}U
+#define USE_HAL_ETH_MAX_TX_CH_NB                {{#if eth_feature.use_hal_eth_max_tx_ch_nb}}{{eth_feature.use_hal_eth_max_tx_ch_nb}}{{else}}1{{/if}}U
+#define USE_HAL_ETH_MAX_RX_CH_NB                {{#if eth_feature.use_hal_eth_max_rx_ch_nb}}{{eth_feature.use_hal_eth_max_rx_ch_nb}}{{else}}1{{/if}}U
 /**
   * @}
   */
@@ -357,7 +360,7 @@ extern "C" {
   * @{
   */
 /* ########################## HAL_FLASH Config ################################## */
-#define USE_HAL_FLASH_MODULE                    {{@root.FLASH_component}}U
+#define USE_HAL_FLASH_MODULE                    {{#if (or @root.FLASH_component @root.FLASH_ITF_component)}}1U{{else}}0U{{/if}}
 #define USE_HAL_FLASH_CLK_ENABLE_MODEL          {{#if flash_feature.clk_enable_model}}{{flash_feature.clk_enable_model}}{{else}}HAL_CLK_ENABLE_NO{{/if}}
 #define USE_HAL_FLASH_REGISTER_CALLBACKS        {{#if flash_feature.use_register_callback}}1{{else}}0{{/if}}U
 #define USE_HAL_FLASH_USER_DATA                 {{#if flash_feature.user_data}}1{{else}}0{{/if}}U
@@ -547,6 +550,7 @@ extern "C" {
 #define USE_HAL_PKA_REGISTER_CALLBACKS          {{#if pka_feature.use_register_callback}}1{{else}}0{{/if}}U
 #define USE_HAL_PKA_USER_DATA                   {{#if pka_feature.user_data}}1{{else}}0{{/if}}U
 #define USE_HAL_PKA_GET_LAST_ERRORS             {{#if pka_feature.get_last_errors}}1{{else}}0{{/if}}U
+#define USE_HAL_PKA_RNG_RECOVERY                {{#if pka_feature.use_hal_pka_rng_recovery}}1{{else}}0{{/if}}U
 /**
   * @}
   */

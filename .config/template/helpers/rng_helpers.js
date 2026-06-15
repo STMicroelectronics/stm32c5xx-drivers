@@ -64,7 +64,7 @@ function helper_rng_get_irq_handler(nvic_api ,exti_api, resource, config) {
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_rng_get_irq_handler: ${e}`);
+    console.error(`[ERROR] helper_rng_get_irq_handler: ${e}`);
   }
   return result;
 }

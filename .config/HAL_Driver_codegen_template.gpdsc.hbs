@@ -117,7 +117,7 @@
       {{/unless}}
       {{#unless (eq (@root.EnvVarAPI.getVariableValue 'HAL_RCC_PROJECT_USE_HAL') undefined)}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="PWR"/>
-      <require Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH"/>
+      <require Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH_ITF"/>
       {{else}}
       <require Cclass="Device" Cgroup="STM32 LL" Csub="PWR"/>
       <require Cclass="Device" Cgroup="STM32 LL" Csub="FLASH"/>
@@ -240,6 +240,12 @@
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="ADC"/>
       {{else}}
       <require Cclass="Device" Cgroup="STM32 LL" Csub="ADC"/>
+      {{/unless}}
+      {{#unless (eq (@root.EnvVarAPI.getVariableValue 'HAL_SBS_PROJECT_USE_HAL') undefined)}}
+      <require Cclass="Device" Cgroup="STM32 HAL" Csub="SBS"/>
+      {{/unless}}
+      {{#unless (eq (@root.EnvVarAPI.getVariableValue 'LL_SBS_PROJECT_USE_LL') undefined)}}
+      <require Cclass="Device" Cgroup="STM32 LL" Csub="SBS"/>
       {{/unless}}
     </condition>
     <condition id="HAL CORE GPIO Init and COMP">
@@ -520,24 +526,26 @@
       <require condition="CMSIS Core"/>
       <require Cclass="Device" Cgroup="STM32 LL" Csub="UTILS"/>
       <require Cclass="Device" Cgroup="STM32CubeMX2 Codegen" Csub="Generated Code"/>
-      {{#if (or (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_USE_ASSERT_DBG_PARAM') (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_USE_ASSERT_DBG_STATE'))}}
+      {{#unless @root.only_ll}}
+        {{#if (or (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_USE_ASSERT_DBG_PARAM') (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_USE_ASSERT_DBG_STATE'))}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="ASSERT"/>
-      {{/if}}
-      {{~assign 'get_timebase' (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_TIMEBASE')~}}
-      {{log '[INFO] GPDSC template: get_timebase=' @root.get_timebase~}}
-      {{#if (or (eq @root.get_timebase undefined) (eq @root.get_timebase 'SYSTICK'))}}
+        {{/if}}
+        {{~assign 'get_timebase' (@root.EnvVarAPI.getVariableValue 'CORE_PROJECT_TIMEBASE')~}}
+        {{log '[INFO] GPDSC template: get_timebase=' @root.get_timebase~}}
+        {{#if (or (eq @root.get_timebase undefined) (eq @root.get_timebase 'SYSTICK'))}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="SYSTICK"/>
-      {{/if}}
-      {{#if (eq @root.get_timebase 'RTC_ALARM')}}
+        {{/if}}
+        {{#if (eq @root.get_timebase 'RTC_ALARM')}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="RTC_ALARM"/>
-      {{/if}}
-      {{#if (eq @root.get_timebase 'RTC_WAKEUP')}}
+        {{/if}}
+        {{#if (eq @root.get_timebase 'RTC_WAKEUP')}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="RTC_WAKEUP"/>
-      {{/if}}
-      {{~assign 'get_timebase_tim' (@root.EnvVarAPI.getVariableValue 'CORE_TIM_TIMEBASE')~}}
-      {{log '[INFO] GPDSC template: get_timebase=' @root.get_timebase~}}
-      {{#unless (eq @root.get_timebase_tim undefined)}}
+        {{/if}}
+        {{~assign 'get_timebase_tim' (@root.EnvVarAPI.getVariableValue 'CORE_TIM_TIMEBASE')~}}
+        {{log '[INFO] GPDSC template: get_timebase=' @root.get_timebase~}}
+        {{#unless (eq @root.get_timebase_tim undefined)}}
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="TIM"/>
+        {{/unless}}
       {{/unless}}
     </condition>
     <condition id="Use mutex">
@@ -582,7 +590,7 @@
       {{/if}}
       <files>
         {{#each files_array}}
-        {{#unless (inArray gen_file @root.save_files)}}
+        {{#unless (inArray @root.save_files gen_file)}}
         <file category="{{category}}" name="{{gen_file}}" />
         {{~assign 'save_files' (helper_common_concatenate_elt_in_array gen_file @root.save_files)}}
         {{/unless}}

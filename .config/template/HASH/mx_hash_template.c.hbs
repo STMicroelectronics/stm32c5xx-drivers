@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'current_resource' 'HASH'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:HASH')~}}
-{{else}}
-{{assign "strategy" 'HW'~}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{log "HASH template _myctx:" this~}}
-{{assign 'current_resource' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
-{{log "HASH template current_resource:" @root.current_resource~}}
-{{log "HASH template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'HASH' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "HASH template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -50,24 +38,19 @@
 /* Exported variables by reference--------------------------------------------*/
 {{assign 'hal_handle_exist' 0~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'hash_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{log "HASH template hash_cxt:" (toJSON @root.hash_cxt)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'current_layer' @root.hash_cxt.settings.parameters.info.layer~}}
-{{log "HASH template current_resource:" @root.current_resource~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
+  {{~assign 'hash_ctxt' config~}}
+  {{~log "HASH template hash_ctxt:" (toJSON @root.hash_ctxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.hash_ctxt.info.layer~}}
 {{#if (eq @root.current_layer 'HAL')~}}
 {{#if (eq @root.hal_handle_exist 0)~}}
 static hal_hash_handle_t h{{@root.current_resource}};
 {{assign 'hal_handle_exist' 1~}}
 {{/if}}
 {{/if}}
-{{#if basic.use_hmac_feature}}
-{{~assign 'key' (helper_hash_string_to_hex basic.key_settings.hmac_key)~}}
-uint8_t input_key[{{basic.key_settings.key_size}}] = { {{@root.key}} };
+{{#if @root.hash_ctxt.basic.use_hmac_feature}}
+{{~assign 'key' (helper_hash_string_to_hex @root.hash_ctxt.basic.key_settings.hmac_key)~}}
+uint8_t input_key[{{@root.hash_ctxt.basic.key_settings.key_size}}] = { {{@root.key}} };
 {{/if}}{{~!basic.use_hmac_feature}}
 {{/each}}
 {{> DMA_HAL fct='get_dma_handles' resource=@root.current_resource}}
@@ -75,21 +58,13 @@ uint8_t input_key[{{basic.key_settings.key_size}}] = { {{@root.key}} };
 {{assign 'hal_handle_exist' 0~}}
 {{assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'name' name~}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{else}}
-{{assign 'hash_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{assign 'name' @root.hash_cxt.name~}}
-{{assign 'current_layer' @root.hash_cxt.settings.parameters.info.layer~}}
-{{assign 'configs' @root.hash_cxt.settings.parameters~}}
-{{/if}}
+  {{~assign 'hash_ctxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.hash_ctxt.info.layer~}}
 /******************************************************************************/
-/* Exported functions for HASH in {{@root.current_layer}} layer (SW instance {{#if (eq name undefined)}}{{instanceIndex}}{{else}}{{name}}{{/if}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
-{{#with @root.configs}}
+{{#with @root.hash_ctxt}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
 {{!
     Generation of initialization function used in HAL
@@ -182,7 +157,28 @@ hal_hash_handle_t *{{@root.fct_name}}_gethandle(void)
 {{assign 'hal_handle_exist' 1~}}
 {{/if}}
 {{/if}}
+{{#with security_privilege}}
 
+{{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                      Privileged attribute management                       */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+{{else}}
+/******************************************************************************/
+/*                Security and privileged attributes management               */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+{{/if}}
+{
+{{> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}
+
+{{> DMA_HAL fct='dma_config_security' resource=@root.current_resource}}
+
+  return SYSTEM_OK;
+}
+{{/with}}
 {{/with}}
 {{/each}}
 

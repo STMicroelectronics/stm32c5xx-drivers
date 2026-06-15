@@ -19,6 +19,8 @@
   {{! }}
   {{log "DMA_HAL fct='init': DMA Channel instance:" needs~}}
   {{#each needs}}
+  {{assign 'selector'  selector~}}
+  {{assign 'instance'  owner~}}
   {{assign 'dma_config' (@root.DmaAPI.getNeedById id)~}}
   {{!log "DMA_HAL fct='init' dma_config:" @root.dma_config~}}
   {{/each}}
@@ -56,15 +58,8 @@
         {{#with @root.dma_config}}
           {{#with configuration.basic}}
 {{#if (eq dma_mode 2)}}
-{{assign 'dma_node' (helper_dma_get_node request.id)~}}
-{{#if (eq @root.dma_request_exist "undefined")}}
-    {{assign 'dma_request_exist' @root.dma_node}}
+{{assign 'dma_node' (helper_dma_get_node request.id @root.dma_config.owner @root.dma_config.selector)~}}
 static hal_dma_node_t {{@root.dma_node~}};
-{{else}}
-  {{#if (not (eq @root.dma_node @root.dma_request_exist))}}
-static hal_dma_node_t {{@root.dma_node~}};
-  {{/if}}
-{{/if}}
 {{/if~}}
           {{/with~}}
         {{/with~}}
@@ -101,11 +96,145 @@ static hal_dma_handle_t h{{this}};
 {{/if}}
 {{/each}}
 
+{{else if (eq fct 'config_security')}}
+{{!
+ Generate the DMA HAL code inside the DMAi_CHy
+ > DMA_HAL fct='dma_config_security' resource=@root.current_resource
+~}}
+  {{~assign 'dma_channel_instance' resource}}
+  {{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)}}
+
+  /* Enable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+
+  {{#with @root.dma_config.security_privilege}}
+  {{#if (eq security.channel_sec 'SEC')}}
+  /* Configure the DMA channel security access level attribute */
+  if (HAL_DMA_SetSecAttr(HAL_{{uppercase @root.dma_channel_instance}}, HAL_DMA_SEC)!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#with @root.dma_config.security_privilege.security.xfer_sec}}
+    {{#with @root.dma_config.basic}}
+    {{#if (eq dma_mode 0)}}
+      {{log "DMA_HAL security_items:" @root.dma_config.security_privilege.security.xfer_sec~}}
+      {{~assign "security_items" (helper_dma_get_security_items @root.current_layer @root.dma_config.security_privilege.security.xfer_sec)}}
+        {{log "DMA_HAL security_items:" @root.security_items}}
+   {{#unless (eq @root.security_items '')}}
+  /* Configure the DMA channel xfer security access levels attributes */
+  if (HAL_DMA_SetXferSecAttr(HAL_{{uppercase @root.dma_channel_instance}}, {{@root.security_items}}, HAL_DMA_SEC)!= HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+    {{/unless}}
+    {{/if}}
+    {{/with}}
+  {{/with}}
+
+  {{#if (eq privilege.channel_priv 'PRIV')}}
+  /* Configure the the DMA channel privileged access level attribute */
+  if (HAL_DMA_SetPrivAttr(HAL_{{uppercase @root.dma_channel_instance}}, HAL_DMA_PRIV)!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#if lock.channel_lock}}
+  /* Lock the security and privileged access levels attributes for DMA channel */
+  if (HAL_DMA_LockAttr(HAL_{{uppercase @root.dma_channel_instance}})!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#if iac_it}}
+  /* Enable DMA IAC interrupt */
+  HAL_RIF_IAC_EnableIT(HAL_RIF_IAC_GPDMA1);
+  {{/if}}
+
+  {{#if clock}}
+  /* Disable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+  {{/if}}
+
+  {{/with}}
+
+{{else if (eq fct 'dma_config_security')}}
+{{!
+ Generate the DMA HAL code inside the mx_pppi_config_security function
+ > DMA_HAL fct='dma_config_security' resource=@root.current_resource
+~}}
+  {{~assign 'needs' (@root.DmaAPI.getAllocatedResourceNeedsByHwInstance resource)~}}
+  {{log "DMA_HAL needs:" @root.needs~}}
+  {{#each @root.needs}}
+  {{assign 'dma_channel_instance' resourceId~}}
+  {{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)}}
+  {{assign 'dma_config' (@root.DmaAPI.getNeedById needId)~}}
+  {{log "DMA_HAL dma_channel_instance:" @root.dma_channel_instance~}}
+  {{log "DMA_HAL dma_config:" @root.dma_config~}}
+
+  /* Enable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+
+  {{#with @root.dma_config.configuration.security_privilege}}
+  {{#if (eq security.channel_sec 'SEC')}}
+  /* Configure the DMA channel security access level attribute */
+  if (HAL_DMA_SetSecAttr(HAL_{{uppercase @root.dma_channel_instance}}, HAL_DMA_SEC)!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#with security.xfer_sec}}
+    {{#with @root.dma_config.configuration.basic}}
+    {{#if (eq dma_mode 0)}}
+      {{~assign "security_items" (helper_dma_get_security_items @root.current_layer @root.dma_config.configuration.security_privilege.security.xfer_sec)}}
+  {{log "DMA_HAL security_items:" @root.security_items}}
+   {{#unless (eq @root.security_items '')}}
+  /* Configure the DMA channel xfer security access levels attributes */
+  if (HAL_DMA_SetXferSecAttr(HAL_{{uppercase @root.dma_channel_instance}}, {{@root.security_items}}, HAL_DMA_SEC)!= HAL_OK)
+  {
+    return SYSTEM_PERIPHERAL_ERROR;
+  }
+    {{/unless}}
+    {{/if}}
+    {{/with}}
+  {{/with}}
+
+  {{#if (eq privilege.channel_priv 'PRIV')}}
+  /* Configure the the DMA channel privileged access level attribute */
+  if (HAL_DMA_SetPrivAttr(HAL_{{uppercase @root.dma_channel_instance}}, HAL_DMA_PRIV)!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#if lock.channel_lock}}
+  /* Lock the security and privileged access levels attributes for DMA channel */
+  if (HAL_DMA_LockAttr(HAL_{{uppercase @root.dma_channel_instance}})!= HAL_OK)
+  {
+      return SYSTEM_PERIPHERAL_ERROR;
+  }
+  {{/if}}
+
+  {{#if clock}}
+  /* Disable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+  {{/if}}
+
+  {{/with}}
+  {{/each}}
 {{else}}
 #warning "{{fct}} not present in partial DMA_HAL_partial.hbs"
 {{/if}}
 {{#if (or (eq fct 'init') (eq fct 'init_dma'))}}
-{{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)~}}
+{{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)}}
   if (HAL_DMA_Init(&h{{@root.dma_channel_instance}}, HAL_{{uppercase @root.dma_channel_instance}}) != HAL_OK)
   {
     return NULL;
@@ -127,24 +256,24 @@ static hal_dma_handle_t h{{this}};
 {{!-- {{#with Basic_xfer}} --}}
 {{#unless (eq dma_mode 1)}}
 {{#if (eq @root.dma_usage 'init')}}
-{{assign 'dma_node' (helper_dma_get_node request.id)~}}
+{{assign 'dma_node' (helper_dma_get_node request.id @root.instance @root.selector)~}}
 
 {{#if request}}
   {{#if (eq @root.xfer_exist undefined)}}
     {{assign 'xfer_cfg' (append 'xfer_cfg_' request.id)}}
     {{assign 'xfer_exist' @root.xfer_cfg}}
-hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
+  hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
   {{else}}
     {{assign 'xfer_cfg' (append 'xfer_cfg_' request.id)}}
     {{#if (not (eq @root.xfer_cfg @root.xfer_exist))}}
     {{assign 'xfer_exist' @root.xfer_cfg}}
-hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
+  hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
     {{/if}}
   {{/if}}
   {{assign 'req' (helper_dma_get_request @root.dma_channel_instance @root.current_layer request.id)~}}
   {{@root.xfer_cfg}}.request         = {{@root.req}};
 {{else}}
-hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
+  hal_dma_direct_xfer_config_t {{@root.xfer_cfg}};
 {{@root.xfer_cfg}}.request         = HAL_DMA_REQUEST_SW;
 {{/if}}
 {{else}}

@@ -16,11 +16,11 @@ const LL_COMP_functionsV1 = {
   LL_COMP_SetInputMinus: ["input_minus"], */
   LL_COMP_SetInputPlus: ["LL_COMP_INPUT_PLUS_IO1"],
   LL_COMP_SetInputHysteresis: ["LL_COMP_HYSTERESIS_NONE"],
-  LL_COMP_SetFilteringDeglitcher: ["LL_COMP_FILT_DEGLITCHER_DISABLE"],
+  LL_COMP_SetFilteringAnalog: ["LL_COMP_FILT_ANA_DISABLE"],
   LL_COMP_SetFilteringDigital: ["LL_COMP_FILT_DIG_DISABLE"],
   LL_COMP_SetOutputPolarity: ["LL_COMP_OUTPUTPOL_NONINVERTED"],
   LL_COMP_SetOutputBlankingSource: ["LL_COMP_BLANKINGSRC_NONE"],
-  LL_COMP_SetDeglitcherMode: ["LL_COMP_DEGLITCHER_DISABLED"],
+  LL_COMP_SetFilteringAnalog: ["LL_COMP_FILT_ANA_DISABLE"],
   LL_COMP_DisableIT_OutputTrig: [],
   LL_COMP_SetCommonWindowMode: ["LL_COMP_WINDOW_DISABLE"],
   LL_COMP_SetCommonWindowOutput: ["LL_COMP_WINDOW_OUTPUT_INDEPT"]

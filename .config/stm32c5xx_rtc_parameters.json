@@ -68,7 +68,7 @@
                 {
                   "type": "set",
                   "condition": "$get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') === $resource.id || $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') === $resource.id",
-                  "computed": {
+                  "attributes": {
                     "const": "HAL",
                     "description": "HAL layer only for RTC timebase."
                   }
@@ -105,7 +105,7 @@
                 {
                   "type": "set",
                   "condition": "$get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') === $resource.id || $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') === $resource.id",
-                  "computed": {
+                  "attributes": {
                     "const": "enabled",
                     "description": "Initialization is done through RTC timebase template."
                   }
@@ -115,7 +115,7 @@
                   "condition": "$get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') === $resource.id || $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') === $resource.id"
                 }
               ],
-              "default": "called"
+              "default": "enabled"
             },
             "timebase_info": {
               "type": "string",
@@ -184,6 +184,11 @@
               "type": "string",
               "readOnly": true,
               "actions": [
+                {
+                  "type": "warning",
+                  "condition": "($get('clock.input','RTC') === 'LSE') && ($get('envVar.value', 'RCC_PROJECT_LSE') !== true)",
+                  "message": "Make sure that LSE is enabled into RCC panel"
+                },
                 {
                   "type": "set",
                   "condition": "true",
@@ -332,7 +337,7 @@
                     "const": "($basic.clock_frequency / ($basic.asynchronous_predivider_value * $basic.synchronous_predivider_value)).toFixed(3) + ' Hz'"
                   },
                   "attributes": {
-                    "description": "BCD update frequency is indicative. You can modify both the synchronous and asynchronous prescaler factors to change it."
+                    "description": "BCD update frequency is indicative. You can modify both the synchronous and asynchronous prescaler factors to change it. To use the calendar, this value must be 1 Hz."
                   }
                 },
                 {
@@ -477,7 +482,7 @@
                         {
                           "type": "set",
                           "condition": "$additional.calendar.hour_format === '24'",
-                          "computed": {
+                          "attributes": {
                             "const": "AM_24H"
                           }
                         }
@@ -864,7 +869,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.calendar.hour_format === '24'",
-                      "computed": {
+                      "attributes": {
                         "const": "AM_24H"
                       }
                     }
@@ -991,7 +996,7 @@
                       "type": "set",
                       "condition": "$basic.mode === 'BCD'",
                       "computed": {
-                        "const": "($additional.alarm_a.sub_seconds / $basic.synchronous_predivider_value) == 1 ? ($additional.alarm_a.sub_seconds / $basic.synchronous_predivider_value) + ' s' : ($additional.alarm_a.sub_seconds / $basic.synchronous_predivider_value) >= 0.001 ? (($additional.alarm_a.sub_seconds / $basic.synchronous_predivider_value) * 1000).toFixed(3) + ' ms' : (($additional.alarm_a.sub_seconds / $basic.synchronous_predivider_value) * 1000000).toFixed(3) + ' us'"
+                        "const": "(((($basic.synchronous_predivider_value - $additional.alarm_a.sub_seconds) / $basic.synchronous_predivider_value) % 1) === 0) ? '0' : (((($basic.synchronous_predivider_value - $additional.alarm_a.sub_seconds) / $basic.synchronous_predivider_value) % 1) >= 0.001 ? (((((($basic.synchronous_predivider_value - $additional.alarm_a.sub_seconds) / $basic.synchronous_predivider_value) % 1) * 1000).toPrecision(4)) + ' ms') : (((((($basic.synchronous_predivider_value - $additional.alarm_a.sub_seconds) / $basic.synchronous_predivider_value) % 1) * 1000000).toPrecision(4)) + ' us'))"
                       }
                     },
                     {
@@ -1346,7 +1351,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.calendar.hour_format === '24'",
-                      "computed": {
+                      "attributes": {
                         "const": "AM_24H"
                       }
                     }
@@ -1473,7 +1478,7 @@
                       "type": "set",
                       "condition": "$basic.mode === 'BCD'",
                       "computed": {
-                        "const": "($additional.alarm_b.sub_seconds / $basic.synchronous_predivider_value) == 1 ? ($additional.alarm_b.sub_seconds / $basic.synchronous_predivider_value) + ' s' : ($additional.alarm_b.sub_seconds / $basic.synchronous_predivider_value) >= 0.001 ? (($additional.alarm_b.sub_seconds / $basic.synchronous_predivider_value) * 1000).toFixed(3) + ' ms' : (($additional.alarm_b.sub_seconds / $basic.synchronous_predivider_value) * 1000000).toFixed(3) + ' us'"
+                        "const": "(((($basic.synchronous_predivider_value - $additional.alarm_b.sub_seconds) / $basic.synchronous_predivider_value) % 1) === 0) ? '0' : (((($basic.synchronous_predivider_value - $additional.alarm_b.sub_seconds) / $basic.synchronous_predivider_value) % 1) >= 0.001 ? (((((($basic.synchronous_predivider_value - $additional.alarm_b.sub_seconds) / $basic.synchronous_predivider_value) % 1) * 1000).toPrecision(4)) + ' ms') : (((((($basic.synchronous_predivider_value - $additional.alarm_b.sub_seconds) / $basic.synchronous_predivider_value) % 1) * 1000000).toPrecision(4)) + ' us'))"
                       }
                     },
                     {
@@ -2735,6 +2740,551 @@
             }
           }
         },
+        "security_privilege": {
+         "title": "Security and privilege",
+         "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+         "description": "Security and privileged access levels attributes management.",
+         "properties": {
+		       "security": {
+                "title": "Security",
+                "type": "object",
+                "properties": {
+                  "set_all_items_attr": {
+                    "title": "Set all items security attribute",
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "all_items_attr": {
+                    "title": "All items security attribute",
+                    "type": "string",
+                    "oneOf": [
+                      {
+                        "title": "Secure",
+                        "const": "SEC"
+                      },
+                      {
+                        "title": "Non-secure",
+                        "const": "NSEC"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "disable",
+                        "condition": "!$security_privilege.security.set_all_items_attr"
+                      },
+                      {
+                        "type": "set",
+                        "computed": {
+                          "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'SEC' : 'NSEC'"
+                        }
+                      }
+                    ]
+                  },
+                  "access_levels": {
+                    "title": "Access levels",
+                    "type": "object",
+                    "properties": {
+                      "global_protection": {
+                        "title": "Global protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "initialization_protection": {
+                        "title": "Initialization protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "calibration_and_time_adjustment_protection": {
+                        "title": "Calibration and time adjustment protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "timestamp_protection": {
+                        "title": "Timestamp protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "wake_up_timer_protection": {
+                        "title": "Wake-up timer protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "alarm_b_protection": {
+                        "title": "Alarm B protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "alarm_a_protection": {
+                        "title": "Alarm A protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('swproject.getCurrentEngine').secure === 'Secure-only'",
+                  "message": "In Secure-only engine, all items are Secure."
+                }
+              ]
+              },
+              "privilege": {
+                "title": "Privilege",
+                "type": "object",
+                "properties": {
+                  "set_all_items_attr": {
+                    "title": "Set all items privilege attribute",
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "all_items_attr": {
+                    "title": "All items privilege attribute",
+                    "type": "string",
+                    "oneOf": [
+                      {
+                        "title": "Privileged",
+                        "const": "PRIV"
+                      },
+                      {
+                        "title": "Unprivileged",
+                        "const": "NPRIV"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "disable",
+                        "condition": "!$security_privilege.privilege.set_all_items_attr"
+                      },
+                      {
+                        "type": "set",
+                        "computed": {
+                          "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'PRIV' : 'NPRIV'"
+                        }
+                      }
+                    ]
+                  },
+                  "access_levels": {
+                    "title": "Access levels",
+                    "type": "object",
+                    "properties": {
+                      "global_protection": {
+                        "title": "Global protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "initialization_protection": {
+                        "title": "Initialization protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "calibration_and_time_adjustment_protection": {
+                        "title": "Calibration and time adjustment protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "timestamp_protection": {
+                        "title": "Timestamp protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "wake_up_timer_protection": {
+                        "title": "Wake-up timer protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "alarm_b_protection": {
+                        "title": "Alarm B protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "alarm_a_protection": {
+                        "title": "Alarm A protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "illegal_access": {
+                "title": "Illegal access interrupt",
+                "type": "boolean",
+                "default": false,
+                "synchronize": true,
+                "synchronizeOn": {
+                  "component": "ST-HAL",
+                  "path": "rif-iac-peripheral",
+                  "custom": "$resource.id"
+                },
+                "actions": [
+                  {
+                    "type": "include",
+                    "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                  },
+                  {
+                    "type": "disable",
+                    "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                  }
+                ]
+              }
+            }
+          },
         "system": {
           "title": "System",
           "type": "object",
@@ -2860,7 +3410,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$additional.timestamp.pin_source && $get('pinout.peripheralCanBeMapped', $resource.id, 'TS')"
+                      "condition": "$additional.timestamp.enable_timestamp && $additional.timestamp.pin_source && $get('pinout.peripheralCanBeMapped', $resource.id, 'TS')"
                     }
                   ]
                 }
@@ -2871,7 +3421,7 @@
               "type": "object",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                    "title": "Interrupt",
                   "type": "boolean",
                   "actions": [
                     {
@@ -2912,65 +3462,6 @@
                     }
                   ]
                 },
-                "use_unitary_irq_handlers": {
-                  "title": "Use unitary IRQ handlers",
-                  "type": "boolean",
-                  "default": false,
-                  "actions": [
-                    {
-                      "type": "include",
-                      "condition": "$system.nvic.enable_interruption && $info.layer === 'HAL' && !($get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') === $resource.id || $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') === $resource.id)"
-                    },
-                    {
-                      "type": "enable",
-                      "condition": "$system.nvic.irq_handler_generation"
-                    },
-                    {
-                      "type": "set",
-                      "condition": "$system.nvic.irq_handler_generation === false",
-                      "computed": {
-                        "const": "false"
-                      }
-                    }
-                  ]
-                },
-                "unitary_apis": {
-                  "title": "List of unitary IRQ handlers",
-                  "type": "array",
-                  "minItems": 1,
-                  "maxItems": 4,
-                  "allowRanking": true,
-                  "actions": [
-                    {
-                      "type": "include",
-                      "condition": "$system.nvic.use_unitary_irq_handlers"
-                    }
-                  ],
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "api_name": {
-                        "title": "Api name",
-                        "type": "string",
-                        "oneOf": [
-                          {
-                            "const": "HAL_RTC_ALARM_IRQHandler"
-                          },
-                          {
-                            "const": "HAL_RTC_TIMESTAMP_IRQHandler"
-                          },
-                          {
-                            "const": "HAL_RTC_WAKEUP_IRQHandler"
-                          },
-                          {
-                            "const": "HAL_RTC_SubSecondsUnderflow_IRQHandler"
-                          }
-                        ],
-                        "default": "HAL_RTC_ALARM_IRQHandler"
-                      }
-                    }
-                  }
-                },
                 "irq_line_priority": {
                   "title": "IRQ line priority",
                   "type": "object",
@@ -2997,7 +3488,7 @@
                     {
                       "type": "set",
                       "condition": "$get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_ALARM_TIMEBASE') === $resource.id || $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') !== undefined && $get('envVar.value', 'CORE_RTC_WAKEUP_TIMEBASE') === $resource.id",
-                      "computed": {
+                      "attributes": {
                         "description": "NVIC priority and subpriority have to be at 0 for HAL RTC timebase."
                       }
                     }

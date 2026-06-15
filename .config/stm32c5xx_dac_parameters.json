@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32 MX Config:DAC",
-  "grammarVersion": "3.31",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
@@ -17,6 +17,14 @@
   "properties": {
     "parameters": {
       "type": "object",
+      "variables": [
+        {
+          "on": "update-value",
+          "name": "HAL_USE_VDD_VALUE",
+          "condition": "true",
+          "semaphore": true
+        }
+      ],
       "properties": {
         "info": {
           "type": "object",
@@ -240,8 +248,8 @@
                   {
                     "type": "set",
                     "condition": "$basic.dual.enable",
-                    "computed": {
-                      "const": "true"
+                    "attributes": {
+                      "const": true
                     }
                   }
                 ]
@@ -273,8 +281,8 @@
                     "actions": [
                       {
                         "type": "disable",
-                        "condition": "$basic.dual.enable",
-                        "message": "DAC channel alignment is managed in dual mode."
+                        "condition": "($basic.dual.enable) || ($info.layer === 'LL')",
+                        "message": "DAC channel alignment is managed in dual mode or managed by the application as layer is set to LL."
                       },
                       {
                         "type": "set",
@@ -284,14 +292,10 @@
                         }
                       },
                       {
-                        "type": "disable",
-                        "condition": "$info.layer === 'LL'"
-                      },
-                      {
                         "type": "set",
                         "condition": "$info.layer === 'LL'",
                         "attributes": {
-                          "description": "Layer LL: Managed by the application. "
+                          "description": "Layer LL: Managed by the application."
                         }
                       }
                     ]
@@ -307,7 +311,6 @@
                     "title" : "Trigger source",
                     "objectType": "query",
                     "description": "Select the external event or signal that will trigger the DAC conversion.",
-                    "default": "No trigger",
                     "query": {
                       "entity": "peripheral.interconnect.input trigger",
                       "parent": "$resource.id",
@@ -320,7 +323,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.basic.trigger_enable"
+                        "condition": "$item.basic.trigger_enable",
+                        "message": "Trigger must be enabled."
                       },
                       {
                         "type": "info",
@@ -383,7 +387,8 @@
                       },
                       {
                         "type": "disable",
-                        "condition": "!((($channel?.id ?? 0) == 0 && ($get('pinout.peripheralCanBeMapped', $resource.id, 'OUT1') == true)) || (($channel?.id ?? 0) == 1 && ($get('pinout.peripheralCanBeMapped', $resource.id, 'OUT2') == true)))"
+                        "condition": "!((($channel?.id ?? 0) == 0 && ($get('pinout.peripheralCanBeMapped', $resource.id, 'OUT1') == true)) || (($channel?.id ?? 0) == 1 && ($get('pinout.peripheralCanBeMapped', $resource.id, 'OUT2') == true)))",
+                        "message": "GPIO not available on this device"
                       }
                     ]
                   },
@@ -587,8 +592,9 @@
                           "reset": {
                             "title": "Reset value",
                             "type": "integer",
-                            "minimum": 0,
                             "default": 0,
+                            "minimum": 0,
+                            "maximum": 4095,
                             "display_format": [
                               "dec",
                               "hex"
@@ -691,8 +697,8 @@
                           {
                             "type": "set",
                             "condition": "(($channel?.id ?? 0) == 0 && (!$system.dma.enable_dma_ch1 || $system.dma.enable_dma_dual)) || (($channel?.id ?? 0) == 1 && (!$system.dma.enable_dma_ch2 || $system.dma.enable_dma_dual))",
-                            "computed": {
-                              "const": "false"
+                            "attributes": {
+                              "const": false
                             }
                           }
                         ]
@@ -718,7 +724,7 @@
                         ]
                       },
                       "clock_frequency": {
-                        "title": "S&H Clock Frequency",
+                        "title": "Clock Frequency",
                         "description": "Low power clock used for the sample and hold.",
                         "type": "number",
                         "default": 32000,
@@ -749,7 +755,8 @@
                         "actions": [
                           {
                             "type": "enable",
-                            "condition": "$item.additional.sample_and_hold.enable"
+                            "condition": "$item.additional.sample_and_hold.enable",
+                            "message": "Timing conditionned to sample and hold feature enabled."
                           }
                         ]
                       },
@@ -768,7 +775,8 @@
                         "actions": [
                           {
                             "type": "enable",
-                            "condition": "$item.additional.sample_and_hold.enable"
+                            "condition": "$item.additional.sample_and_hold.enable",
+                            "message": "Timing conditionned to sample and hold feature enabled."
                           }
                         ]
                       },
@@ -787,7 +795,8 @@
                         "actions": [
                           {
                             "type": "enable",
-                            "condition": "$item.additional.sample_and_hold.enable"
+                            "condition": "$item.additional.sample_and_hold.enable",
+                            "message": "Timing conditionned to sample and hold feature enabled."
                           }
                         ]
                       },
@@ -897,6 +906,136 @@
             }
           ]
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "title": "System",
           "type": "object",
@@ -924,9 +1063,6 @@
                       "constraints": {
                         "mode": {
                           "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "NO"
                         }
                       }
                     }
@@ -977,9 +1113,6 @@
                       "constraints": {
                         "mode": {
                           "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "NO"
                         }
                       }
                     }
@@ -1008,8 +1141,8 @@
                     {
                       "type": "set",
                       "condition": "!$basic.dual.enable",
-                      "computed": {
-                        "const": "false"
+                      "attributes": {
+                        "const": false
                       }
                     }
                   ]
@@ -1071,8 +1204,8 @@
                     {
                       "type": "set",
                       "condition": "$basic.dual.enable",
-                      "computed": {
-                        "const": "false"
+                      "attributes": {
+                        "const": false
                       }
                     }
                   ]
@@ -1138,8 +1271,8 @@
                     {
                       "type": "set",
                       "condition": "$basic.dual.enable",
-                      "computed": {
-                        "const": "false"
+                      "attributes": {
+                        "const": false
                       }
                     }
                   ]
@@ -1197,13 +1330,13 @@
               "properties": {
                 "enable_interruption": {
                   "type": "boolean",
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
                       "condition": "$system.dma.enable_dma_ch1 || $system.dma.enable_dma_ch2 || $system.dma.enable_dma_dual",
-                      "message": "NVIC interruption can only be enabled when DMA is use."
+                      "message": "NVIC interrupt conditionned to DMA enabled in DAC channel panel."
                     }
                   ]
                 },

@@ -22,8 +22,7 @@
 function helper_smartcard_get_irq_handler(nvic_api, exti_api, resource, config) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_smartcard_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
+    console.info(`helper_smartcard_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
     );
 
     /** Check the peripheral interruptions have been generated or not */
@@ -61,7 +60,7 @@ function helper_smartcard_get_irq_handler(nvic_api, exti_api, resource, config) 
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_smartcard_get_irq_handler: ${e}`);
+    console.error(`helper_smartcard_get_irq_handler: ${e}`);
   }
   return result;
 }

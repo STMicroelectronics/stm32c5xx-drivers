@@ -78,6 +78,7 @@ hal_status_t mx_{{lowercase @root.current_resource}}_hal_deinit(void)
 {{> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.current_resource}}
 }
   {{/if}}
+
 {{/if}}
 
 {{~assign 'nvic_context' 'undefined'~}}
@@ -85,7 +86,6 @@ hal_status_t mx_{{lowercase @root.current_resource}}_hal_deinit(void)
 {{~assign 'generate_global_handler' false~}}
 {{#each @root.instances}}
   {{#if (eq @root.strategy "HW")}}
-    {{~assign 'name' name~}}
     {{~assign 'current_resource' (append 'RAMCFG_' (replace this 'RAMCFG.' ''))~}}
     {{~log "RAMCFG template current_resource:" @root.current_resource~}}
     {{~assign 'configs' (@root.peripheralsResourceManagerAPI.getSoftwareInstancesBoundToPeripheral this)~}}
@@ -93,7 +93,6 @@ hal_status_t mx_{{lowercase @root.current_resource}}_hal_deinit(void)
   {{else}}
     {{~assign 'ramcfg_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
     {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.ramcfg_cxt.name~}}
     {{~assign 'current_layer' @root.ramcfg_cxt.info.layer~}}
     {{~assign 'configs' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
   {{/if}}
@@ -128,12 +127,6 @@ hal_ramcfg_t {{@root.fct_name}}_init(void)
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
         {{/if}}
         {{#if additional.enable_ecc}}
-          {{#if system.nvic.ramcfg_interruption}}
-
-  /* Enable the interruption for RAMCFG */
-{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config1.needs}}
-{{/CORTEX}}
-          {{/if}}
           {{#if (or (helper_ramcfg_is_global_it_enabled this) (helper_ramcfg_is_ecc_nmi_enabled this))}}
 
   HAL_RAMCFG_ECC_Enable_IT(HAL_{{@root.current_resource}}, {{helper_ramcfg_get_it_enum 'HAL' this}});
@@ -141,6 +134,12 @@ hal_ramcfg_t {{@root.fct_name}}_init(void)
 
   HAL_RAMCFG_ECC_Enable(HAL_{{@root.current_resource}});
           {{/if}}
+        {{/if}}
+        {{#if system.nvic.ramcfg_interruption}}
+
+  /* Enable the interruption for RAMCFG */
+{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config1.needs}}
+{{/CORTEX}}
         {{/if}}
 
   return HAL_{{@root.current_resource}};
@@ -169,11 +168,6 @@ RAMCFG_TypeDef *{{@root.fct_name}}_init(void)
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
         {{/if}}
         {{#if additional.enable_ecc}}
-          {{#if system.nvic.ramcfg_interruption}}
-  /* Enable the interruption for RAMCFG */
-{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config1.needs}}
-{{/CORTEX}}
-          {{/if}}
           {{#if (or (helper_ramcfg_is_global_it_enabled this) (helper_ramcfg_is_ecc_nmi_enabled this))}}
 
   {{helper_common_gen_ll_code 'LL_RAMCFG_ClearFlag' 'LL_RAMCFG_FLAG_ECC_ALL'}}
@@ -181,8 +175,14 @@ RAMCFG_TypeDef *{{@root.fct_name}}_init(void)
           {{/if}}
 
   LL_RAMCFG_EnableECC({{@root.current_resource}});
-
         {{/if}}
+        {{#if system.nvic.ramcfg_interruption}}
+
+  /* Enable the interruption for RAMCFG */
+{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.irq_config1.needs}}
+{{/CORTEX}}
+        {{/if}}
+
   return {{@root.current_resource}};
 }
 
@@ -199,13 +199,34 @@ void {{@root.fct_name}}_deinit(void)
         {{/if}}
 }
       {{/if}}
+      {{#with security_privilege}}
+        {{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+        {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                   privileged attributes management             */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+        {{else}}
+/******************************************************************************/
+/*                  Security and privileged attributes management             */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+        {{/if}}
+{
+
+        {{#> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}
+        {{/RIF}}
+
+  return SYSTEM_OK;
+}
+      {{/with}}
       {{#if @root.only_ll}}
         {{~assign 'generate_global_handler' false~}}
       {{/if}}
     {{/with}}
+
   {{/each}}
 {{/each}}
-
 {{#if (eq @root.generate_global_handler true)}}
 /******************************************************************************/
 /* RAMCFG global interrupt (Grouping interrupts of all active RAMCFG instances)*/

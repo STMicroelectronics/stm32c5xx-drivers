@@ -26,7 +26,8 @@
             },
             {
               "type": "disable",
-              "condition": "!$get('peripheral.isBound', 'NVIC')"
+              "condition": "!$get('peripheral.isBound', 'NVIC')",
+              "message": "NVIC must be bound to the project."
             },
             {
               "type": "warning",
@@ -54,21 +55,23 @@
             "use_vdd_value": {
               "type": "boolean",
               "title": "Use VDD",
-              "description": "Add the definition of VDD_VALUE in generated code inside stm32_external_env.h and activate compile-time option (USE_EXTERNAL_ENV).",
+              "default": false,
+              "description": "Add the definition of VDD_VALUE in generated code inside stm32_external_env.h and activate compile-time option (USE_EXTERNAL_ENV). Turn on when ADC/DAC is used so voltage-dependent calculations use the correct supply voltage.",
               "actions": [
                 {
                   "type": "set",
-                  "condition": "($get('peripheral.isBound', 'ADC12.ADC1')) || ($get('peripheral.isBound', 'ADC12.ADC2')) || ($get('peripheral.isBound', 'ADC1')) || ($get('peripheral.isBound', 'ADC2')) || ($get('peripheral.isBound', 'ADC3')) || ($get('peripheral.isBound', 'DAC1'))",
+                  "condition": "$get('envVar.value', 'HAL_USE_VDD_VALUE')",
                   "attributes": {
-                    "default": true
+                    "const": true
                   }
-                },
-                {
-                  "type": "info",
-                  "condition": "!$value && (($get('peripheral.isBound', 'ADC12.ADC1')) || ($get('peripheral.isBound', 'ADC12.ADC2')) || ($get('peripheral.isBound', 'ADC1')) || ($get('peripheral.isBound', 'ADC2')) || ($get('peripheral.isBound', 'ADC3')) || ($get('peripheral.isBound', 'DAC1')))",
-                  "message": "Turn on \"Use VDD\" when you use ADC/DAC so voltage-dependent calculations use the correct supply voltage."
                 }
               ]
+            },
+            "rcc_rst": {
+              "type": "boolean",
+              "title": "Reset RCC at system initialization",
+              "default": false,
+              "description": "Perform a reset of the RCC peripheral at system initialization. This may be necessary in case the system starts with an unknown state of the RCC. Enabling this option ensures that the RCC is in its default state."
             },
             "vdd_value": {
               "type": "number",
@@ -119,9 +122,304 @@
             }
           }
         },
+        "generated_function_calls_not_ranked": {
+          "type": "array",
+          "title": "Initialization function calls (not ranked)",
+          "rendering": "horizontal-list",
+          "source": "$common.helper_common_get_generated_function_calls_not_ranked($get('sw-config.list-configurations', '{ \"init\": \"init_type\", \"layer\": \"layer\", \"function_type\": \"function_type\" }'))",
+          "itemId": "index",
+          "itemVar": "functions_calls",
+          "itemTitle": "_rank",
+          "items": {
+            "type": "object",
+            "properties": {
+              "hw_instance": {
+                "type": "string",
+                "default": "",
+                "title": "Instance",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.index"
+                    }
+                  }
+                ]
+              },
+              "peripheral": {
+                "type": "string",
+                "default": "",
+                "title": "Component",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.sw_instance"
+                    }
+                  }
+                ]
+              },
+              "layer": {
+                "type": "string",
+                "title": "Layer",
+                "default": "HAL",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.layer"
+                    }
+                  }
+                ]
+              },
+              "generated": {
+                "type": "boolean",
+                "default": true,
+                "title": "Generated",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.init !== 'disabled'"
+                    }
+                  }
+                ]
+              },
+              "callable": {
+                "type": "boolean",
+                "title": "Callable",
+                "default": true,
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.init === 'called'"
+                    }
+                  }
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "default": "",
+                "title": "Mode",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.function_type"
+                    }
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "default": "",
+                "title": "Function",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.name"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "generated_function_calls": {
+          "type": "array",
+          "title": "Ranking of generated initialization function calls",
+          "rendering": "horizontal-list",
+          "source": "$common.helper_common_get_generated_function_calls($get('sw-config.list-configurations', '{ \"init\": \"init_type\", \"layer\": \"layer\", \"function_type\": \"function_type\" }'))",
+          "itemId": "index",
+          "itemVar": "functions_calls",
+          "itemTitle": "_rank",
+          "allowRanking": true,
+          "items": {
+            "type": "object",
+            "properties": {
+              "hw_instance": {
+                "type": "string",
+                "default": "",
+                "title": "Instance",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.index"
+                    }
+                  }
+                ]
+              },
+              "peripheral": {
+                "type": "string",
+                "default": "",
+                "title": "Component",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.sw_instance"
+                    }
+                  }
+                ]
+              },
+              "layer": {
+                "type": "string",
+                "title": "Layer",
+                "default": "HAL",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.layer"
+                    }
+                  }
+                ]
+              },
+              "generated": {
+                "type": "boolean",
+                "default": true,
+                "title": "Generated",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.init !== 'disabled'"
+                    }
+                  }
+                ]
+              },
+              "callable": {
+                "type": "boolean",
+                "title": "Callable",
+                "default": true,
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.init === 'called'"
+                    }
+                  }
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "default": "",
+                "title": "Mode",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.function_type"
+                    }
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "default": "",
+                "title": "Function",
+                "actions": [
+                  {
+                    "type": "disable",
+                    "condition": "true",
+                    "message": "This field is read-only and cannot be edited here."
+                  },
+                  {
+                    "type": "set",
+                    "condition": "true",
+                    "computed": {
+                      "const": "$functions_calls.name"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
         "code_generation": {
           "type": "object",
-          "title": "Code Generation model",
+          "title": "Code generation model",
           "properties": {
             "isr_handler": {
               "type": "boolean",
@@ -138,8 +436,8 @@
             "optim_enable": {
               "type": "boolean",
               "default": true,
-              "title": "Low-Layer code optimization",
-              "description": "Reduce generated Low-Layer (LL) code by relying on peripheral reset defaults."
+              "title": "Low-layer code optimization",
+              "description": "Reduce generated Low-layer (LL) code by relying on peripheral reset defaults."
             },
             "strategy": {
               "type": "string",
@@ -171,6 +469,33 @@
                 }
               ],
               "default": "HW"
+            },
+            "exti_callback_user_data": {
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "$get('envVar.value', 'HAL_EXTI_SYSTEM_GPIO_STANDARD_EXTI')",
+                  "attributes": {
+                    "const": true
+                  }
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('envVar.value', 'HAL_EXTI_SYSTEM_GPIO_STANDARD_EXTI')",
+                  "message": "This option is forced to be enabled as HAL EXTI is enabled inside GPIO configuration panel."
+                }
+              ],
+              "type": "boolean",
+              "title": "EXTI callback and user data upon activation",
+              "description": "Enable EXTI callback registration with user data so generated code can connect driver callbacks to EXTI events and pass application-specific context.",
+              "default": false,
+              "variables": [
+                {
+                  "on": "update-value",
+                  "name": "HAL_SYSTEM_CORE_EXTI_CALLBACK_USER_DATA",
+                  "computed_value": "$value"
+                }
+              ]
             }
           }
         },

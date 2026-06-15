@@ -81,7 +81,7 @@ USART_TypeDef *{{@root.fct_name}}_init(void)
 {{/if~}}
 {{#if enable_rx_pin_level_invert}}
   /* Rx pin level inversion configuration */
-  LL_USART_SetRXPinLevel({{@root.current_resource}}, LL_USART_TXPIN_LEVEL_INVERTED);
+  LL_USART_SetRXPinLevel({{@root.current_resource}}, LL_USART_RXPIN_LEVEL_INVERTED);
 
 {{/if~}}
 {{#if enable_data_invert}}

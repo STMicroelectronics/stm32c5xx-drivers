@@ -15,18 +15,13 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'file_name' 'PWR'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:PWR')~}}
-{{else}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'file_name' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'PWR' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "PWR template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign "_define_" "#define"~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -45,13 +40,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'pwr_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' @root.pwr_cxt.settings.resources.name~}}
-    {{~assign 'current_layer' @root.pwr_cxt.settings.blocks.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'PWR_ctx' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.PWR_ctx.info.layer~}}
   {{#if (eq @root.current_layer 'HAL')}}
     {{~assign 'only_ll' false~}}
   {{/if}}
@@ -67,30 +58,68 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{~assign 'pwr_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{~assign 'current_layer' @root.pwr_cxt.info.layer~}}
-{{else}}
-{{~assign 'current_layer' info.layer~}}
-{{/if}}
-{{#if (eq @root.current_layer 'LL')}}
+  {{~assign 'PWR_ctx' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.PWR_ctx.info.layer~}}
+  {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
-{{/if}}
+  {{/if}}
 {{helper_gpio_generate_aliases @root.pinoutAPI @root.current_resource @root.current_layer~}}
+  {{#with @root.PWR_ctx}}
+    {{#with additional}}
+      {{#with wakeup_pins_configuration}}
+        {{#if wkup_1_configuration.enable}}
+          {{#each wkup_1_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_1
+          {{/each}}
+        {{/if}}
+        {{#if wkup_2_configuration.enable}}
+          {{#each wkup_2_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_2
+          {{/each}}
+        {{/if}}
+        {{#if wkup_3_configuration.enable}}
+          {{#each wkup_3_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_3
+          {{/each}}
+        {{/if}}
+        {{#if wkup_4_configuration.enable}}
+          {{#each wkup_4_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_4
+          {{/each}}
+        {{/if}}
+        {{#if wkup_5_configuration.enable}}
+          {{#each wkup_5_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_5
+          {{/each}}
+        {{/if}}
+        {{#if wkup_6_configuration.enable}}
+          {{#each wkup_6_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_6
+          {{/each}}
+        {{/if}}
+        {{#if wkup_7_configuration.enable}}
+          {{#each wkup_7_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_7
+          {{/each}}
+        {{/if}}
+        {{#if wkup_8_configuration.enable}}
+          {{#each wkup_8_configuration.labels}}
+{{@root._define_}} {{this}} {{@root.current_layer}}_PWR_WAKEUP_PIN_8
+          {{/each}}
+        {{/if}}
+      {{/with}}
+    {{/with}}
+  {{/with}}
 {{/each}}
 
 /* Exported macros -----------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'pwr_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.pwr_cxt.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'PWR_ctx' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.PWR_ctx.info.layer~}}
 /******************************************************************************/
 /* Exported functions for PWR in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -106,6 +135,11 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void);
   * @brief  De-initialize {{lowercase @root.current_resource}} instance.
   */
 system_status_t {{@root.pwr_root_fct_name}}_deinit(void);
+
+  {{#if (eq @root.current_layer 'HAL')}}
+    {{#> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
+    {{/GPIO_HAL}}
+  {{/if}}
 
   {{#if (eq @root.current_layer 'HAL')}}
   {{/if}}
@@ -136,21 +170,24 @@ void {{line}}_IRQHandler(void);
 
 {{/if}}
 {{#each @root.instances}}
-  {{#with runtime}}
-    {{#if enable}}
+  {{~assign 'PWR_ctx' config~}}
+  {{#with @root.PWR_ctx}}
+    {{#with runtime}}
+      {{#if enable}}
 /******************************************************************************/
 /* Runtime APIs.                                                              */
 /******************************************************************************/
-      {{#if lp_entry}}
+        {{#if lp_entry}}
 system_status_t mx_pwr_enter_low_power(void);
-      {{/if}}
-      {{#if lp_exit}}
+        {{/if}}
+        {{#if lp_exit}}
 system_status_t mx_pwr_exit_low_power(void);
-      {{/if}}
-      {{#if (and (eq lp_check true)(or (eq mode 'STOP_MODE')(eq mode 'STOP0_MODE')(eq mode 'STOP1_MODE')(eq mode 'STOP2_MODE')(eq mode 'STOP3_MODE')(eq mode 'STANDBY_MODE')))}}
+        {{/if}}
+        {{#if (eq lp_check true)}}
 uint32_t mx_pwr_system_was_low_power(void);
+        {{/if}}
       {{/if}}
-    {{/if}}
+    {{/with}}
   {{/with}}
 {{/each}}
 #ifdef __cplusplus

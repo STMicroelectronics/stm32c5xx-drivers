@@ -27,7 +27,7 @@ const LL_GPIO_functions_PA13 = {
   LL_GPIO_SetPinPull: ["LL_GPIO_PULL_UP"],
   LL_GPIO_SetAFPin_0_7: ["LL_GPIO_AF_0"],
   LL_GPIO_SetAFPin_8_15: ["LL_GPIO_AF_0"],
-  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ANALOG"],
+  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ALTERNATE"],
   LL_GPIO_WriteOutputPin: ["LL_GPIO_PIN_RESET"],
 };
 
@@ -37,7 +37,7 @@ const LL_GPIO_functions_PA14 = {
   LL_GPIO_SetPinPull: ["LL_GPIO_PULL_DOWN"],
   LL_GPIO_SetAFPin_0_7: ["LL_GPIO_AF_0"],
   LL_GPIO_SetAFPin_8_15: ["LL_GPIO_AF_0"],
-  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ANALOG"],
+  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ALTERNATE"],
   LL_GPIO_WriteOutputPin: ["LL_GPIO_PIN_RESET"],
 };
 
@@ -47,7 +47,7 @@ const LL_GPIO_functions_PA15_B4 = {
   LL_GPIO_SetPinPull: ["LL_GPIO_PULL_UP"],
   LL_GPIO_SetAFPin_0_7: ["LL_GPIO_AF_0"],
   LL_GPIO_SetAFPin_8_15: ["LL_GPIO_AF_0"],
-  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ANALOG"],
+  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ALTERNATE"],
   LL_GPIO_WriteOutputPin: ["LL_GPIO_PIN_RESET"],
 };
 
@@ -57,7 +57,7 @@ const LL_GPIO_functions_PB3 = {
   LL_GPIO_SetPinPull: ["LL_GPIO_PULL_NO"],
   LL_GPIO_SetAFPin_0_7: ["LL_GPIO_AF_0"],
   LL_GPIO_SetAFPin_8_15: ["LL_GPIO_AF_0"],
-  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ANALOG"],
+  LL_GPIO_SetPinMode: ["LL_GPIO_MODE_ALTERNATE"],
   LL_GPIO_WriteOutputPin: ["LL_GPIO_PIN_RESET"],
 };
 

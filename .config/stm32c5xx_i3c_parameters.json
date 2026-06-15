@@ -104,6 +104,44 @@
               ],
               "default": "CTRL"
             },
+            "clock_source": {
+              "title": "Clock source",
+              "description": "Clock source can be modified in the clock tree.",
+              "type": "string",
+              "readOnly": true,
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "const": "$get('clock.input', $resource.id)"
+                  }
+                },
+                {
+                  "type": "warning",
+                  "condition": "(($get('clock.input', $resource.id) === 'HSE') && ($get('envVar.value', 'RCC_PROJECT_HSE') !== true))",
+                  "message": "Make sure that HSE is enabled into RCC panel"
+                }
+              ],
+              "default": ""
+            },
+            "clock_frequency": {
+              "title": "Clock frequency",
+              "description": "Clock frequency can be modified in the clock tree.",
+              "type": "integer",
+              "readOnly": true,
+              "default": 0,
+              "unit": "Hz",
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "const": "$get('clock.frequency', $resource.id)"
+                  }
+                }
+              ]
+            },
             "bus_usage": {
               "title": "Bus usage",
               "actions": [
@@ -127,7 +165,7 @@
               "default": "UTILS_I3C_PURE_I3C_BUS"
             },
             "freq_i3c": {
-              "title": "I3C frequency (kHz)",
+              "title": "I3C frequency",
               "actions": [
                 {
                   "type": "include",
@@ -138,10 +176,11 @@
               "description": "I3C controller frequency (kHz). It must be between 124 kHz and 12.5 MHz.",
               "minimum": 124,
               "maximum": 12500,
+              "unit": "kHz",
               "default": 12500
             },
             "freq_i2c": {
-              "title": "I2C frequency (kHz)",
+              "title": "I2C frequency",
               "actions": [
                 {
                   "type": "include",
@@ -152,6 +191,7 @@
               "description": "I2C controller frequency (kHz). It must be between 87 kHz and 1 MHz.",
               "minimum": 87,
               "maximum": 1000,
+              "unit": "kHz",
               "default": 1000
             },
             "duty_cycle_i3c": {
@@ -282,19 +322,21 @@
                   "default": "LL_I3C_OWN_ACTIVITY_STATE_0"
                 },
                 "bus_free_duration": {
-                  "title": "Bus free duration (ns)",
+                  "title": "Bus free duration",
                   "type": "integer",
                   "description": "The duration after a stop and before a start (ns). It must be between 20 ns and 2042 ns.",
                   "minimum": 20,
                   "maximum": 2042,
+                  "unit": "ns",
                   "default": 20
                 },
                 "bus_idle_duration": {
-                  "title": "Bus idle duration (ns)",
+                  "title": "Bus idle duration",
                   "type": "integer",
                   "description": "An extended duration of the bus free to allow the devices to hot join the I3C bus. It must be between 200000 ns and 205601 ns.",
                   "minimum": 200000,
                   "maximum": 205601,
+                  "unit": "ns",
                   "default": 200000
                 }
               }
@@ -372,11 +414,12 @@
               ],
               "properties": {
                 "bus_available_duration": {
-                  "title": "Bus available duration (ns)",
+                  "title": "Bus available duration",
                   "type": "integer",
                   "description": "Minimum idle time with SDA and SCL high before next transaction. It must be between 1000 ns and 2008 ns.",
                   "minimum": 1000,
                   "maximum": 2008,
+                  "unit": "ns",
                   "default": 1000
                 }
               }
@@ -490,11 +533,12 @@
               ],
               "properties": {
                 "stall_time": {
-                  "title": "Stall time (ns)",
+                  "title": "Stall time",
                   "type": "integer",
                   "description": "Controller clock stall time (ns). It must be between 0 ns and 1020 ns. It is applied to ACK, CCC t-bit, Tx parity and Rx parity if enabled.",
                   "minimum": 0,
                   "maximum": 1020,
+                  "unit": "ns",
                   "default": 0
                 },
                 "ack": {
@@ -862,7 +906,7 @@
               ],
               "properties": {
                 "ta_duration": {
-                  "title": "Clock to data turn-around time (tSCO in ns)",
+                  "title": "Clock to data turn-around time (tSCO)",
                   "description": "Minimum interval between the falling edge of SCL and the moment when SDA changes state.",
                   "type": "string",
                   "default": "LESS_12NS",
@@ -928,6 +972,136 @@
                   ]
                 }
               }
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },

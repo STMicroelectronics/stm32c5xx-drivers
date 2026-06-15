@@ -37,7 +37,7 @@ USART_TypeDef *{{@root.fct_name}}_init(void)
 {
   /* Basic configuration */
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource~}}
-{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='SMARTCARD'}}
+{{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='USART'}}
 {{#with basic}}
 {{#if nack}}
 {{assign 'nack_state' "1U"}}

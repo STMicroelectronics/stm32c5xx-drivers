@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32 MX Config:OPAMP",
-  "grammarVersion": "3.31",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
@@ -136,22 +136,22 @@
                   "oneOf": [
                     {
                       "title": "Non-inverting",
-                      "description": "Non-inverting PGA: Inverting input connected to the internal feedback resistor. No external connection on inverting input. Positive gain (Non-Inverting mode). VINPx: Input signal.",
+                      "description": "Non-inverting PGA: Inverting input connected to the internal feedback resistor. No external connection on inverting input. Positive gain (Non-inverting mode). VINPx: Input signal.",
                       "const": "EXT_NONE"
                     },
                     {
                       "title": "Non-inverting + filtering",
-                      "description": "Non-inverting PGA with filtering: Inverting input connected to the internal feedback resistor and to VINM0 for filtering. Positive gain (Non-Inverting mode). VINPx: Input signal. VINM0 - VOUT: Additional low-pass filtering.",
+                      "description": "Non-inverting PGA with filtering: Inverting input connected to the internal feedback resistor and to VINM0 for filtering. Positive gain (Non-inverting mode). VINPx: Input signal. VINM0 - VOUT: Additional low-pass filtering.",
                       "const": "EXT_FILT"
                     },
                     {
                       "title": "Non-inverting + bias, inverting",
-                      "description": "Non-inverting PGA with external bias, or inverting PGA: Inverting input connected to the internal feedback resistor. VINM0 is available for bias voltage in non-inverting mode or to use the OPAMP in inverting mode. Negative gain (Inverting mode): VINPx: Bias voltage, VINM0: Input signal. Positive gain (Non-Inverting mode): VINPx: Input signal, VINM0: Bias voltage.",
+                      "description": "Non-inverting PGA with external bias, or inverting PGA: Inverting input connected to the internal feedback resistor. VINM0 is available for bias voltage in Non-inverting mode or to use the OPAMP in inverting mode. Negative gain (Inverting mode): VINPx: Bias voltage, VINM0: Input signal. Positive gain (Non-inverting mode): VINPx: Input signal, VINM0: Bias voltage.",
                       "const": "EXT_BIAS"
                     },
                     {
                       "title": "Non-inverting or inverting + bias and filtering",
-                      "description": "Inverting or non-inverting PGA with external bias or/and filtering: In PGA mode, the inverting input is connected to the internal feedback resistor and to VINM1 for filtering. VINM0 is available for bias voltage in non-inverting mode or to use the OPAMP in inverting mode. Negative gain (Inverting mode): VINPx: Bias voltage,  VINM0: Input signal, VINM1 - VOUT: Additional low-pass filtering. Positive gain (Non-Inverting mode): VINPx: Input signal, VINM0: Bias voltage, VINM1 - VOUT: Additional low-pass filtering.",
+                      "description": "Inverting or non-inverting PGA with external bias and/or filtering: In PGA mode, the inverting input is connected to the internal feedback resistor and to VINM1 for filtering. VINM0 is available for bias voltage in Non-inverting mode or to use the OPAMP in inverting mode. Negative gain (Inverting mode): VINPx: Bias voltage,  VINM0: Input signal, VINM1 - VOUT: Additional low-pass filtering. Positive gain (Non-inverting mode): VINPx: Input signal, VINM0: Bias voltage, VINM1 - VOUT: Additional low-pass filtering.",
                       "const": "EXT_BIAS_FILT"
                     }
                   ],
@@ -175,7 +175,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT' || $basic.opamp_mode === 'STANDALONE' || $basic.opamp_mode === 'FOLLOWER'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT' || $basic.opamp_mode === 'STANDALONE' || $basic.opamp_mode === 'FOLLOWER'",
+                          "message": "PGA gain can be configured in Non-inverting or PGA mode."
                         }
                       ]
                     },
@@ -185,7 +186,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -195,7 +197,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -205,7 +208,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -215,7 +219,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain cannot be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -225,7 +230,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain cannot be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -235,7 +241,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain cannot be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     },
@@ -245,7 +252,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'"
+                          "condition": "$basic.config.external_mode === 'EXT_NONE' || $basic.config.external_mode === 'EXT_FILT'",
+                          "message": "PGA gain cannot be configured in Non-inverting mode with no external connection or with filtering."
                         }
                       ]
                     }
@@ -276,7 +284,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.opamp_mode === 'STANDALONE'"
+                          "condition": "$basic.opamp_mode === 'STANDALONE'",
+                          "message": "Inverting input can be connected to GPIO pins in Standalone mode."
                         },
                         {
                           "type": "include",
@@ -290,7 +299,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.opamp_mode === 'STANDALONE'"
+                          "condition": "$basic.opamp_mode === 'STANDALONE'",
+                          "message": "Inverting input can be connected to GPIO pins in Standalone mode."
                         },
                         {
                           "type": "include",
@@ -304,7 +314,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.opamp_mode === 'STANDALONE'"
+                          "condition": "$basic.opamp_mode === 'STANDALONE'",
+                          "message": "Inverting input can be connected to GPIO pins in Standalone mode."
                         },
                         {
                           "type": "include",
@@ -318,7 +329,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.opamp_mode === 'STANDALONE'"
+                          "condition": "$basic.opamp_mode === 'STANDALONE'",
+                          "message": "Inverting input can be connected to GPIO pins in Standalone mode."
                         },
                         {
                           "type": "include",
@@ -333,7 +345,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.opamp_mode === 'FOLLOWER' || $basic.opamp_mode === 'PGA'"
+                          "condition": "$basic.opamp_mode === 'FOLLOWER' || $basic.opamp_mode === 'PGA'",
+                          "message": "Inverting input is controlled by the operating mode."
                         }
                       ]
                     }
@@ -342,22 +355,8 @@
                     {
                       "type": "set",
                       "condition": "$basic.opamp_mode === 'FOLLOWER' || $basic.opamp_mode === 'PGA'",
-                      "computed": {
+                      "attributes": {
                         "const": "INT"
-                      }
-                    },
-                    {
-                      "type": "set",
-                      "condition": "$basic.opamp_mode === 'PGA'",
-                      "computed": {
-                        "title": "Controlled by PGA mode"
-                      }
-                    },
-                    {
-                      "type": "set",
-                      "condition": "$basic.opamp_mode === 'FOLLOWER'",
-                      "computed": {
-                        "title": "Not externally connected"
                       }
                     }
                   ]
@@ -428,9 +427,9 @@
               "type": "object",
               "properties": {
                 "output": {
-                  "title": " Output",
+                  "title": "Output",
                   "type": "string",
-                  "description": "Select if the OPAMP output is routed to a GPIO pin or internally to another peripheral (peripherals compliant: refer to device reference manual).",
+                  "description": "Select if the OPAMP output is routed to a GPIO pin or internally to another peripheral (supported peripherals: refer to device reference manual).",
                   "default": "EXTERNAL",
                   "oneOf": [
                     {
@@ -463,8 +462,9 @@
               "title": "Offset trimming value",
               "actions": [
                 {
-                  "type": "include",
-                  "condition": "$additional.user_trim_sel === true"
+                  "type": "enable",
+                  "condition": "$additional.user_trim_sel === true",
+                  "message": "Enable user trimming to configure offset trimming values."
                 }
               ],
               "properties": {
@@ -503,8 +503,9 @@
               "title": "Timer-controlled multiplexing",
               "actions": [
                 {
-                  "type": "include",
-                  "condition": "$additional.secondary_configuration_sel === true"
+                  "type": "enable",
+                  "condition": "$additional.secondary_configuration_sel === true",
+                  "message": "Enable timer-controlled multiplexing to configure the secondary OPAMP configuration."
                 }
               ],
               "properties": {
@@ -559,7 +560,7 @@
                         {
                           "type": "disable",
                           "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE' || $additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER'",
-                          "message": "PGA Mode must be enabled to configure external connection."
+                          "message": "Set Operating mode to PGA to change External connection."
                         }
                       ]
                     },
@@ -575,7 +576,9 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT' || $additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE' || $additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT' || $additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE' || $additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER'",
+                              "message": "Secondary PGA gain can be configured in Non-inverting or PGA mode."
+
                             }
                           ]
                         },
@@ -585,7 +588,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Secondary PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                             }
                           ]
                         },
@@ -595,7 +599,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Secondary PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                             }
                           ]
                         },
@@ -605,7 +610,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Secondary PGA gain can be configured in Non-inverting mode with no external connection or with filtering."
                             }
                           ]
                         },
@@ -615,7 +621,8 @@
                           "actions": [
                             {
                               "type": "disable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Gain values with negative gain are not available when the inverting input is not externally connected or is connected with a low-pass filter."
                             }
                           ]
                         },
@@ -625,7 +632,8 @@
                           "actions": [
                             {
                               "type": "disable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Gain values with negative gain are not available when the inverting input is not externally connected or is connected with a low-pass filter."
                             }
                           ]
                         },
@@ -635,7 +643,8 @@
                           "actions": [
                             {
                               "type": "disable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Gain values with negative gain are not available when the inverting input is not externally connected or is connected with a low-pass filter."
                             }
                           ]
                         },
@@ -645,7 +654,8 @@
                           "actions": [
                             {
                               "type": "disable",
-                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'"
+                              "condition": "$additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_NONE' || $additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT'",
+                              "message": "Gain values with negative gain are not available when the inverting input is not externally connected or is connected with a low-pass filter."
                             }
                           ]
                         }
@@ -654,7 +664,7 @@
                         {
                           "type": "disable",
                           "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE' || $additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER'",
-                          "message": "PGA Mode must be enabled to configure gain."
+                          "message": "Set Operating mode to PGA to change gain."
                         }
                       ]
                     },
@@ -675,7 +685,12 @@
                         {
                           "type": "disable",
                           "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE' || $additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER'",
-                          "message": "PGA must be enabled to select timer for gain mux control."
+                          "message": "Set secondary operating mode to PGA to choose the timer for gain switching."
+                        },
+                        {
+                          "type": "info",
+                          "condition": "true",
+                          "message": "The selected interconnect must be configured manually."
                         }
                       ]
                     }
@@ -697,7 +712,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'"
+                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'",
+                              "message": "Secondary inverting input can be connected to GPIO pins in Standalone mode."
                             },
                             {
                               "type": "include",
@@ -711,7 +727,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'"
+                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'",
+                              "message": "Secondary inverting input can be connected to GPIO pins in Standalone mode."
                             },
                             {
                               "type": "include",
@@ -725,7 +742,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'"
+                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'",
+                              "message": "Secondary inverting input can be connected to GPIO pins in Standalone mode."
                             },
                             {
                               "type": "include",
@@ -739,7 +757,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'"
+                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'STANDALONE'",
+                              "message": "Secondary inverting input can be connected to GPIO pins in Standalone mode."
                             },
                             {
                               "type": "include",
@@ -754,7 +773,8 @@
                           "actions": [
                             {
                               "type": "enable",
-                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER' || $additional.secondary_configuration.opamp_secondary_mode === 'PGA'"
+                              "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER' || $additional.secondary_configuration.opamp_secondary_mode === 'PGA'",
+                              "message": "Secondary inverting input is controlled by the operating mode selection. In Follower mode, it is not externally connected. In PGA mode, it is controlled by the external connection selection."
                             }
                           ]
                         }
@@ -763,7 +783,7 @@
                         {
                           "type": "set",
                           "condition": "$additional.secondary_configuration.opamp_secondary_mode === 'FOLLOWER' || $additional.secondary_configuration.opamp_secondary_mode === 'PGA'",
-                          "computed": {
+                          "attributes": {
                             "const": "INT"
                           }
                         }
@@ -843,7 +863,14 @@
                         "where": "$entity.ip_signal.includes('opamp_tc')",
                         "sharing": false
                       },
-                      "select": "first"
+                      "select": "first",
+                      "actions": [
+                        {
+                          "type": "info",
+                          "condition": "true",
+                          "message": "The selected interconnect must be configured manually."
+                        }
+                      ]
                     }
                   }
                 }
@@ -885,7 +912,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config.external_mode === 'EXT_BIAS_FILT') || ($basic.config.external_mode === 'EXT_BIAS') || ($basic.config.external_mode === 'EXT_FILT') || ($additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_BIAS_FILT') || ($additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_BIAS') || ($additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_FILT') || ($basic.config_input_connection.inverting_input === '0') || ($additional.secondary_configuration.config_input_mux_secondary_connection.inverting_input === '0')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM0') == true))"
+                      "condition": "$common.helper_opamp_show_vinm_gpio($basic, $additional, '0') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM0') == true)"
                     },
                     {
                       "type": "set",
@@ -922,7 +949,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config.external_mode === 'EXT_BIAS_FILT') || ($additional.secondary_configuration.pga_secondary_config.external_mode === 'EXT_BIAS_FILT') || ($basic.config_input_connection.inverting_input === '1') || ($additional.secondary_configuration.config_input_mux_secondary_connection.inverting_input === '1')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM1') == true))"
+                      "condition": "$common.helper_opamp_show_vinm_gpio($basic, $additional, '1') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM1') == true)"
                     },
                     {
                       "type": "set",
@@ -959,7 +986,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.inverting_input === '2') || ($additional.secondary_configuration.config_input_mux_secondary_connection.inverting_input === '2')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM2') == true))"
+                      "condition": "$common.helper_opamp_show_vinm_gpio($basic, $additional, '2') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM2') == true)"
                     },
                     {
                       "type": "set",
@@ -996,7 +1023,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.inverting_input === '3') || ($additional.secondary_configuration.config_input_mux_secondary_connection.inverting_input === '3')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM3') == true))"
+                      "condition": "$common.helper_opamp_show_vinm_gpio($basic, $additional, '3') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM3') == true)"
                     },
                     {
                       "type": "set",
@@ -1033,7 +1060,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.inverting_input === '4') || ($additional.secondary_configuration.config_input_mux_secondary_connection.inverting_input === '4')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM4') == true))"
+                      "condition": "$common.helper_opamp_show_vinm_gpio($basic, $additional, '4') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINM4') == true)"
                     },
                     {
                       "type": "set",
@@ -1070,7 +1097,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.non_inverting_input === '0') || ($additional.secondary_configuration.config_input_mux_secondary_connection.non_inverting_input === '0')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP0') == true))"
+                      "condition": "$common.helper_opamp_show_vinp_gpio($basic, $additional, '0') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP0') == true)"
                     },
                     {
                       "type": "set",
@@ -1107,7 +1134,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.non_inverting_input === '1') || ($additional.secondary_configuration.config_input_mux_secondary_connection.non_inverting_input === '1')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP1') == true))"
+                      "condition": "$common.helper_opamp_show_vinp_gpio($basic, $additional, '1') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP1') == true)"
                     },
                     {
                       "type": "set",
@@ -1144,7 +1171,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.non_inverting_input === '2') || ($additional.secondary_configuration.config_input_mux_secondary_connection.non_inverting_input === '2')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP2') == true))"
+                      "condition": "$common.helper_opamp_show_vinp_gpio($basic, $additional, '2') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP2') == true)"
                     },
                     {
                       "type": "set",
@@ -1181,7 +1208,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.non_inverting_input === '3') || ($additional.secondary_configuration.config_input_mux_secondary_connection.non_inverting_input === '3')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP3') == true))"
+                      "condition": "$common.helper_opamp_show_vinp_gpio($basic, $additional, '3') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP3') == true)"
                     },
                     {
                       "type": "set",
@@ -1218,7 +1245,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.config_input_connection.non_inverting_input === '4') || ($additional.secondary_configuration.config_input_mux_secondary_connection.non_inverting_input === '4')) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP4') == true))"
+                      "condition": "$common.helper_opamp_show_vinp_gpio($basic, $additional, '4') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'VINP4') == true)"
                     },
                     {
                       "type": "set",

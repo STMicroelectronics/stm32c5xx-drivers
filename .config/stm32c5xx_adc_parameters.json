@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:ADC",
-  "grammarVersion": "3.31",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
@@ -13,6 +13,14 @@
   "properties": {
     "parameters": {
       "type": "object",
+      "variables": [
+        {
+          "on": "update-value",
+          "name": "HAL_USE_VDD_VALUE",
+          "condition": "true",
+          "semaphore": true
+        }
+      ],
       "properties": {
         "info": {
           "type": "object",
@@ -95,14 +103,9 @@
               "description": "ADC kernel clock source can be modified in clock tree.",
               "actions": [
                 {
-                  "type": "exclude",
-                  "condition": "true"
-                },
-                {
                   "type": "set",
-                  "condition": "true",
                   "computed": {
-                    "const": "$get('clock.input', 'ADC_Clock_Source').toString().split('_')[0]"
+                    "const": "$get('clock.input', $resource.name)"
                   }
                 }
               ],
@@ -136,6 +139,7 @@
               "type": "integer",
               "description": "Sets the precision of the ADC conversion.",
               "default": 12,
+              "unit": "Bit",
               "oneOf": [
                 {
                   "title": "6 bit",
@@ -168,12 +172,12 @@
                 {
                   "title": "Bulb",
                   "const": "BULB",
-                  "description": "ADC conversions sampling phase starts immediately after end of conversion, stops upon trigger event.\nNote: First conversion is using minimal sampling time (refer to hal_adc_sampling_time_t).\nNote:  Usable only if conversions from ADC group regular (not ADC group injected) and not in continuous mode."
+                  "description": "Sampling starts right after conversion end and stops on trigger.\nAvailable only for regular group conversions (not injected) and non-continuous mode."
                 },
                 {
                   "title": "Trigger control",
                   "const": "TRIGGER_CTRL",
-                  "description": "ADC conversions sampling phase  by trigger events: trigger rising edge starts sampling, trigger falling edge stops sampling and start conversion.\nNote: Usable only if conversions from ADC group regular (not ADC group injected) and not in continuous mode."
+                  "description": "Sampling is controlled by trigger edges.\nAvailable only for regular group conversions (not injected) and non-continuous mode."
                 }
               ]
             },
@@ -182,7 +186,7 @@
               "rendering": "channel-tabs",
               "type": "array",
               "strictMaxItems": false,
-              "source": "$resource.interconnect.filter(el => el.type === \"analog input\" && !/gnd/i.test(el.source) && el.source !== \"VREF-\" && !el.source.startsWith(\"DFT\") && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes(el.source) || /^opamp/i.test(el.source) || /^dac_/i.test(el.source) || /^vcore/i.test(el.source) || /^vsens/i.test(el.source) || /^vbat(\\/4)?$/i.test(el.source) || (/vinp/i.test(el.id) && el.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, el.source.replace($resource.name + '_','')) == true ) ) ).filter((el,i,a)=> i === a.findIndex(f => f.source === el.source))",
+              "source": "$common.helper_adc_get_standard_channel_sources($resource, $get)",
               "itemTitle": "source",
               "itemVar": "channel",
               "itemId": "source",
@@ -246,7 +250,9 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_channel"
+                        "condition": "$item.use_channel",
+                        "message": "Available when channel is enabled."
+
                       }
                     ]
                   },
@@ -256,7 +262,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_channel"
+                        "condition": "$item.use_channel",
+                        "message": "Available when channel is enabled."
                       }
                     ],
                     "oneOf": [
@@ -288,7 +295,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_channel"
+                        "condition": "$item.use_channel",
+                        "message": "Available when channel is enabled."
                       }
                     ]
                   }
@@ -297,16 +305,16 @@
             },
             "group_panel": {
               "type": "object",
-              "title": "ADC groups conversions",
+              "title": "Groups conversions",
               "properties": {
                 "reg_config_t": {
                   "type": "object",
-                  "title": "Group regular",
+                  "title": "Regular",
                   "properties": {
                     "grp_reg_sel": {
                       "type": "boolean",
                       "default": true,
-                      "title": "Group regular"
+                      "title": "Use group"
                     },
                     "trigger_src": {
                       "title": "Trigger type",
@@ -326,7 +334,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true"
+                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true",
+                          "message": "Available when regular group is selected."
                         }
                       ]
                     },
@@ -343,11 +352,13 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "($basic.group_panel.reg_config_t.trigger_src == true) || ($basic.group_panel.reg_config_t.grp_reg_sel == false)"
+                          "condition": "($basic.group_panel.reg_config_t.trigger_src == true) || ($basic.group_panel.reg_config_t.grp_reg_sel == false)",
+                          "message": "Available when external trigger is selected as trigger source and regular group is selected."
                         },
                         {
-                          "type": "include",
-                          "condition": "true"
+                        "type": "info",
+                        "condition": "true",
+                        "message": "The selected interconnect must be configured manually."
                         }
                       ]
                     },
@@ -372,7 +383,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "($basic.group_panel.reg_config_t.trigger_src == true) || ($basic.group_panel.reg_config_t.grp_reg_sel == false)"
+                          "condition": "($basic.group_panel.reg_config_t.trigger_src == true) || ($basic.group_panel.reg_config_t.grp_reg_sel == false)",
+                          "message": "Available when external trigger is selected as trigger source and regular group is selected."
                         }
                       ]
                     },
@@ -391,7 +403,8 @@
                            "actions": [
                             {
                               "type": "disable",
-                              "condition": "$basic.sampling_mode != 'NORMAL'"
+                              "condition": "$basic.sampling_mode != 'NORMAL'",
+                              "message": "Available only in normal sampling mode."
                             }
                           ]
                         }
@@ -400,12 +413,13 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true"
+                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true",
+                          "message": "Available when regular group is selected."
                         },
                         {
                           "type": "error",
-                          "condition": "$basic.sampling_mode != 'NORMAL' && $basic.group_panel.reg_config_t.continuous == 'CONTINUOUS'",
-                          "message": "Continuous mode is only available in normal sampling mode."
+                          "condition": "($basic.group_panel.reg_config_t.grp_reg_sel == true) && ($basic.sampling_mode != 'NORMAL') && ($basic.group_panel.reg_config_t.continuous == 'CONTINUOUS')",
+                          "message": "Continuous mode is only available in sampling mode normal."
                         }
                       ]
                     },
@@ -455,7 +469,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true"
+                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true",
+                          "message": "Available when regular group is selected."
                         }
                       ]
                     },
@@ -477,13 +492,14 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true"
+                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true",
+                          "message": "Available when regular group is selected."
                         }
                       ]
                     },
                     "reg_sequencer": {
                       "type": "array",
-                      "title": "Regular sequencer",
+                      "title": "Sequencer",
                       "description": "Order channels conversion sequence in regular group.",
                       "minItems": 0,
                       "maxItems": 16,
@@ -491,7 +507,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true"
+                          "condition": "$basic.group_panel.reg_config_t.grp_reg_sel == true",
+                          "message": "Available when regular group is selected."
                         }
                       ],
                       "allowRanking": true,
@@ -509,8 +526,8 @@
                                 "peripheral.interconnect.analog input"
                               ],
                               "parent": "$resource.name",
-                              "title": "{{source}}",
-                              "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                              "title": "{{source.toUpperCase()}}",
+                              "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                             },
                             "select": "first"
                           }
@@ -521,12 +538,12 @@
                 },
                 "inj_config_t": {
                   "type": "object",
-                  "title": "Group injected",
+                  "title": "Injected",
                   "properties": {
                     "grp_inj_sel": {
                       "type": "boolean",
                       "default": false,
-                      "title": "Group injected",
+                      "title": "Use group",
                       "actions": [
                         {
                           "type": "error",
@@ -557,7 +574,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true"
+                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true" ,
+                          "message": "Available when injected group is selected."
                         }
                       ]
                     },
@@ -574,11 +592,13 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "($basic.group_panel.inj_config_t.grp_inj_sel == false) || ($basic.group_panel.inj_config_t.trigger_src != 'EXTERNAL')"
+                          "condition": "($basic.group_panel.inj_config_t.grp_inj_sel == false) || ($basic.group_panel.inj_config_t.trigger_src != 'EXTERNAL')",
+                          "message": "Available when injected group is selected and trigger source is external."
                         },
                         {
-                          "type": "include",
-                          "condition": "true"
+                          "type": "info",
+                          "condition": "true",
+                          "message": "The selected interconnect must be configured manually."
                         }
                       ]
                     },
@@ -603,7 +623,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "($basic.group_panel.inj_config_t.grp_inj_sel == false) || ($basic.group_panel.inj_config_t.trigger_src != 'EXTERNAL')"
+                          "condition": "($basic.group_panel.inj_config_t.grp_inj_sel == false) || ($basic.group_panel.inj_config_t.trigger_src != 'EXTERNAL')",
+                          "message": "Available when injected group is selected and trigger source is external."
                         }
                       ]
                     },
@@ -625,7 +646,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true"
+                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true",
+                          "message": "Available when injected group is selected."
                         }
                       ]
                     },
@@ -639,7 +661,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true"
+                          "condition": "$basic.group_panel.inj_config_t.grp_inj_sel == true",
+                          "message": "Available when injected group is selected."
                         }
                       ],
                       "allowRanking": true,
@@ -657,8 +680,8 @@
                                 "peripheral.interconnect.analog input"
                               ],
                               "parent": "$resource.name",
-                              "title": "{{source}}",
-                              "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                              "title": "{{source.toUpperCase()}}",
+                              "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                             },
                             "select": "first"
                           }
@@ -691,9 +714,10 @@
               ],
               "properties": {
                 "left_bit_shift": {
+                  "title": "Data shift left",
+                  "description": "Shift the ADC conversion result to the left by the selected number of bits. Applies to ADC groups regular and injected conversions.",
                   "type": "string",
-                  "description": "Shift the ADC conversion result to the left by the selected number of bits.",
-                  "default": "1_BIT",
+                  "default": "NONE",
                   "oneOf": [
                     {
                       "title": "Disable",
@@ -759,13 +783,12 @@
                       "title": "15 bits",
                       "const": "15_BITS"
                     }
-                  ],
-                  "title": "Data shift left"
+                  ]
                 },
                 "gain_compensation_x1000": {
                   "type": "integer",
                   "title": "Gain compensation",
-                  "description": "ADC gain coefficient applies to raw conversions data. Value multiplied by 1000 to have an integer value (example: to set coefficient 0.982, parameter value must be 982). Therefore, unitary gain corresponds to value 1000..\nNote: Coefficient resolution managed by ADC peripheral is higher than 1/1000, if needed to reach more accurate resolution, refer to function LL_ADC_SetGainCompensation().",
+                  "description": "ADC gain coefficient for raw conversion data, scaled by 1000 (use 982 to represent 0.982).",
                   "maximum": 3999,
                   "minimum": 0,
                   "default": 1000
@@ -788,7 +811,7 @@
               ],
               "properties": {
                 "lp_auto_wait": {
-                  "description": "When enabled, ADC conversions are performed only when necessary (when previous ADC conversion data is read). Refer to detailed description of function LL_ADC_SetLPModeAutoWait().",
+                  "description": " ADC starts a new conversion only after the previous conversion data is read.",
                   "title": "Auto wait",
                   "type": "boolean",
                   "default": true
@@ -814,7 +837,7 @@
                   "description": "Enable ADC analog watchdog 1.",
                   "type": "boolean",
                   "default": true,
-                  "title": "AWD1 instance"
+                  "title": "Use AWD1"
                 },
                 "awd_channel_mode": {
                   "type": "string",
@@ -834,7 +857,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true"
+                      "condition": "$additional.awd1_panel.awd1_sel === true",
+                      "message": "Available when AWD1 is enabled."
                     }
                   ]
                 },
@@ -848,15 +872,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                     },
                   "select": "first",
                   "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true && $additional.awd1_panel.awd_channel_mode === 'SINGLE'"
+                      "condition": "$additional.awd1_panel.awd1_sel === true && $additional.awd1_panel.awd_channel_mode === 'SINGLE'",
+                      "message": "Available when AWD1 is enabled and channel mode is set to SINGLE."
                     },
                     {
                       "type": "exclude",
@@ -892,8 +917,8 @@
                             "peripheral.interconnect.analog input"
                           ],
                           "parent": "$resource.name",
-                          "title": "{{source}}",
-                           "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                          "title": "{{source.toUpperCase()}}",
+                           "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                           },
                         "select": "first"
                       }
@@ -922,7 +947,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true"
+                      "condition": "$additional.awd1_panel.awd1_sel === true",
+                      "message": "Available when AWD1 is enabled."
                     }
                   ]
                 },
@@ -940,7 +966,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true"
+                      "condition": "$additional.awd1_panel.awd1_sel === true",
+                      "message": "Available when AWD1 is enabled."
                     }
                   ]
                 },
@@ -958,7 +985,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true"
+                      "condition": "$additional.awd1_panel.awd1_sel === true",
+                      "message": "Available when AWD1 is enabled."
                     }
                   ]
                 },
@@ -1004,7 +1032,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd1_panel.awd1_sel === true"
+                      "condition": "$additional.awd1_panel.awd1_sel === true",
+                      "message": "Available when AWD1 is enabled."
                     }
                   ]
                 }
@@ -1024,7 +1053,7 @@
                   "description": "Enable ADC analog watchdog 2.",
                   "type": "boolean",
                   "default": false,
-                  "title": "AWD2 instance"
+                  "title": "Use AWD2"
                 },
                 "awd_channel_mode": {
                   "type": "string",
@@ -1048,7 +1077,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd2_panel.awd2_sel === true"
+                      "condition": "$additional.awd2_panel.awd2_sel === true",
+                      "message": "Available when AWD2 is enabled."
                     }
                   ]
                 },
@@ -1062,15 +1092,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                      "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                      "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                      },
                   "select": "first",
                   "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($additional.awd2_panel.awd2_sel === true) && ($additional.awd2_panel.awd_channel_mode === 'SINGLE')"
+                      "condition": "($additional.awd2_panel.awd2_sel === true) && ($additional.awd2_panel.awd_channel_mode === 'SINGLE')",
+                      "message": "Available when AWD2 is enabled and channel mode is set to SINGLE."
                     },
                     {
                       "type": "exclude",
@@ -1093,7 +1124,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "($additional.awd2_panel.awd2_sel === false) || ($additional.awd2_panel.awd_channel_mode === 'ALL')"
+                      "condition": "($additional.awd2_panel.awd2_sel === false) || ($additional.awd2_panel.awd_channel_mode === 'ALL')",
+                      "message": "Available when AWD2 is enabled and channel mode is set to multiple."
                     }
                   ],
                   "items": {
@@ -1110,8 +1142,8 @@
                             "peripheral.interconnect.analog input"
                           ],
                           "parent": "$resource.name",
-                          "title": "{{source}}",
-                          "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                          "title": "{{source.toUpperCase()}}",
+                          "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                          },
                         "select": "first"
                       }
@@ -1132,7 +1164,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "true || ($additional.awd2_panel.awd2_sel === false)"
+                      "condition": "true || ($additional.awd2_panel.awd2_sel === false)",
+                      "message": "AWD2 and AWD3 monitor channels without distinction of group regular and injected."
                     }
                   ]
                 },
@@ -1150,7 +1183,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd2_panel.awd2_sel === true"
+                      "condition": "$additional.awd2_panel.awd2_sel === true",
+                      "message": "Available when AWD2 is enabled."
                     }
                   ]
                 },
@@ -1168,7 +1202,59 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd2_panel.awd2_sel === true"
+                      "condition": "$additional.awd2_panel.awd2_sel === true",
+                      "message": "Available when AWD2 is enabled."
+                    }
+                  ]
+                },
+                "filtering": {
+                  "type": "string",
+                  "description": "Specify the number of consecutive out-of-window samples required to trigger the watchdog event.",
+                  "default": "ADC_AWD_FILTERING_NONE",
+                  "oneOf": [
+                    {
+                      "title": "No filtering",
+                      "const": "ADC_AWD_FILTERING_NONE"
+                    },
+                    {
+                      "title": "2 ",
+                      "const": "ADC_AWD_FILTERING_2SAMPLES"
+                    },
+                    {
+                      "title": "3",
+                      "const": "ADC_AWD_FILTERING_3SAMPLES"
+                    },
+                    {
+                      "title": "4",
+                      "const": "ADC_AWD_FILTERING_4SAMPLES"
+                    },
+                    {
+                      "title": "5",
+                      "const": "ADC_AWD_FILTERING_5SAMPLES"
+                    },
+                    {
+                      "title": "6",
+                      "const": "ADC_AWD_FILTERING_6SAMPLES"
+                    },
+                    {
+                      "title": "7",
+                      "const": "ADC_AWD_FILTERING_7SAMPLES"
+                    },
+                    {
+                      "title": "8",
+                      "const": "ADC_AWD_FILTERING_8SAMPLES"
+                    }
+                  ],
+                  "title": "Filtering",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.awd2_panel.awd2_sel === true",
+                      "message": "Available when AWD2 is enabled."
+                    },
+                    {
+                      "type": "include",
+                      "condition": "($resource.features.adc_adv_gen === 1) || ($resource.parentDescription.features.adc_adv_gen === 1)"
                     }
                   ]
                 }
@@ -1188,7 +1274,7 @@
                   "description": "Enable ADC analog watchdog 3.",
                   "type": "boolean",
                   "default": false,
-                  "title": "AWD3 instance"
+                  "title": "Use AWD3"
                 },
                 "awd_channel_mode": {
                   "type": "string",
@@ -1226,15 +1312,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                   },
                   "select": "first",
                   "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($additional.awd3_panel.awd3_sel === true) && ($additional.awd3_panel.awd_channel_mode === 'SINGLE')"
+                      "condition": "($additional.awd3_panel.awd3_sel === true) && ($additional.awd3_panel.awd_channel_mode === 'SINGLE')",
+                      "message": "Available when AWD3 is enabled and channel mode is set to SINGLE."
                     },
                     {
                       "type": "exclude",
@@ -1257,7 +1344,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "($additional.awd3_panel.awd_channel_mode === 'ALL') || ($additional.awd3_panel.awd3_sel === false)"
+                      "condition": "($additional.awd3_panel.awd_channel_mode === 'ALL') || ($additional.awd3_panel.awd3_sel === false)",
+                      "message": "Available when AWD3 is enabled and channel mode is set to multiple."
                     }
                   ],
                   "items": {
@@ -1274,8 +1362,8 @@
                             "peripheral.interconnect.analog input"
                           ],
                           "parent": "$resource.name",
-                          "title": "{{source}}",
-                           "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                          "title": "{{source.toUpperCase()}}",
+                           "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                           },
                         "select": "first"
                       }
@@ -1296,7 +1384,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "true || ($additional.awd3_panel.awd3_sel === false)"
+                      "condition": "true || ($additional.awd3_panel.awd3_sel === false)",
+                      "message": "Available when AWD3 is enabled."
                     }
                   ]
                 },
@@ -1314,7 +1403,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd3_panel.awd3_sel === true"
+                      "condition": "$additional.awd3_panel.awd3_sel === true",
+                      "message": "Available when AWD3 is enabled."
                     }
                   ]
                 },
@@ -1332,7 +1422,59 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.awd3_panel.awd3_sel === true"
+                      "condition": "$additional.awd3_panel.awd3_sel === true",
+                      "message": "Available when AWD3 is enabled."
+                    }
+                  ]
+                },
+                "filtering": {
+                  "type": "string",
+                  "description": "Specify the number of consecutive out-of-window samples required to trigger the watchdog event.",
+                  "default": "ADC_AWD_FILTERING_NONE",
+                  "oneOf": [
+                    {
+                      "title": "No filtering",
+                      "const": "ADC_AWD_FILTERING_NONE"
+                    },
+                    {
+                      "title": "2 ",
+                      "const": "ADC_AWD_FILTERING_2SAMPLES"
+                    },
+                    {
+                      "title": "3",
+                      "const": "ADC_AWD_FILTERING_3SAMPLES"
+                    },
+                    {
+                      "title": "4",
+                      "const": "ADC_AWD_FILTERING_4SAMPLES"
+                    },
+                    {
+                      "title": "5",
+                      "const": "ADC_AWD_FILTERING_5SAMPLES"
+                    },
+                    {
+                      "title": "6",
+                      "const": "ADC_AWD_FILTERING_6SAMPLES"
+                    },
+                    {
+                      "title": "7",
+                      "const": "ADC_AWD_FILTERING_7SAMPLES"
+                    },
+                    {
+                      "title": "8",
+                      "const": "ADC_AWD_FILTERING_8SAMPLES"
+                    }
+                  ],
+                  "title": "Filtering",
+                  "actions": [
+                    {
+                      "type": "enable",
+                      "condition": "$additional.awd3_panel.awd3_sel === true",
+                      "message": "Available when AWD3 is enabled."
+                    },
+                    {
+                      "type": "include",
+                      "condition": "($resource.features.adc_adv_gen === 1) || ($resource.parentDescription.features.adc_adv_gen === 1)"
                     }
                   ]
                 }
@@ -1355,7 +1497,7 @@
               "properties": {
                 "scope": {
                   "type": "string",
-                  "description": "Oversampling scope: ADC groups regular and/or injected.\nIf ADC group injected conversion insertion within regular sequence:\n- setting continued: when group injected is triggered, the oversampling on group regular is temporary stopped and continued afterwards.\n- setting resumed: when group injected is triggered, the oversampling on group regular is resumed from start (oversampler buffer reset).",
+                  "description": "Oversampling scope: ADC groups regular and/or injected.\nIf ADC group injected conversion insertion within regular sequence:\n- setting continued: when group injected is triggered, the oversampling on group regular is temporary stopped and continued afterwards.\n- setting resumed: when group injected is triggered, the oversampling on group regular is resumed from start (oversampler buffer reset). This device supports parallel injected oversampling, allowing to perform oversampling on groups regular and injected independently (different accumulators with their own settings ratio and shift), refer to panel 'Oversampling group injected'.",
                   "default": "REG_CONTINUED",
                   "oneOf": [
                     {
@@ -1364,26 +1506,30 @@
                     },
                     {
                       "title": "Regular (continued)",
-                      "const": "REG_CONTINUED"
+                      "const": "REG_CONTINUED",
+                      "description": "ADC oversampling on conversions of ADC group regular. If ADC group injected conversion insertion within regular sequence: oversampling on group regular is temporary stopped and, after injected conversion, continued (oversampling accumulator maintained)."
                     },
                     {
                       "title": "Regular (resumed)",
-                      "const": "REG_RESUMED"
+                      "const": "REG_RESUMED",
+                      "description": "ADC oversampling on conversions of ADC group regular. If ADC group injected conversion insertion within regular sequence: after injected conversion, oversampling on group regular is resumed from start (oversampler accumulator reset)."
                     },
                     {
                       "title": "Injected",
-                      "const": "INJ"
+                      "const": "INJ",
+                      "description": "ADC oversampling on conversions of ADC group injected, in sequential mode: oversampling conversions sequence sequential, switching data registers after each oversampling process (all ratio occurrences, shift)."
                     },
                     {
                       "title": "Regular and injected",
-                      "const": "INJ_REG_RESUMED"
+                      "const": "INJ_REG_RESUMED",
+                      "description": "ADC oversampling on conversions of ADC groups regular and injected. Combination of modes 'Regular (resumed)' and 'Injected': refer to description of these parameters."
                     }
                   ],
                   "title": "Scope"
                 },
                 "discont": {
                   "type": "string",
-                  "description": "Choose between continuous or discontinuous oversampling mode.",
+                  "description": "Choose between continuous or discontinuous (triggered) oversampling mode (applied only on group regular oversampling).",
                   "default": "CONT",
                   "oneOf": [
                     {
@@ -1392,14 +1538,22 @@
                     },
                     {
                       "title": "Discontinuous",
-                      "const": "DISCONT"
+                      "const": "DISCONT",
+                      "actions": [
+                        {
+                          "type": "disable",
+                          "condition": "$additional.ovs_panel.scope == 'INJ'",
+                          "message": "Injected oversampling in scope sequential (legacy) does not support triggered oversampling"
+                        }
+                      ]
                     }
                   ],
                   "title": "Discontinuous mode",
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$additional.ovs_panel.scope === DISABLE"
+                      "condition": "$additional.ovs_panel.scope === 'DISABLE'",
+                      "message": "Conditionned to oversampling scope."
                     }
                   ]
                 },
@@ -1413,7 +1567,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$additional.ovs_panel.scope === DISABLE"
+                      "condition": "$additional.ovs_panel.scope === 'DISABLE'",
+                      "message": "Available when oversampling is enabled and scope is disabled."
                     }
                   ]
                 },
@@ -1425,7 +1580,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$additional.ovs_panel.scope === DISABLE"
+                      "condition": "$additional.ovs_panel.scope === 'DISABLE'",
+                      "message": "Conditionned to oversampling scope."
                     }
                   ]
                 },
@@ -1439,8 +1595,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "message": "Shift value computed automatically",
-                      "condition": "$additional.ovs_panel.shift_keep_res === true"
+                      "condition": "($additional.ovs_panel.shift_keep_res === true) || ($additional.ovs_panel.scope === DISABLE)",
+                      "message": "Conditionned to oversampling scope or shift value computed automatically to keep ADC resolution."
                     }
                   ]
                 }
@@ -1464,7 +1620,7 @@
                 "offset_1_sel": {
                   "type": "boolean",
                   "default": true,
-                  "title": "Offset instance 1"
+                  "title": "Data offset 1"
                 },
                 "adc_channel": {
                   "type": "object",
@@ -1475,16 +1631,17 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                   },
                   "select": "first",
-                  "title": "ADC channel",
+                  "title": "Channel",
                   "description": "Select the ADC channel to which the offset will be applied.",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_1_panel.offset_1_sel === true"
+                      "condition": "$additional.offset_1_panel.offset_1_sel === true",
+                      "message": "Available when Offset 1 instance is enabled."
                     }
                   ]
                 },
@@ -1492,13 +1649,14 @@
                   "type": "integer",
                   "description": "ADC offset level to be subtracted or added to the raw ADC converted data.\n Value is signed and can exceed ADC resolution with post-processing computation (offset, oversampling, data shift, ...).",
                   "maximum": 4194303,
-                  "minimum": 0,
+                  "minimum": -4194303,
                   "default": 4194303,
-                  "title": "Offset level",
+                  "title": "Level",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_1_panel.offset_1_sel === true"
+                      "condition": "$additional.offset_1_panel.offset_1_sel === true",
+                      "message": "Available when Offset 1 instance is enabled."
                     }
                   ],
                   "display_format": [
@@ -1507,26 +1665,26 @@
                   ]
                 },
                 "saturation_signed": {
-                  "description": "Enable ADC offset signed saturation.",
-                  "title": "Offset signed saturation",
+                  "title": "Signed saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_1_panel.offset_1_sel === true"
+                      "condition": "$additional.offset_1_panel.offset_1_sel === true",
+                      "message": "Available when Offset 1 instance is enabled."
                     }
                   ]
                 },
                 "saturation_unsigned": {
-                  "description": "Enable ADC offset unsigned saturation.",
-                  "title": "Offset unsigned saturation",
+                  "title": "Unsigned saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_1_panel.offset_1_sel === true"
+                      "condition": "$additional.offset_1_panel.offset_1_sel === true",
+                      "message": "Available when Offset 1 instance is enabled."
                     }
                   ]
                 }
@@ -1545,7 +1703,7 @@
                 "offset_2_sel": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Offset instance 2"
+                  "title": "Data offset 2"
                 },
                 "adc_channel": {
                   "type": "object",
@@ -1557,15 +1715,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                   },
                   "select": "first",
-                  "title": "ADC channel",
+                  "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_2_panel.offset_2_sel === true"
+                      "condition": "$additional.offset_2_panel.offset_2_sel === true",
+                      "message": "Available when Offset 2 instance is enabled."
                     }
                   ]
                 },
@@ -1573,13 +1732,14 @@
                   "type": "integer",
                   "description": "ADC offset level to be subtracted or added to the raw ADC converted data.\n Value is signed and can exceed ADC resolution with post-processing computation (offset, oversampling, data shift, ...).",
                   "maximum": 4194303,
-                  "minimum": 0,
+                  "minimum": -4194303,
                   "default": 4194303,
-                  "title": "Offset level",
+                  "title": "Level",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_2_panel.offset_2_sel === true"
+                      "condition": "$additional.offset_2_panel.offset_2_sel === true",
+                      "message": "Available when Offset 2 instance is enabled."
                     }
                   ],
                   "display_format": [
@@ -1588,26 +1748,26 @@
                   ]
                 },
                 "saturation_signed": {
-                  "description": "Enable ADC offset signed saturation.",
-                  "title": "Offset signed saturation",
+                  "title": "Signed saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_2_panel.offset_2_sel === true"
+                      "condition": "$additional.offset_2_panel.offset_2_sel === true",
+                      "message": "Available when Offset 2 instance is enabled."
                     }
                   ]
                 },
                 "saturation_unsigned": {
-                  "description": "Enable ADC offset unsigned saturation.",
-                  "title": "Offset unsigned saturation",
+                  "title": "Unsigned saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_2_panel.offset_2_sel === true"
+                      "condition": "$additional.offset_2_panel.offset_2_sel === true",
+                      "message": "Available when Offset 2 instance is enabled."
                     }
                   ]
                 }
@@ -1626,7 +1786,7 @@
                 "offset_3_sel": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Offset instance 3"
+                  "title": "Data offset 3"
                 },
                 "adc_channel": {
                   "type": "object",
@@ -1638,15 +1798,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                   },
                   "select": "first",
-                  "title": "ADC channel",
+                  "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_3_panel.offset_3_sel === true"
+                      "condition": "$additional.offset_3_panel.offset_3_sel === true",
+                      "message": "Available when Offset 3 instance is enabled."
                     }
                   ]
                 },
@@ -1654,13 +1815,14 @@
                   "type": "integer",
                   "description": "ADC offset level to be subtracted or added to the raw ADC converted data.\n Value is signed and can exceed ADC resolution with post-processing computation (offset, oversampling, data shift, ...).",
                   "maximum": 4194303,
-                  "minimum": 0,
+                  "minimum": -4194303,
                   "default": 4194303,
-                  "title": "Offset level",
+                  "title": "Level",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_3_panel.offset_3_sel === true"
+                      "condition": "$additional.offset_3_panel.offset_3_sel === true",
+                      "message": "Available when Offset 3 instance is enabled."
                     }
                   ],
                   "display_format": [
@@ -1669,26 +1831,26 @@
                   ]
                 },
                 "saturation_signed": {
-                  "description": "Enable ADC offset signed saturation.",
-                  "title": "Offset signed saturation",
+                  "title": "Signed saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_3_panel.offset_3_sel === true"
+                      "condition": "$additional.offset_3_panel.offset_3_sel === true",
+                      "message": "Available when Offset 3 instance is enabled."
                     }
                   ]
                 },
                 "saturation_unsigned": {
-                  "description": "Enable ADC offset unsigned saturation.",
-                  "title": "Offset unsigned saturation",
+                  "title": "Unsigned saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_3_panel.offset_3_sel === true"
+                      "condition": "$additional.offset_3_panel.offset_3_sel === true",
+                      "message": "Available when Offset 3 instance is enabled."
                     }
                   ]
                 }
@@ -1707,7 +1869,7 @@
                 "offset_4_sel": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Offset instance 4"
+                  "title": "Data offset 4"
                 },
                 "adc_channel": {
                   "type": "object",
@@ -1718,15 +1880,16 @@
                       "peripheral.interconnect.analog input"
                     ],
                     "parent": "$resource.name",
-                    "title": "{{source}}",
-                    "where": "!/gnd/i.test($entity.source) && $entity.source !== 'VREF-' && !$entity.source.startsWith('DFT') && ( ['Vsens','VrefInt','VDDCORE','VDDARRAY','VBAT'].includes($entity.source) || /^opamp/i.test($entity.source) || /^dac_/i.test($entity.source) || /^vcore/i.test($entity.source) || /^vsens/i.test($entity.source) || /^vbat(\\/4)?$/i.test($entity.source) || ( /vinp/i.test($entity.id) && $entity.source.startsWith($resource.name + '_') && $get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace($resource.name + '_','')) == true ) ) && (!$resource.interconnect || ($resource.interconnect.filter(e => e.type === 'analog input' && e.source === $entity.source).map(e => e.id).sort()[0] === $entity.id))"
+                    "title": "{{source.toUpperCase()}}",
+                    "where": "$common.helper_adc_is_standard_query_channel($entity, $resource, $get)"
                   },
                   "select": "first",
-                  "title": "ADC channel",
+                  "title": "Channel",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_4_panel.offset_4_sel === true"
+                      "condition": "$additional.offset_4_panel.offset_4_sel === true",
+                      "message": "Available when Offset 4 instance is enabled."
                     }
                   ]
                 },
@@ -1734,13 +1897,14 @@
                   "type": "integer",
                   "description": "ADC offset level to be subtracted or added to the raw ADC converted data.\n Value is signed and can exceed ADC resolution with post-processing computation (offset, oversampling, data shift, ...).",
                   "maximum": 4194303,
-                  "minimum": 0,
+                  "minimum": -4194303,
                   "default": 4194303,
-                  "title": "Offset level",
+                  "title": "Level",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_4_panel.offset_4_sel === true"
+                      "condition": "$additional.offset_4_panel.offset_4_sel === true",
+                      "message": "Available when Offset 4 instance is enabled."
                     }
                   ],
                   "display_format": [
@@ -1749,30 +1913,160 @@
                   ]
                 },
                 "saturation_signed": {
-                  "description": "Enable ADC offset signed saturation.",
-                  "title": "Offset signed saturation",
+                  "title": "Signed saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_4_panel.offset_4_sel === true"
+                      "condition": "$additional.offset_4_panel.offset_4_sel === true",
+                      "message": "Available when Offset 4 instance is enabled."
                     }
                   ]
                 },
                 "saturation_unsigned": {
-                  "description": "Enable ADC offset unsigned saturation.",
-                  "title": "Offset unsigned saturation",
+                  "title": "Unsigned saturation",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.offset_4_panel.offset_4_sel === true"
+                      "condition": "$additional.offset_4_panel.offset_4_sel === true",
+                      "message": "Available when Offset 4 instance is enabled."
                     }
                   ]
                 }
               }
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.peripheralType"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.peripheralType"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.peripheralType"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.peripheralType"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -1867,6 +2161,24 @@
                       "on": "update-value",
                       "name": "HAL_GPIO_PROJECT_USE_HAL",
                       "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "HAL_SBS_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC4' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "LL_SBS_PROJECT_USE_LL",
+                      "condition": "$info.layer === 'LL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC4' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "ADC1_CORE_USE_SBS",
+                      "condition": "$get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC4' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
                       "semaphore": true
                     }
                   ],
@@ -1979,6 +2291,24 @@
                       "name": "HAL_GPIO_PROJECT_USE_HAL",
                       "condition": "$info.layer === 'HAL'",
                       "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "HAL_SBS_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC5' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "LL_SBS_PROJECT_USE_LL",
+                      "condition": "$info.layer === 'LL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC5' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "ADC1_CORE_USE_SBS",
+                      "condition": "$get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PC5' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
                     }
                   ],
                   "owner": "$resource.name",
@@ -2016,6 +2346,24 @@
                       "name": "HAL_GPIO_PROJECT_USE_HAL",
                       "condition": "$info.layer === 'HAL'",
                       "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "HAL_SBS_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB0' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "LL_SBS_PROJECT_USE_LL",
+                      "condition": "$info.layer === 'LL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB0' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "ADC1_CORE_USE_SBS",
+                      "condition": "$get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB0' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
                     }
                   ],
                   "owner": "$resource.name",
@@ -2052,6 +2400,24 @@
                       "on": "update-value",
                       "name": "HAL_GPIO_PROJECT_USE_HAL",
                       "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "HAL_SBS_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB1' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                      "semaphore": true
+                    },
+                    {
+                     "on": "update-value",
+                     "name": "LL_SBS_PROJECT_USE_LL",
+                     "condition": "$info.layer === 'LL' && $get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB1' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
+                     "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": "ADC1_CORE_USE_SBS",
+                      "condition": "$get('sw-config.need-allocated-resource-description', $value.needs[0]).id === 'PB1' && $get('peripheral.hardwareIpDescription', 'SBS')?.features?.input_pin_remap === true",
                       "semaphore": true
                     }
                   ],
@@ -2743,7 +3109,7 @@
               "properties": {
                 "enable_interruption": {
                   "type": "boolean",
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "default": false
                 },
                 "irq_handler_generation": {

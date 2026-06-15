@@ -114,21 +114,37 @@ extern "C" {
 /******************************************************************************/
 /* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
-      {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
+      {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)}}
       {{#if system.nvic.irq_handler_generation }}
-        {{~assign 'generate_global_handler' true~}}
+        {{~assign 'generate_global_handler' true}}
       {{/if}}
 /**
-* @brief {{@root.fct_name}} init function
-* This function configures the hardware resources used in this example
-* @retval pointer to handle or NULL in case of failure
-*/
+  * @brief {{@root.fct_name}} init function
+  * This function configures the hardware resources used in this example
+  * @retval pointer to handle or NULL in case of failure
+  */
       {{#if (eq @root.current_layer 'HAL')}}
 hal_ramcfg_t {{@root.fct_name}}_init(void);
       {{else}}
 RAMCFG_TypeDef *{{@root.fct_name}}_init(void);
       {{/if}}
 void {{@root.fct_name}}_deinit(void);
+
+{{#with security_privilege}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+{{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+{{/if}}
+{{/with}}
 
       {{#if @root.only_ll}}
         {{~assign 'generate_global_handler' false~}}

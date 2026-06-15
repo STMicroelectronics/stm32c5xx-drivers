@@ -15,25 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'COMP'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:COMP')~}}
-  {{~assign 'dma_resource' 'STM32CubeMX2 Config:COMP'~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "COMP template _myctx:" this~}}
-      {{~assign 'dma_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-  {{~assign 'current_resource' (get 'hw_resource')~}}
-{{/if}}
-{{log "COMP template current_resource:" @root.current_resource~}}
-{{log "COMP template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'COMP' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "COMP template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 /**
   ******************************************************************************
@@ -44,9 +30,18 @@
 /* Includes ------------------------------------------------------------------*/
 #include "mx_{{lowercase @root.current_resource}}.h"
 {{> RCC fct='include_rcc'}}
-{{#each instances~}}
-{{#if (eq info.layer 'HAL')}}
-{{/if}}{{! info.layer}}
+{{#each @root.instances~}}
+  {{~assign 'comp_cxt' config~}}
+  {{#if (eq @root.comp_cxt.basic.multi_inst_mode "multi_inst_window_main")}}
+#include "mx_hal_def.h" /* For window mode, include other comparator instance */
+  {{/if}}{{!helper_comp_is_window_instance_main}}
+
+  {{#unless (eq @root.comp_cxt.basic.multi_inst_mode undefined)}}
+  {{#unless (eq @root.comp_cxt.basic.multi_inst_mode "multi_inst_independent")}}
+    {{assign 'comp_window_other_instance_nb' (helper_comp_get_window_other_instance_nb @root.codegen_ctxt.parent_resource)~}}
+    {{log "comp_window_other_instance_nb:" @root.comp_window_other_instance_nb~}}
+  {{/unless}}{{!multi_inst_mode multi_inst_independent}}
+  {{/unless}}{{!multi_inst_mode undefined}}
 {{/each~}}{{!instances~}}
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -55,15 +50,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'comp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "COMP template comp_cxt:" (toJSON @root.comp_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.comp_cxt.info.layer~}}
-    {{~log "COMP template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'comp_cxt' config~}}
+  {{~log "COMP template comp_cxt:" (toJSON @root.comp_cxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.comp_cxt.info.layer~}}
+  {{~log "COMP template current_resource:" @root.current_resource~}}
   {{#if (eq @root.current_layer 'HAL')}}
 static hal_comp_handle_t h{{@root.current_resource}};
 {{> GPIO_HAL fct='gpio_exti_get_variables' resource=@root.current_resource~}}
@@ -74,23 +65,17 @@ static hal_comp_handle_t h{{@root.current_resource}};
 {{assign 'nvic_context' 'undefined'~}}
 {{assign 'nvic_generate_handler' true~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "HW")}}
-    {{~assign 'name' name~}}
-    {{~assign 'current_layer' info.layer~}}
-    {{~assign 'comp_cxt' this}}
-  {{else}}
-    {{~assign 'comp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.comp_cxt.name~}}
-    {{~assign 'current_layer' @root.comp_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{/if}}
+  {{~assign 'comp_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'name' @root.comp_cxt.name~}}
+  {{~assign 'current_layer' @root.comp_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
   {{~log "COMP template instance:" (toJSON this)~}}
 {{! Initialize the context for LL code optimization ~}}
 {{assign 'lut_table'   (helper_comp_get_lut_table 'COMP_V1')~}}
 {{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
 {{assign 'current_index' (helper_common_inc_index @root.current_resource)~}}
@@ -104,6 +89,13 @@ hal_comp_handle_t *{{@root.fct_name~}}_init(void)
 COMP_TypeDef *{{@root.fct_name}}_init(void)
 {{/if}}{{! eq @root.current_layer 'HAL'~}}
 {
+{{#if (eq @root.current_layer 'HAL')}}
+  if (HAL_COMP_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
+  {
+    return NULL;
+  }
+
+{{/if}}{{! current_layer 'HAL'}}
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
 {{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='COMP'}}
 
@@ -141,7 +133,12 @@ COMP_TypeDef *{{@root.fct_name}}_init(void)
 {{/if}}{{! current_layer 'HAL'}}
 
 {{!==================== EXTI ====================}}
-{{#if (eq @root.comp_cxt.basic.output.output_trigger "NONE")}}
+{{#if (eq @root.comp_cxt.basic.multi_inst_mode "multi_inst_window_sec")}}
+{{assign 'output_trigger' @root.comp_cxt.basic.output.output_trigger~}}
+{{~else}}{{!multi_inst_window_sec}}
+{{assign 'output_trigger' @root.comp_cxt.basic.output.output_trigger~}}
+{{/if}}{{!multi_inst_window_sec}}
+{{#if (eq @root.output_trigger "NONE")}}
 {{! no exti to configure}}
 {{else}}
 {{#if (eq @root.current_layer 'HAL')}}
@@ -221,11 +218,11 @@ hal_comp_handle_t *{{@root.fct_name~}}_gethandle(void)
   return &h{{@root.current_resource~}};
 }
 
-{{#if (not (eq @root.nvic_context 'undefined'))}}
-{{> CORTEX fct='generate_irqhandler' type='implementation' component='COMP'}}
-{{/if}}
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
 
 {{/if}}{{! current_layer 'HAL'}}
 {{/with}}
 {{/each~}}{{!instance~}}
+{{> CORTEX fct='generate_irqhandler' type='implementation' component='COMP'}}
+
 {{/helper_common_beautifier}}

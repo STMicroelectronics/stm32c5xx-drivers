@@ -18,17 +18,15 @@
 function helper_usart_get_min_baudrate(input_clock, prescaler) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_usart_get_min_baudrate: input_clock=${input_clock}, prescaler=${prescaler} `
-    );
+    console.info(`helper_usart_get_min_baudrate: input_clock=${input_clock}, prescaler=${prescaler} `);
 
     /* USART/USART */
     result = Math.ceil(((input_clock * (16 / 8)) / (prescaler * 0xFFFF)));
 
-    console.log(`[INFO] helper_usart_get_min_baudrate: Min Baudrate: ${result}`);
+    console.info(`helper_usart_get_min_baudrate: Min Baudrate: ${result}`);
     return result;
   } catch (e) {
-    console.log(`[ERROR] helper_usart_get_min_baudrate: ${e}`);
+    console.error(`helper_usart_get_min_baudrate: ${e}`);
   }
 }
 
@@ -41,17 +39,15 @@ function helper_usart_get_min_baudrate(input_clock, prescaler) {
 function helper_usart_get_max_baudrate(input_clock, prescaler) {
   let result = 0;
   try {
-    console.log(
-      `[INFO] helper_usart_get_max_baudrate: input_clock=${input_clock}, prescaler=${prescaler}`
-    );
+    console.info(`helper_usart_get_max_baudrate: input_clock=${input_clock}, prescaler=${prescaler}`);
     /* USART/USART */
     /* USARDIV must be greater or equal to 16 (oversampling 8 or 16) */
     result = Math.floor((input_clock * (16 / 8) / (prescaler * 16)));
 
-    console.log(`[INFO] helper_usart_get_max_baudrate: Max Baudrate: ${result}`);
+    console.info(`helper_usart_get_max_baudrate: Max Baudrate: ${result}`);
     return result;
   } catch (e) {
-    console.log(`[ERROR] helper_usart_get_max_baudrate: ${e}`);
+    console.error(`helper_usart_get_max_baudrate: ${e}`);
   }
 }
 
@@ -66,8 +62,7 @@ function helper_usart_get_max_baudrate(input_clock, prescaler) {
 function helper_usart_get_irq_handler(nvic_api, exti_api, resource, config) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_usart_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
+    console.info(`helper_usart_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
     );
 
     /** Check the peripheral interruptions have been generated or not */
@@ -105,7 +100,7 @@ function helper_usart_get_irq_handler(nvic_api, exti_api, resource, config) {
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_usart_get_irq_handler: ${e}`);
+    console.error(`helper_usart_get_irq_handler: ${e}`);
   }
   return result;
 }

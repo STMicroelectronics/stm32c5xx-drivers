@@ -110,7 +110,7 @@ function helper_usb_ep_calc_address(pmaSettings, index, bufferIndex = 0, asHexSt
     // Optionally return as uppercase hex string (without 0x prefix).
     return asHexString ? addr.toString(16).toUpperCase() : addr;
   } catch (e) {
-    console.log("[ERROR] helper_usb_ep_calc_address: " + e);
+    console.error("helper_usb_ep_calc_address: " + e);
     return asHexString ? "0" : 0;
   }
 }
@@ -443,8 +443,8 @@ function helper_usb_dec_into_hex_string(value, padLength = 0) {
 function helper_usb_get_irq_handler(nvic_api, exti_api, resource, config, parent) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_usb_get_irq_handler: resource= ${resource}, config=${JSON.stringify(config)}`
+    console.info(
+      `helper_usb_get_irq_handler: resource= ${resource}, config=${JSON.stringify(config)}`
     );
 
     /** Reference all the elements which enable the USB interruptions */
@@ -491,9 +491,65 @@ function helper_usb_get_irq_handler(nvic_api, exti_api, resource, config, parent
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_usb_get_irq_handler: ${e}`);
+    console.error(`helper_usb_get_irq_handler: ${e}`);
   }
   return result;
+}
+
+
+/**
+ * Return the default USB speed setting for a given USB IP name.
+ *
+ * Mapping:
+ * - `OTG_HS` => `USB_OTG_SPEED_HIGH`
+ * - `OTG_FS` / `USB` / any other value => `USB_OTG_SPEED_FULL`
+ *
+ * @param {string} ip_name USB IP name (e.g. "OTG_HS", "OTG_FS", "USB").
+ * @returns {string} USB speed identifier.
+ */
+function helper_usb_get_speed_by_ip(ip_name) {
+  switch (ip_name) {
+    case "OTG_HS":
+      return "SPEED_HS";
+    case "OTG_FS":
+    case "USB":
+    default:
+      return "SPEED_FS";
+  }
+}
+/**
+ * Return the default PHY interface setting for a given USB IP name.
+ *
+ * Mapping:
+ * - `OTG_HS` => `PHY_EMBEDDED_HS`
+ * - `OTG_FS` / `USB` / any other value => `PHY_EMBEDDED_FS`
+ *
+ * This helper is intended to centralize the IP-to-PHY selection logic used by
+ * templates/schemas when building the PCD/HCD configuration.
+ *
+ * @param {string} ip_name USB IP name (e.g. "OTG_HS", "OTG_FS", "USB").
+ * @returns {"PHY_EMBEDDED_HS"|"PHY_EMBEDDED_FS"} PHY interface identifier.
+ */
+function helper_usb_get_phy_interface_by_ip(ip_name) {
+  switch (ip_name) {
+    case "OTG_HS":
+      return "PHY_EMBEDDED_HS";
+    case "OTG_FS":
+    case "USB":
+    default:
+      return "PHY_EMBEDDED_FS";
+  }
+}
+
+function helper_usb_get_phy_interface_title_by_ip(ip_name) {
+  switch (ip_name) {
+    case "OTG_HS":
+      return "Embedded High Speed PHY";
+    case "OTG_FS":
+    case "USB":
+    default:
+      return "Embedded Full Speed PHY";
+  }
 }
 
 module.exports = {
@@ -503,6 +559,9 @@ module.exports = {
   helper_usb_get_irq_handler,
   helper_usb_set_current_ep_number,
   helper_usb_set_current_ep_direction,
+  helper_usb_get_phy_interface_by_ip,
+  helper_usb_get_phy_interface_title_by_ip,
+  helper_usb_get_speed_by_ip,
   helper_usb_dec_into_hex_string,
   helper_usb_get_irq_handler
 };

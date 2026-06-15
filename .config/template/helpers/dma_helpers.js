@@ -234,16 +234,25 @@ function helper_dma_need_linkedlist(dma_need_configuration) {
 /**
  * Retrieve the DMA Node name
  * @param {string} request request from DFP (ex: tim8_ch3_dma)
+ * @param {string} instance instance name (ex: I2C1)
+ * @param {string} selector selector name (ex: TX)
  * @returns {string} HAL value (ex: DMA_Node_I2C1_TX or DMA_Node_SPI1_RX)
  */
-function helper_dma_get_node(request) {
+function helper_dma_get_node(request, instance, selector) {
   let result;
   try {
+    console.info(`helper_dma_get_node: request=${request}, instance=${instance}, selector=${selector}`);
+    
     let req;
     req = request.split("_dma");
     req = req[0].toUpperCase();
-    result = 'DMA_Node_' + req;
-    console.info(`helper_dma_get_node, DMA_Node=${result}`);
+
+    if (req.startsWith('XSPI') || req.startsWith('PSSI')) {
+      result = 'DMA_Node_' + instance.toUpperCase() + '_' + selector.toUpperCase();
+    } else {
+      result = 'DMA_Node_' + req;
+    }
+    console.info(`helper_dma_get_node: DMA_Node=${result}`);
   } catch (e) {
     console.error(`[ERROR] helper_dma_get_node: ${e}`);
   }
@@ -449,6 +458,68 @@ function helper_dma_generate_lli_reg_aliases(dma_api, sw_config_api) {
   return result;
 }
 
+/**
+  * Get security items based on xfer_sec.
+  * @param {string} layer  "HAL" or "LL"
+  * @param {Array<string>} xfer_sec
+  * @returns {Array<string>} The security items
+  */
+function helper_dma_get_security_items(
+  layer,
+  xfer_sec
+) {
+  try {
+    console.info(`helper_dma_get_security_items, xfer_sec=${xfer_sec}`);
+    let result = "";
+    const map_defined_security = {
+      dest_sec:`${layer}_DMA_SEC_ITEM_DEST`,
+      src_sec:`${layer}HAL_DMA_SEC_ITEM_SRC`,
+    };
+
+    const map_attribute = {
+      SEC: 1,
+      NSEC: 0,
+    };
+    
+    let next_element = 0;
+    for (const key in xfer_sec) {
+      if (!Object.hasOwn(xfer_sec, key)) continue;
+
+      let element = xfer_sec[key];
+      element = map_attribute[element];
+      if (element > 0) {
+        if (next_element > 0) {
+          result =  `${layer}_DMA_SEC_ITEM_ALL`;
+          return result;
+        }
+        result += map_defined_security[key];
+        next_element = 1;
+      }
+    }
+    return result;
+  } catch (e) {
+    console.error(`[ERROR] helper_dma_get_security_items: ${e}`);
+    return false;
+  }
+}
+
+/**
+ * Retrieve the LL DMA channel instances.
+ * @param {string} dma_instance DMA channel string (ex GPDMA1_CH5)
+ * @returns {string} return the LL DMA channel name (ex LL_DMA_CHANNEL_7 or LL_DMA_CHANNEL_11)
+ */
+function helper_dma_get_ll_channel(dma_instance) {
+  let result;
+  try {
+    console.info(`helper_dma_get_parent: dma_instance=${JSON.stringify(dma_instance)}`
+    );
+    result = dma_instance.split("CH");
+    result = 'LL_DMA_CHANNEL_' + result[1];
+  } catch (e) {
+    console.error(`helper_dma_get_parent: ${e}`);
+  }
+  return result;
+}
 
 module.exports = {
 
@@ -471,6 +542,10 @@ module.exports = {
   helper_dma_get_node,
 
   helper_dma_need_get_irq_handler,
+
+  helper_dma_get_security_items,
+
+  helper_dma_get_ll_channel,
 
   helper_dma_get_irq_handler,
 

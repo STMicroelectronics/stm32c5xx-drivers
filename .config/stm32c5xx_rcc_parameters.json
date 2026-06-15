@@ -112,6 +112,20 @@
               ],
               "default": 0
             },
+            "system_clock_frequency": {
+              "title": "System clock frequency",
+              "type": "string",
+              "readOnly": true,
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "const": "$rcc_helpers.helper_rcc_display_frequency($get('clock.frequency','System_Clock_Frequency'))"
+                  }
+                }
+              ]
+            },
             "flash_latency": {
               "title": "Flash latency wait states",
               "description": "Select the number of wait states required for the chosen system clock frequency. This ensures reliable flash memory access at different speeds.",
@@ -123,21 +137,14 @@
               },
               "actions": [
                 {
-                  "type": "set",
-                  "condition": "true",
-                  "computed": {
-                    "default": "$rcc_helpers.helper_rcc_get_optimal_latency($get('clock.frequency','System_Clock_Frequency'))"
-                  }
-                },
-                {
                   "type": "error",
-                  "condition": "($value === undefined) || (($rcc_helpers.helper_rcc_get_optimal_latency($get('clock.frequency','System_Clock_Frequency'))) > $value)",
-                  "message": "Use consistent value. The flash wait states must be at least the recommended value for the current system clock. Using a lower value can lead to system malfunction."
+                  "condition": "($value === undefined) || (($rcc_helpers.helper_rcc_get_optimal_latency($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'))) > $value)",
+                  "message": "Increase value. The flash wait states must be at least the recommended value for the current system clock. Using a lower value can lead to system malfunction."
                 },
                 {
                   "type": "info",
-                  "condition": "(($rcc_helpers.helper_rcc_get_optimal_latency($get('clock.frequency','System_Clock_Frequency'))) < $value)",
-                  "message": "A different flash wait state is recommended for this clock. Using a non-optimal value can affect performances."
+                  "condition": "(($rcc_helpers.helper_rcc_get_optimal_latency($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'))) < $value)",
+                  "message": "Decrease value. Using a non-optimal value can affect performances."
                 }
               ],
               "default": 1,
@@ -145,55 +152,85 @@
                 {
                   "const": 0,
                   "title": "0",
-                  "description": "Recommended value for system clock frequencies up to 34 MHz.",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'0 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 0))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 0)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 0)"
                     }
                   ]
                 },
                 {
                   "const": 1,
                   "title": "1",
-                  "description": "Recommended value for system clock frequencies up to 68 MHz.",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'1 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 1))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 1)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 1)"
                     }
                   ]
                 },
                 {
                   "const": 2,
                   "title": "2",
-                  "description": "Recommended value for system clock frequencies up to 102 MHz.",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'2 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 2))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 2)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 2)"
                     }
                   ]
                 },
                 {
                   "const": 3,
                   "title": "3",
-                  "description": "Recommended value for system clock frequencies up to 136 MHz.",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'3 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 3))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 3)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 3)"
                     }
                   ]
                 },
                 {
                   "const": 4,
                   "title": "4",
-                  "description": "Recommended value for system clock frequencies up to 144 MHz.",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'4 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 4))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 4)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 4)"
                     }
                   ]
                 },
@@ -202,8 +239,15 @@
                   "title": "5",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'5 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 5))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 5)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 5)"
                     }
                   ]
                 },
@@ -212,46 +256,170 @@
                   "title": "6",
                   "actions": [
                     {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'6 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 6))+' MHz max)'"
+                      }
+                    },
+                    {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($get('clock.frequency','System_Clock_Frequency'), 6)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 6)"
                     }
                   ]
                 },
                 {
                   "const": 7,
-                  "title": "7"
+                  "title": "7",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'7 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 7))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 7)"
+                    }
+                  ]
                 },
                 {
                   "const": 8,
-                  "title": "8"
+                  "title": "8",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'8 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 8))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 8)"
+                    }
+                  ]
                 },
                 {
                   "const": 9,
-                  "title": "9"
+                  "title": "9",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'9 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 9))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 9)"
+                    }
+                  ]
                 },
                 {
                   "const": 10,
-                  "title": "10"
+                  "title": "10",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'10 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 10))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 10)"
+                    }
+                  ]
                 },
                 {
                   "const": 11,
-                  "title": "11"
+                  "title": "11",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'11 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 11))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 11)"
+                    }
+                  ]
                 },
                 {
                   "const": 12,
-                  "title": "12"
+                  "title": "12",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'12 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 12))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 12)"
+                    }
+                  ]
                 },
                 {
                   "const": 13,
-                  "title": "13"
+                  "title": "13",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'13 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 13))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 13)"
+                    }
+                  ]
                 },
                 {
                   "const": 14,
-                  "title": "14"
+                  "title": "14",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'14 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 14))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 14)"
+                    }
+                  ]
                 },
                 {
                   "const": 15,
-                  "title": "15"
+                  "title": "15",
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'15 ('+($rcc_helpers.helper_rcc_get_latency_max_freq($resource.features.flash.latency_max_frequency, 15))+' MHz max)'"
+                      }
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_latency_possible($resource.features.flash.latency_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 15)"
+                    }
+                  ]
                 }
               ]
             },
@@ -266,58 +434,91 @@
               },
               "actions": [
                 {
-                  "type": "set",
-                  "condition": "true",
-                  "computed": {
-                    "default": "$rcc_helpers.helper_rcc_get_optimal_programming_delay($get('clock.frequency','System_Clock_Frequency'))"
-                  }
-                },
-                {
                   "type": "error",
-                  "condition": "($value === undefined) || (($rcc_helpers.helper_rcc_get_optimal_programming_delay($get('clock.frequency','System_Clock_Frequency'))) > $value)",
-                  "message": "Use consistent value. The flash programming delay must be at least the recommended value for the current system clock. Using a lower value can lead to system malfunction."
+                  "condition": "($value === undefined) || (($rcc_helpers.helper_rcc_get_optimal_programming_delay($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency'))) > $value)",
+                  "message": "Increase value. The flash programming delay must be at least the recommended value for the current system clock. Using a lower value can lead to system malfunction."
                 },
                 {
                   "type": "info",
-                  "condition": "($rcc_helpers.helper_rcc_get_optimal_programming_delay($get('clock.frequency','System_Clock_Frequency')) < $value)",
-                  "message": "A different flash programming delay is recommended for this clock. Using a non-optimal value can affect performances."
+                  "condition": "($rcc_helpers.helper_rcc_get_optimal_programming_delay($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency')) < $value)",
+                  "message": "Decrease value. Using a non-optimal value can affect performances."
                 }
               ],
               "oneOf": [
                 {
                   "const": 0,
                   "title": "0",
-                  "description": "Recommended value for system clock frequencies up to 68 MHz.",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($get('clock.frequency','System_Clock_Frequency'), 0)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 0)"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'0 ('+($rcc_helpers.helper_rcc_get_programming_delay_max_freq($resource.features.flash.programming_delay_max_frequency, 0))+' MHz max)'"
+                      }
                     }
                   ]
                 },
                 {
                   "const": 1,
                   "title": "1",
-                  "description": "Recommended value for system clock frequencies up to 136 MHz.",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($get('clock.frequency','System_Clock_Frequency'), 1)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 1)"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'1 ('+($rcc_helpers.helper_rcc_get_programming_delay_max_freq($resource.features.flash.programming_delay_max_frequency, 1))+' MHz max)'"
+                      }
                     }
                   ]
                 },
                 {
                   "const": 2,
                   "title": "2",
-                  "description": "Recommended value for system clock frequencies up to 144 MHz.",
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($get('clock.frequency','System_Clock_Frequency'), 2)"
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 2)"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'2 ('+($rcc_helpers.helper_rcc_get_programming_delay_max_freq($resource.features.flash.programming_delay_max_frequency, 2))+' MHz max)'"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "const": 3,
+                  "title": "3",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_available($resource.features.flash.programming_delay_max_frequency, 3)"
+                    },
+                    {
+                      "type": "enable",
+                      "condition": "$rcc_helpers.helper_rcc_is_flash_programming_delay_possible($resource.features.flash.programming_delay_max_frequency, $get('clock.frequency','System_Clock_Frequency'), 3)"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'3 ('+($rcc_helpers.helper_rcc_get_programming_delay_max_freq($resource.features.flash.programming_delay_max_frequency, 3))+' MHz max)'"
+                      }
                     }
                   ]
                 }
-              ]
+              ],
+              "default": 1
             },
             "hse": {
               "title": "HSE",
@@ -410,7 +611,7 @@
                 },
                 "enable_css": {
                   "title": "Clock Security System",
-                  "description": "CSS detects HSE failures. If a failure occurs, the system automatically switches to HSIDIV3 clock. You must handle additional corrective actions.",
+                  "description": "CSS detects HSE failures. If a failure occurs, the system automatically switches to default clock. You must handle additional corrective actions.",
                   "type": "boolean",
                   "actions": [
                     {
@@ -625,7 +826,7 @@
                 },
                 "audio_clock_freq": {
                   "title": "Frequency",
-                  "type": "integer",
+                  "type": "number",
                   "unit": "Hz",
                   "default": 100,
                   "actions": [
@@ -999,13 +1200,14 @@
               "type": "object",
               "properties": {
                 "irq_handler_generation": {
-                  "title": "IRQ handler generation",
+                  "title": "NMI IRQ handler generation",
+                  "description": "HSE and LSE CSS failures are reported through NMI. Enabling this option generates the NMI IRQ handler in which you can manage the clock failure event. If both HSE and LSE CSS are enabled, only one NMI handler is generated to manage both failures.",
                   "type": "boolean",
                   "default": true,
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.hse.enable_css || $basic.lse.enable_css) && $info.layer === 'HAL'"
+                      "condition": "($basic.hse.enable_css || $basic.lse.enable_css) && ($info.layer === 'HAL')"
                     }
                   ],
                   "variables": [
@@ -1018,7 +1220,7 @@
                   ]
                 },
                 "css_interruption": {
-                  "title": "CSS IRQ",
+                  "title": "NMI Priority",
                   "type": "object",
                   "objectType": "need.interrupt.lines",
                   "owner": "$resource.id",
@@ -1031,27 +1233,6 @@
                     {
                       "type": "include",
                       "condition": "($basic.hse.enable_css || $basic.lse.enable_css)"
-                    },
-                    {
-                      "type": "set",
-                      "condition": "($basic.hse.enable_css) && ($basic.lse.enable_css)",
-                      "attributes": {
-                        "title": "HSE and LSE CSS IRQ"
-                      }
-                    },
-                    {
-                      "type": "set",
-                      "condition": "($basic.hse.enable_css) && (!$basic.lse.enable_css)",
-                      "attributes": {
-                        "title": "HSE CSS IRQ"
-                      }
-                    },
-                    {
-                      "type": "set",
-                      "condition": "(!$basic.hse.enable_css) && ($basic.lse.enable_css)",
-                      "attributes": {
-                        "title": "LSE CSS IRQ"
-                      }
                     }
                   ],
                   "variables": [

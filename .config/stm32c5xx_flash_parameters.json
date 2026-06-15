@@ -64,13 +64,6 @@
               "title": "Resource initialization code generation",
               "type": "string",
               "description": "Pick whether the initialization code should be generated and automatically called at startup.",
-              "actions": [
-                {
-                  "type": "warning",
-                  "condition": "$info.init_type != 'called'",
-                  "message": "ICACHE is not called automatically at startup"
-                }
-              ],
               "oneOf": [
                 {
                   "title": "Callable",
@@ -95,10 +88,10 @@
         "basic": {
           "type": "object",
           "title": "Main features",
-          "description": "FLASH Global Configuration Structure definition.",
           "properties": {
             "latency_display": {
               "title": "Latency",
+              "description": "Synchronize with RCC panel : number of wait states required for the chosen system clock frequency. This ensures reliable FLASH memory access at different speeds.",
               "type": "integer",
               "synchronize": true,
               "synchronizeOn": {
@@ -126,13 +119,15 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is read-only because latency settings are configured in the RCC panel. The FLASH panel only displays live synchronized values from RCC."
                 }
               ],
-              "default": 1
+              "default": 7
             },
             "programming_delay_display": {
               "title": "Programming delay",
+              "description": "Synchronize with RCC panel : programming delay value required for the chosen system clock frequency. This ensures reliable FLASH memory operations at different speeds.",
               "type": "integer",
               "synchronize": true,
               "synchronizeOn": {
@@ -140,18 +135,19 @@
                 "component": "HAL-FLASH"
               },
               "oneOf": [
-                { "title": "0 WS", "const": 0 },
-                { "title": "1 WS", "const": 1 },
-                { "title": "2 WS", "const": 2 },
-                { "title": "3 WS", "const": 3 }
+                { "title": "0", "const": 0 },
+                { "title": "1", "const": 1 },
+                { "title": "2", "const": 2 },
+                { "title": "3", "const": 3 }
               ],
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "true"
+                  "condition": "true",
+                  "message": "This field is read-only because programming delay settings are configured in the RCC panel. The FLASH panel only displays live synchronized values from RCC."
                 }
               ],
-              "default": 0
+              "default": 2
             }
           }
         },
@@ -160,10 +156,10 @@
           "title": "Advanced features",
           "properties": {
             "use_flash_programming": {
-              "title": "Use flash Programming",
+              "title": "Programming Mode",
               "type": "boolean",
               "default": false,
-              "description": "Enable FLASH programming support for this instance. When disabled, the programming mode selection is forced to 'Quad-word' and cannot be modified. This option is only available when using the HAL layer (not available for LL).",
+              "description": "When disabled, the programming mode selection is forced to 'Quad-word' and cannot be modified. This option is only available when using the HAL layer (not available for LL).",
               "variables": [
                 {
                   "on": "update-value",
@@ -174,28 +170,23 @@
               ],
               "actions":[
                 {
-                  "type": "exclude",
-                  "condition": "$info.layer === 'LL'"
+                  "type": "set",
+                  "condition": "$info.layer === 'LL'",
+                  "attributes": {
+                    "const": false
+                  }
                 }
               ]
             },
             "programming_mode": {
-              "title": "Programming mode",
+              "title": "Mode",
               "type": "string",
-              "description": "Select the FLASH programming granularity used by the HAL APIs for this instance. This setting is editable only when 'Use flash programming' is enabled. If programming is disabled, the granularity is automatically set and locked to 'Quad-word'. Available options depend on the device capabilities advertised by 'program_by_*' features.",
+              "description": "Select the FLASH programming granularity used by the HAL APIs for this instance. This setting is editable only when 'Use flash programming' is enabled. If programming is disabled, the granularity is automatically set and locked to 'Quad-word'.",
               "actions":[
-                {
-                  "type": "exclude",
-                  "condition": "$info.layer === 'LL'"
-                },
-                {
-                  "type": "enable",
-                  "condition": "$additional.use_flash_programming"
-                },
                 {
                   "type": "set",
                   "condition": "!($additional.use_flash_programming)",
-                  "computed": {
+                  "attributes": {
                     "const": "QUADWORD"
                   }
                 }
@@ -258,7 +249,7 @@
             "enable_single_ecc_interrupt": {
               "title": "Single ECC error interrupt",
               "type": "boolean",
-              "description": "Enable generation of an interrupt on single ECC error and generate the corresponding ECC IRQHandler. This option is only available when 'Use error Code Correction (ECC)' is enabled; otherwise it is automatically cleared and disabled.",
+              "description": "Enable generation of an interrupt on single ECC error and generate the corresponding ECC IRQ handler. This option is only available when 'Use error Code Correction (ECC)' is enabled; otherwise it is automatically cleared and disabled.",
               "default": false,
               "variables": [
                 {
@@ -280,12 +271,12 @@
               "type": "object",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": false
                 },
                 "irq_handler_generation": {
-                  "title": "IRQ Handler generation",
+                  "title": "IRQ handler generation",
                   "type": "boolean",
                   "default": true,
                   "actions": [
@@ -296,7 +287,7 @@
                   ]
                 },
                 "itf_irq_handler_generation": {
-                  "title": "FLASH ITF IRQ handler generation",
+                  "title": "Interface IRQ handler generation",
                   "type": "boolean",
                   "description": "This handler processes FLASH interface interrupt requests for option-bytes programming and error handling.",
                   "default": false,
@@ -310,7 +301,7 @@
                 "use_unitary_irq_handlers": {
                   "title": "Unitary IRQ",
                   "type": "boolean",
-                  "description": "These handlers manage interrupt requests for FLASH programming by address, OBK area mass erase and ECC error handling.",
+                  "description": "These handlers manage interrupt requests for FLASH programming Address and ECC error handling.",
                   "default": false,
                   "actions": [
                     {
@@ -323,6 +314,7 @@
                   "title": "List of unitary IRQ handlers",
                   "type": "array",
                   "source": "$flash_helpers.helper_flash_get_unitary_irq_handler($additional, $system.nvic)",
+                  "rendering": "horizontal-list",
                   "itemId": "name",
                   "itemVar": "irq_name",
                   "allowRanking": true,
@@ -336,14 +328,22 @@
                     "type": "object",
                     "properties": {
                       "use_unitary_irq_handler": {
-                        "title": "Use this unitary IRQHandler API",
+                        "title": "Use this unitary IRQ handler API",
                         "type": "boolean",
-                        "description": "Generate the specific process IRQHandler API. ECC Single IT or Double IT must be enabled to be able to generate the ECC IRQHandler.",
-                        "default": true,
+                        "description": "Generate the specific process IRQ handler API. ECC single IT or double IT must be enabled to be able to generate the ECC IRQ handler.",
+                        "default": false,
                         "actions": [
                           {
                             "type": "disable",
-                            "condition": "($flash_helpers.helper_flash_check_unitary_irq_handler($additional, $system.nvic, $item))"
+                            "condition": "$flash_helpers.helper_flash_check_unitary_irq_handler($additional, $system.nvic, $item)",
+                            "message": "To disable this unitary IRQHandler, disable the related FLASH configuration."
+                          },
+                          {
+                            "type": "set",
+                            "condition": "$flash_helpers.helper_flash_check_unitary_irq_handler($additional, $system.nvic, $item)",
+                            "attributes": {
+                              "const": true
+                            }
                           }
                         ],
                         "variables": [
@@ -384,6 +384,25 @@
                             "semaphore": true
                           }
                         ]
+                      },
+                      "name": {
+                        "type": "string",
+                        "default": "",
+                        "title": "Instance",
+                        "actions": [
+                          {
+                            "type": "disable",
+                            "condition": "true",
+                            "message": "Instance is auto-filled from available IRQ handlers and is read-only."
+                          },
+                          {
+                            "type": "set",
+                            "condition": "true",
+                            "computed": {
+                              "const": "$irq_name.name"
+                            }
+                          }
+                        ]
                       }
                     }
                   }
@@ -414,25 +433,19 @@
                   ]
                 },
                 "enable_interruption_nmi": {
-                  "title": "NMI Interruption",
+                  "title": "NMI FLASH exception management",
+                  "description": "This handler processes the NMI exception that occurs when a double ECC error is detected in the FLASH.",
+                  "type": "boolean",
+                  "default": false
+                },
+                "irq_handler_generation_nmi": {
+                  "title": "NMI IRQ handler generation",
                   "type": "boolean",
                   "default": true,
                   "actions": [
                     {
-                      "type": "disable",
-                      "condition": "true"
-                    }
-                  ]
-                },
-                "irq_handler_generation_nmi": {
-                  "title": "NMI IRQ Handler generation",
-                  "description": "This handler processes the NMI exception that occurs when a double ECC error is detected in the FLASH.",
-                  "type": "boolean",
-                  "default": false,
-                  "actions": [
-                    {
                       "type": "include",
-                      "condition": "$info.layer === 'HAL'"
+                      "condition": "$system.nvic.enable_interruption_nmi && ($info.layer === 'HAL')"
                     }
                   ],
                   "variables": [
@@ -449,12 +462,12 @@
                   "type": "object",
                   "objectType": "need.interrupt.lines",
                   "variables": [
-                      {
-                          "on": "update-value",
-                          "name": "HAL_CORTEX_PROJECT_USE_HAL",
-                          "condition": "$info.layer === 'HAL'",
-                          "semaphore": true
-                      }
+                    {
+                      "on": "update-value",
+                      "name": "HAL_CORTEX_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
                   ],
                   "actions": [
                     {
@@ -477,3 +490,5 @@
     }
   }
 }
+
+

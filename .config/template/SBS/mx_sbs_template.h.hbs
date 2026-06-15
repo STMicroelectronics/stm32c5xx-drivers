@@ -15,6 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'SBS' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "SBS template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.h
@@ -32,13 +37,9 @@ extern "C" {
 /* Includes ----------------------------------------------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'current_layer' info.layer~}}
-{{else}}
-{{assign 'sbs_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'sbs_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'current_layer' @root.sbs_cxt.info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'only_ll' false~}}
 {{/if}}
@@ -53,17 +54,12 @@ extern "C" {
 /* Exported types ----------------------------------------------------------------------------------------------------*/
 /* Exported constants ------------------------------------------------------------------------------------------------*/
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{~assign 'sbs_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-{{~assign 'current_layer' @root.sbs_cxt.info.layer~}}
-{{else}}
-{{~assign 'current_layer' info.layer~}}
-{{/if}}
+{{~assign 'sbs_ctxt' config~}}
+{{~assign 'current_resource' current_resource~}}
+{{~assign 'current_layer' @root.sbs_ctxt.info.layer~}}
 {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
 {{/if}}
-{{/each}}
 
 /* Exported macros ---------------------------------------------------------------------------------------------------*/
 /* Exported functions ----------------------------------------------------------------------------------------------- */
@@ -72,6 +68,7 @@ extern "C" {
 /* Exported functions for SBS in {{@root.current_layer}} layer */
 /******************************************************************************/
 
+  {{#with @root.sbs_ctxt}}
 /**
   * @brief {{@root.fct_name}} SBS init function
   * This function configures the SBS peripheral used in this example
@@ -83,21 +80,25 @@ system_status_t {{@root.fct_name}}_init(void);
   */
 system_status_t {{@root.fct_name}}_deinit(void);
 
-{{#each @root.irq_info_list}}
-{{#if generate_handler}}
-/******************************************************************************/
-/*                     {{description}}                                        */
-/******************************************************************************/
-void {{line}}_IRQHandler(void);
-
-{{else}}
-/******************************************************************************/
-/*    {{description}} is managed directly in user code.                       */
-/******************************************************************************/
-/* void {{line}}_IRQHandler(void); */
-
-{{/if}}
+    {{#with security_privilege}}
+      {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t mx_sbs_config_privilege(void);
+      {{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t mx_sbs_config_security_privilege(void);
+      {{/if}}
+    {{/with}}
+  {{/with}}
 {{/each}}
+
+{{> CORTEX fct='generate_irqhandler' type='prototype' component='SBS'}}
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

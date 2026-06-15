@@ -142,7 +142,7 @@
 {{#if (eq additional.postproc_sel true)}}
 {{#with additional.postproc_panel}}
   {{helper_common_gen_ll_code 'LL_ADC_SetLeftBitShift' (concat 'LL_ADC_LEFT_BIT_SHIFT_' (helper_adc_remove_suffix left_bit_shift))}}
-  {{helper_common_gen_ll_code 'LL_ADC_SetGainCompensation' gain_compensation_x1000}}
+  {{helper_common_gen_ll_code 'LL_ADC_SetGainCompensation' (helper_adc_get_ll_gain_value gain_compensation_x1000)}}
 {{/with}}
 {{/if~}}{{!(eq additional.postproc_sel true)}}
 {{!==================== Low power ====================~}}
@@ -231,11 +231,11 @@
 {{#if (eq additional.ovs_sel true)}}
 {{#with additional.ovs_panel}}
   {{helper_common_gen_ll_code 'LL_ADC_SetOverSamplingScope' (concat 'LL_ADC_OVS_' scope)}}
-{{#if (not (eq scope DISABLE))}}
+{{#if (not (eq scope 'DISABLE'))}}
   {{helper_common_gen_ll_code 'LL_ADC_SetOverSamplingDiscont' (concat 'LL_ADC_OVS_' discont)}}
   LL_ADC_ConfigOverSamplingRatioShift({{@root.current_resource}}, {{ratio}}, LL_ADC_OVS_SHIFT_RIGHT_{{shift}});
 {{/if~}}{{!(eq scope DISABLE)~}}
-{{/with}}{{!ovs_panel~}}
+{{/with}}{{!ovs_panel}}
 {{/if~}}{{!(eq additional.ovs_sel true)}}
 {{!==================== Offset ====================~}}
 {{#if (eq additional.offset_sel true)}}
@@ -243,7 +243,12 @@
 {{#each offsetPanels}}
 {{#with panel}}
   LL_ADC_SetOffsetChannel({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, LL_{{helper_adc_transform_channel_name adc_channel.source}});
-  LL_ADC_SetOffsetLevel({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, {{level}});
+  LL_ADC_SetOffsetLevel({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, {{helper_adc_absolute_value level}});
+{{#if (lt level 0)}}
+  LL_ADC_SetOffsetSign({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, LL_ADC_OFFSET_SIGN_NEGATIVE);
+{{else}}
+  LL_ADC_SetOffsetSign({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, LL_ADC_OFFSET_SIGN_POSITIVE);
+{{/if}}{{!level~}}
 {{#if (eq saturation_signed true)}}
   LL_ADC_SetOffsetSignedSaturation({{@root.current_resource}}, LL_ADC_OFFSET_{{../offset_number}}, LL_ADC_OFFSET_SIGNED_SATURATION_ENABLE);
 {{else}}

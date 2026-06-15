@@ -13,7 +13,7 @@
  */
 
 /**
-  * Retrieve all the interruptions set by SPI but not generated
+  * Retrieve all the interrupts set by SPI but not generated
   * @param {object} nvic_api Getter on NVIC api
   * @param {object} exti_api Getter on EXTI api (not used)
   * @param {object} resource Current resource
@@ -26,9 +26,9 @@ function helper_spi_get_irq_handler(nvic_api, exti_api, resource, config) {
     console.info(`helper_spi_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
     );
 
-    /** Check the peripheral interruptions have been generated or not */
-    const enableInterruption = config?.system?.nvic?.enable_interruption ?? false;
-    if (enableInterruption) {
+    /** Check the peripheral interrupts have been generated or not */
+    const enableInterrupt = config?.system?.nvic?.enable_interrupt ?? false;
+    if (enableInterrupt) {
 
       /** Check if IRQ handler generated is done on code generation or not */
       const irqHandlerGeneration = config.system?.nvic?.irq_handler_generation ?? false;

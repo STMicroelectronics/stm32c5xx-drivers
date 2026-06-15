@@ -78,7 +78,7 @@ module.exports.main_grouping_hook = function (
         let get_timebase = envVarGettersAPI.getVariableValue(
           "CORE_PROJECT_TIMEBASE"
         );
-        if (get_timebase !== "SYSTICK") {
+        if (get_timebase !== "SYSTICK" && get_timebase !== "CUSTOM") {
           hook_result.push(
             getHookResult(component_id, template, getTemplateName(template))
           );
@@ -90,14 +90,14 @@ module.exports.main_grouping_hook = function (
          * */
         let get_env_domain =
           globalGetters.envVarGettersAPI.EnvVarAPI.getEnvDomain();
-        Object.entries(get_env_domain).forEach(([key, envVar]) => {
-          if (envVar.name.endsWith("_PROJECT_USE_HAL")) {
-            hook_result.push(
-              getHookResult(component_id, template, getTemplateName(template))
-            );
-            return;
-          }
-        });
+        const usesHAL = Object.values(get_env_domain).some(envVar =>
+          envVar && envVar.name && envVar.name.endsWith("_PROJECT_USE_HAL")
+        );
+        if (usesHAL) {
+          hook_result.push(
+            getHookResult(component_id, template, getTemplateName(template))
+          );
+        }
       } else if (template === "stm32_ll_template.h") {
         /**
          * Check if stm32_ll_template.h must be generated

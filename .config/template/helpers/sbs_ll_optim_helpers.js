@@ -20,6 +20,7 @@ const LL_SBS_functionsV1 = {
   LL_SBS_SetEPOCHSelection: ["LL_SBS_EPOCH_SEL_NONSECURE"],
   LL_SBS_SetETHExternalPHYInterruptPolarity: [["LL_SBS_PERIPH_ETH1"], ["LL_SBS_ETHPHY_IT_POL_ACTIVE_HIGH"]],
   LL_SBS_SetETHPHYInterface: [["LL_SBS_PERIPH_ETH1"], ["LL_SBS_ETHPHY_ITF_GMII_MII"]],
+  LL_SBS_SetEXTISource: [["LL_SBS_EXTI_GPIO_PORTA"], [/LL_SBS_EXTI_GPIO_LINE\d/]],
 };
 
 /**

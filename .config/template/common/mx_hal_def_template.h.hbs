@@ -43,7 +43,7 @@ extern "C" {
 {{else}}
 #include "stm32_hal.h"
 {{/if}}
-{{~assign 'list_includes' (helper_common_find_include_files @root.SWProjectAPI @root.DmaAPI @root.SWConfigurationAPI @root.pinoutAPI @root.peripheralsResourceManagerAPI @root.strategy)~}}
+{{assign 'list_includes' (helper_common_find_include_files @root.SWProjectAPI @root.DmaAPI @root.SWConfigurationAPI @root.pinoutAPI @root.peripheralsResourceManagerAPI @root.strategy)~}}
 {{#each @root.list_includes}}
 #include "mx_{{lowercase this}}.h"
 {{/each}}

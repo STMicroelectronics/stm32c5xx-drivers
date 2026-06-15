@@ -78,7 +78,7 @@ function helper_tamp_compute_sample_frequency(
     /* Return the output frequency */
     result = Math.floor(sampling_time);
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_compute_sample_frequency: ${e}`);
+    console.error(`helper_tamp_compute_sample_frequency: ${e}`);
   }
 
   return result;
@@ -97,7 +97,7 @@ function helper_tamp_check_passive_mode(tampers) {
 
     return tampers.find((tamper) => tamper.mode === "Passive") !== undefined;
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_check_passive_mode: ${e}`);
+    console.error(`helper_tamp_check_passive_mode: ${e}`);
   }
 }
 
@@ -115,7 +115,7 @@ function helper_tamp_check_active_mode(tampers) {
 
     return tampers.find((tamper) => tamper.mode === "Active") !== undefined;
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_check_active_mode: ${e}`);
+    console.error(`helper_tamp_check_active_mode: ${e}`);
   }
 }
 
@@ -136,7 +136,7 @@ function helper_tamp_active_output(tamper_id, nb_tampers) {
     }
 
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_active_output: ${e}`);
+    console.error(`helper_tamp_active_output: ${e}`);
   }
   return output_tamper;
 }
@@ -159,7 +159,7 @@ function tamper_need_gpio(tamper, tamper_id) {
         result = true;
     }
   } catch (e) {
-    console.log(`[ERROR] tamper_need_gpio: ${e}`);
+    console.error(`tamper_need_gpio: ${e}`);
   }
 
   return result;
@@ -186,7 +186,7 @@ function helper_tamp_need_at_least_one_gpio(basic) {
         return result;
     }
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_need_at_least_one_gpio: ${e}`);
+    console.error(`helper_tamp_need_at_least_one_gpio: ${e}`);
   }
 
   return result;
@@ -213,7 +213,7 @@ function helper_tamp_need_gpio_in_tamper(tampers, tamper_id) {
 
     result = tamper_need_gpio(config_tamp, tamper_id);
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_need_gpio_in_tamper: ${e}`);
+    console.error(`helper_tamp_need_gpio_in_tamper: ${e}`);
   }
   return result;
 }
@@ -251,7 +251,7 @@ function helper_tamp_need_gpio_out_tamper(basic, tamper_id) {
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_need_gpio_out_tamper: ${e}`);
+    console.error(`helper_tamp_need_gpio_out_tamper: ${e}`);
   }
   return result;
 }
@@ -276,7 +276,7 @@ function helper_tamp_convert(tamper) {
     };
     return map_ll_tamper[tamper];
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_convert: ${e}`);
+    console.error(`helper_tamp_convert: ${e}`);
     return "";
   }
 }
@@ -308,7 +308,7 @@ function helper_tamp_internal_convert(tamper) {
     };
     return map_ll_tamper[tamper];
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_internal_convert: ${e}`);
+    console.error(`helper_tamp_internal_convert: ${e}`);
     return "";
   }
 }
@@ -327,7 +327,7 @@ function helper_tamp_passive_trigger_convert(trigger) {
     else
       return "TAMP";
   } catch (e) {
-    console.log(`[ERROR] helper_tamp_passive_trigger_convert: ${e}`);
+    console.error(`helper_tamp_passive_trigger_convert: ${e}`);
     return "";
   }
 }
@@ -400,8 +400,301 @@ function helper_tamp_get_irq_handler(nvic_api, exti_api, resource, config) {
   return result;
 }
 
+/**
+ * Format selected resources as a bitmask expression.
+ * @param {Array} resources resource list
+ * @param {string} prefix enum prefix
+ * @returns {string} formatted expression
+ */
+function helper_tamp_format_resources(resources, prefix) {
+  try {
+    if (!prefix) {
+      return "";
+    }
 
+    if (!Array.isArray(resources)) {
+      return "";
+    }
 
+    const selected = [];
+    for (const resource of resources) {
+      if (resource && resource.use_resource) {
+        const key = resource._foreignKey || resource.id;
+        if (key) {
+          selected.push(prefix + key);
+        }
+      }
+    }
+
+    if (selected.length === 0) {
+      return "";
+    }
+
+    return selected.join(" | ");
+  } catch (e) {
+    console.error(`[ERROR] helper_tamp_format_resources: ${e}`);
+  }
+  return "";
+}
+
+/**
+ * Format selected resource names for comments.
+ * @param {Array} resources resource list
+ * @returns {string} formatted names
+ */
+function helper_tamp_format_resource_names(resources) {
+  try {
+    if (!Array.isArray(resources)) {
+      return "";
+    }
+
+    const selected = [];
+    for (const resource of resources) {
+      if (resource && resource.use_resource) {
+        if (resource.name) {
+          selected.push(resource.name);
+        }
+      }
+    }
+
+    if (selected.length === 0) {
+      return "";
+    }
+
+    return selected.join(", ");
+  } catch (e) {
+    console.error(`[ERROR] helper_tamp_format_resource_names: ${e}`);
+  }
+  return "";
+}
+
+/**
+ * Check if only backup registers is selected (default value).
+ * @param {Array} resources resource list
+ * @returns {boolean} true or false
+ */
+function helper_tamp_default_resources(resources) {
+  try {
+    if (!Array.isArray(resources)) {
+      return false;
+    }
+
+    let has_backup_registers = false;
+    for (const resource of resources) {
+      if (resource && resource.use_resource) {
+        const key = resource._foreignKey || resource.id;
+        if (key === "_31") {
+          has_backup_registers = true;
+        } else {
+          return false;
+        }
+      }
+    }
+
+    return has_backup_registers;
+  } catch (e) {
+    console.error(`[ERROR] helper_tamp_default_resources: ${e}`);
+  }
+  return false;
+}
+
+/**
+ * Check if a resource key is disabled.
+ * @param {Array} resources resource list
+ * @param {string} resource_key resource key (e.g. "_31")
+ * @returns {boolean} true or false
+ */
+function helper_tamp_is_resource_disabled(resources, resource_key) {
+  try {
+    if (!Array.isArray(resources) || !resource_key) {
+      return false;
+    }
+
+    for (const resource of resources) {
+      if (!resource) {
+        continue;
+      }
+      const key = resource._foreignKey || resource.id;
+      if (key === resource_key) {
+        return !resource.use_resource;
+      }
+    }
+  } catch (e) {
+    console.error(`[ERROR] helper_tamp_is_resource_disabled: ${e}`);
+  }
+  return false;
+}
+
+/**
+ * Check if at least one resource is enabled.
+ * @param {Array} resources resource list
+ * @returns {boolean} true or false
+ */
+function helper_tamp_is_resource_enabled(resources) {
+  try {
+    if (!Array.isArray(resources)) {
+      return false;
+    }
+
+    return resources.find((resource) => resource && resource.use_resource) !== undefined;
+  } catch (e) {
+    console.error(`[ERROR] helper_tamp_is_resource_enabled: ${e}`);
+  }
+  return false;
+}
+
+/**
+ * Classifies attribute settings across all access level entries.
+ * Returns an object with three booleans:
+ *  - allPositive: true only if every entry is 1
+ *  - allNegative: true only if every entry is 0
+ *  - allConsistent: true if all entries are either allPositive or allNegative
+ * Empty or invalid inputs return all flags false to avoid vacuous truth.
+ * @param {object} access_levels
+ * @returns {{allPositive: boolean, allNegative: boolean, allConsistent: boolean}}
+ */
+function helper_tamp_attribute_all_states(access_levels) {
+  const result = { allPositive: false, allNegative: false, allConsistent: false };
+  const map_attribute = {
+    SEC: 1,
+    PRIV: 1,
+    NSEC: 0,
+    NPRIV: 0,
+  };
+  try {
+    const values = Object.values(access_levels ?? {});
+
+    let allPositive = true;
+    let allNegative = true;
+    for (let v of values) {
+      if (typeof v === "boolean") {
+        v = Number(v);
+      }
+      if (typeof v === "string") {
+        v = map_attribute[v];
+      }
+      if (v !== 1) {
+        allPositive = false;
+      }
+      if (v !== 0) {
+        allNegative = false;
+      }
+      if (!allPositive && !allNegative) {
+        break;
+      }
+    }
+
+    result.allPositive = allPositive;
+    result.allNegative = allNegative;
+    result.allConsistent = allPositive || allNegative;
+    console.info(`helper_tamp_attribute_all_states result = ${JSON.stringify(result)}`);
+    return result;
+  } catch (e) {
+    console.error(`helper_tamp_attribute_all_states: ${e}`);
+    return result;
+  }
+}
+
+/**
+ * Get security, privilege, public and lock items based on layer, security privilege, and access levels.
+ * @param {string} layer
+ * @param {string} attribute PRIV or SEC
+ * @param {Array<string>} access_levels
+ * @returns {Array<string>} The selected attribute items
+ */
+function helper_tamp_get_attribute_items(
+  layer,
+  attribute,
+  access_levels
+) {
+  try {
+    console.info("helper_tamp_get_attribute_items:", access_levels);
+
+    let result = "";
+    const map_defined_attribute_items = {
+      tamper_protection: layer + "_TAMP_" + attribute + "_ITEM_TAMP",
+      backup_registers_zone_1_protection: layer + "_TAMP_" + attribute + "_ITEM_BACKUP_ZONE_1",
+      backup_registers_zone_2_protection: layer + "_TAMP_" + attribute + "_ITEM_BACKUP_ZONE_2",
+      monotonic_counter_1_protection: layer + "_TAMP_" + attribute + "_ITEM_CNT1",
+      monotonic_counter_2_protection: layer + "_TAMP_" + attribute + "_ITEM_CNT2",
+    };
+    const map_attribute = {
+      SEC: 1,
+      PRIV: 1,
+      NSEC: 0,
+      NPRIV: 0
+    };
+    let next_element = 0;
+    for (const key in access_levels) {
+      if (!Object.hasOwn(access_levels, key)) continue;
+      let element = access_levels[key];
+      if (typeof element === "boolean") {
+        element = Number(element);
+      }
+      if (typeof element === "string") {
+        element = map_attribute[element];
+      }
+      if (element > 0) {
+        if (next_element > 0) {
+          result += " | ";
+        }
+        if(layer == "LL"){
+          result += map_defined_attribute_items[key] + attribute;
+          result = result.replace("_ITEM_BACKUP_ZONE_1", "_ZONE_BKPRW");
+          result = result.replace("_ITEM_BACKUP_ZONE_2", "_ZONE_BKPW");
+        }
+        else
+        {
+          result += map_defined_attribute_items[key];
+        }
+        next_element = 1;
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error(`[ERROR] helper_ltdc_get_attribute_items: ${error.message}`);
+    return false;
+  }
+}
+
+function helper_tamp_get_gpio_need(pinout_api, gpio_config, tamper_id, direction) {
+  try {
+    if (tamper_id !== undefined) {
+      const tamperIndex = tamper_id.toString().match(/\d+/)?.[0];
+      const gpioDirection = direction === "out" ? "out" : "in";
+      gpio_config = gpio_config?.[`gpio_${gpioDirection}_${tamperIndex}`];
+    }
+    const needId = gpio_config?.needs?.[0]?.id;
+    if (!needId) {
+      return undefined;
+    }
+    return pinout_api.getNeedById(needId);
+  } catch (error) {
+    return { error: error.message };
+  }
+}
+
+function helper_tamp_get_remap_define(gpio_need, remap_table) {
+  try {
+    const signalName = gpio_need?.signalName;
+    const userLabel = gpio_need?.userLabels?.[0]
+      ?? (gpio_need?.gpioPad ? `P${gpio_need.gpioPad.port}${gpio_need.gpioPad.index}` : undefined);
+
+    if (!signalName || !userLabel || !remap_table) {
+      return "";
+    }
+
+    const remap = remap_table.split("|").find((entry) => {
+      const [tableSignalName, tableRemapPin] = entry.split(",");
+      return tableSignalName === signalName && tableRemapPin === userLabel;
+    });
+
+    return remap?.split(",")?.[2] ?? "";
+  } catch (error) {
+    console.error(`helper_tamp_get_remap_define: ${error}`);
+    return "";
+  }
+}
 
 module.exports = {
   helper_tamp_internal_array_length,
@@ -417,5 +710,14 @@ module.exports = {
   helper_tamp_convert,
   helper_tamp_internal_convert,
   helper_tamp_passive_trigger_convert,
-  helper_tamp_get_irq_handler
+  helper_tamp_get_irq_handler,
+  helper_tamp_format_resources,
+  helper_tamp_format_resource_names,
+  helper_tamp_default_resources,
+  helper_tamp_is_resource_disabled,
+  helper_tamp_is_resource_enabled,
+  helper_tamp_attribute_all_states,
+  helper_tamp_get_attribute_items,
+  helper_tamp_get_gpio_need,
+  helper_tamp_get_remap_define
 };

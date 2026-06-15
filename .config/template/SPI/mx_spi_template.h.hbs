@@ -15,20 +15,13 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'file_name' 'SPI'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:SPI')~}}
-{{assign 'current_resource' 'SPI'~}}
-{{else}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{!log "SPI template _myctx:" this~}}
-{{assign 'current_resource' resource~}}
-{{assign 'file_name' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'SPI' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "SPI template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign 'dma_resource' @root.codegen_ctxt.dma_resource~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.h
@@ -46,17 +39,20 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
+{{assign 'include_mx_def' false~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'spi_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'spi_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'current_layer' @root.spi_cxt.info.layer~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'only_ll' false~}}
 {{/if}}
+  {{#with @root.spi_cxt.security_privilege}}
+    {{#unless @root.include_mx_def}}
+      {{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+    {{/unless}}
+  {{/with}}
 {{/each}}
 {{#if @root.only_ll}}
 #include "stm32_ll.h"
@@ -67,13 +63,9 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'spi_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.spi_cxt.info.layer~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'spi_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.spi_cxt.info.layer~}}
   {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
   {{/if}}
@@ -86,16 +78,11 @@ extern "C" {
 {{helper_common_initialize_index~}}
 {{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'spi_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'spi_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'current_layer' @root.spi_cxt.info.layer~}}
 {{assign 'configs' @root.spi_cxt~}}
 {{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'configs' this~}}
-{{/if}}
 /******************************************************************************/
 /* Exported functions for SPI in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -119,6 +106,23 @@ SPI_TypeDef *{{@root.fct_name}}_init(void);
   */
 void {{@root.fct_name}}_deinit(void);
 
+{{#with security_privilege}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+{{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+{{/if}}
+
+{{/with}}
+
 {{/with}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined)~}}
@@ -128,6 +132,7 @@ void {{@root.fct_name}}_deinit(void);
   */
 hal_spi_handle_t *{{@root.fct_name}}_gethandle(void);
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
 {{/if}}
 
 {{#if (eq @root.current_layer 'LL')}}
@@ -141,9 +146,6 @@ hal_spi_handle_t *{{@root.fct_name}}_gethandle(void);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-{{#if (eq @root.strategy "SW")~}}
-{{~assign 'current_resource' 'SPI'~}}
-{{/if~}}
 
 #endif /* MX_{{@root.current_resource}}_H */
 {{/helper_common_beautifier}}

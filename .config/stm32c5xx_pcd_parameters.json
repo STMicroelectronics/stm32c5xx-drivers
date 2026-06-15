@@ -2,16 +2,12 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:PCD",
-  "grammarVersion": "3.1",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
       "path": ".config/template/helpers/usb_helpers.js",
       "accessor": "common"
-    },
-    {
-      "path": ".config/template/helpers/common_helpers.js",
-      "accessor": "com"
     }
   ],
   "properties": {
@@ -48,7 +44,8 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$com.helper_common_display_object($resource)"
+                  "message": "Only HAL layer is supported for this component",
+                  "condition": "true"
                 }
               ],
               "variables": [
@@ -90,6 +87,7 @@
               "actions": [
                 {
                   "type": "disable",
+                  "message": "Only Device mode is supported for this component",
                   "condition": "true"
                 }
               ],
@@ -103,22 +101,74 @@
           "properties": {
             "core_speed": {
               "type": "string",
-              "title": "USB core speed",
-              "default": "SPEED_FS",
+              "title": "Core speed",
+              "oneOf": [
+                {
+                  "title": "Full speed",
+                  "const": "SPEED_FS"
+                },
+                {
+                  "title": "High speed",
+                  "const": "SPEED_HS",
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "($resource.name === 'OTG_FS') || ($resource.name === 'USB')"
+                    }
+                  ]
+                },
+                {
+                  "title": "High speed in full speed",
+                  "const": "SPEED_HS_IN_FS",
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "($resource.name === 'OTG_FS')||($resource.name === 'USB')"
+                    }
+                  ]
+                }
+              ],
               "actions": [
                 {
-                  "type": "disable",
-                  "condition": "true"
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "default": "$common.helper_usb_get_speed_by_ip($resource.name)"
+                  }
+                }
+              ]
+            },
+            "sof_state": {
+              "type": "boolean",
+              "title": "USB SOF state",
+              "default": false
+            },
+            "vbus_sense_state": {
+              "type": "boolean",
+              "title": "USB VBUS sensing",
+              "default": false,
+              "actions": [
+                {
+                  "type": "exclude",
+                  "condition": "$resource.name == 'USB'"
                 }
               ]
             },
             "phy_interface": {
               "title": "PHY interface",
               "type": "string",
-              "default": "PHY_EMBEDDED_FS",
               "actions": [
                 {
+                  "type": "set",
+                    "computed": {
+                      "default": "$common.helper_usb_get_phy_interface_by_ip($resource.name)",
+                      "title" : "$common.helper_usb_get_phy_interface_title_by_ip($resource.name)"
+                    },
+                  "condition": "true"
+                },
+                {
                   "type": "disable",
+                  "message": "PHY interface is automatically set based on the selected IP and cannot be modified.",
                   "condition": "true"
                 }
               ]
@@ -127,10 +177,10 @@
               "type": "array",
               "minItems": 1,
               "maxItems": 16,
-              "title": "Packet memory area (PMA)",
+              "title": "Packet memory area endpoint",
+              "itemTitle": "number",
               "items": {
                 "type": "object",
-                "title": "Endpoint details",
                 "actions": [
                   {
                     "type": "error",
@@ -209,6 +259,7 @@
                     "actions": [
                       {
                           "type": "disable",
+                          "message": "Double buffering is not possible for endpoint 0",
                           "condition": "$item.number === 0"
                       }
                     ],
@@ -230,10 +281,15 @@
                   "title": "Buffer address",
                   "description": "Address in PMA where the buffer is located. It is computed automatically.",
                   "default": "0x00",
-                  "pattern": "^0x[0-9A-Fa-f]{1,4}$",
                   "actions": [
+                      {
+                        "type": "error",
+                        "condition": "!/^0x[0-9A-Fa-f]{1,4}$/.test($value)",
+                        "message": "Buffer address must be a hexadecimal value in the form 0x0 to 0xFFFF."
+                      },
                     {
-                      "type": "disable"
+                      "type": "disable",
+                      "message": "Buffer address is automatically computed and cannot be modified."
                     },
                     {
                       "type": "set",
@@ -267,14 +323,19 @@
                   "title": "Second Buffer address",
                   "description": "Address in PMA (Packet Memory Area) where the second buffer is located.",
                   "default": "0x00",
-                  "pattern": "^0x[0-9A-Fa-f]{1,4}$",
                   "actions": [
                     {
                       "type": "exclude",
                       "condition": "$item.buffer_type === \"single\""
                     },
                     {
-                      "type": "disable"
+                      "type": "error",
+                      "condition": "!/^0x[0-9A-Fa-f]{1,4}$/.test($value)",
+                      "message": "Second buffer address must be a hexadecimal value in the form 0x0 to 0xFFFF."
+                    },
+                    {
+                      "type": "disable",
+                      "message": "Buffer address is automatically computed and cannot be modified."
                     },
                     {
                       "type": "set",
@@ -302,12 +363,12 @@
             },
             "lpm_enable": {
               "type": "boolean",
-              "title": "USB Low power management state",
+              "title": "USB low power management state",
               "default": false
             },
             "bulk_doublebuffer_enable": {
               "type": "boolean",
-              "title": "USB Bulk double buffer state",
+              "title": "USB bulk double buffer state",
               "default": false
             }
           }
@@ -315,12 +376,10 @@
         "system": {
           "type": "object",
           "title": "System",
-          "description": "PCD Global Configuration Structure definition.",
           "properties": {
             "gpio": {
               "type": "object",
               "title": "GPIO",
-              "description": "GPIO settings.",
               "properties": {
                 "dp": {
                   "type": "object",
@@ -339,27 +398,11 @@
                     {
                       "type": "exclude",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.name, 'DP')"
-                    },
-                    {
-                      "type": "warning",
-                      "message": "This parameter's basic configuration is automatically done",
-                      "condition": "$resource.name === 'OTG_FS'"
                     }
                   ],
                   "needs": [
                     {
-                      "selector": "DP",
-                      "constraints": {
-                        "mode": {
-                          "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "No"
-                        },
-                        "speed": {
-                          "const": "High"
-                        }
-                      }
+                      "selector": "DP"
                     }
                   ]
                 },
@@ -380,28 +423,41 @@
                     {
                       "type": "exclude",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.name, 'DM')"
-                    },
-                    {
-                      "type": "warning",
-                      "message": "This parameter's basic configuration is automatically done",
-                      "condition": "$resource.name === 'OTG_FS'"
                     }
                   ],
                   "needs": [
                     {
-                      "selector": "DM",
+                      "selector": "DM"
+                    }
+                  ]
+                },
+                "sof": {
+                  "type": "object",
+                  "title": "USB SOF signal",
+                  "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.name",
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "(!$get('pinout.peripheralCanBeMapped', $resource.name, 'SOF'))||($basic.sof_state==false)"
+                    }
+                  ],
+                  "needs": [
+                    {
+                      "selector": "SOF",
                       "constraints": {
                         "mode": {
-                          "const": "ANALOG"
-                        },
-                        "pull": {
-                          "const": "No"
-                        },
-                        "speed": {
-                          "const": "High"
+                          "const": "ALTERNATE"
                         }
-                      }
-                    }
+                      }                    }
                   ]
                 }
               }
@@ -440,14 +496,13 @@
                 },
                 "nvic_config": {
                   "type": "object",
-                  "title": "NVIC USB global",
+                  "title": "Global",
                   "actions": [
                     {
                       "type": "include",
                       "condition": "$system.nvic.enable_interruption"
                     }
                   ],
-                  "type": "object",
                   "objectType": "need.interrupt.lines",
                   "variables": [
                     {

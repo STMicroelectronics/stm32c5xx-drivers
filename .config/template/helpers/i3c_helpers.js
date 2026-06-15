@@ -261,7 +261,7 @@ function UTILS_I3C_CtrlGetTiming(config) {
       timing_reg0 = (raw_timing.scl_pp_low_duration |
         (raw_timing.scl_i3c_high_duration << I3C_TIMINGR0_SCLH_I3C_POS) |
         (raw_timing.scl_od_low_duration << I3C_TIMINGR0_SCLL_OD_POS) |
-        (raw_timing.scl_i2c_high_duration << I3C_TIMINGR0_SCLH_I2C_POS));
+        (raw_timing.scl_i2c_high_duration << I3C_TIMINGR0_SCLH_I2C_POS)) >>> 0;
 
       if (config.adv_bus_free_duration === -100) {
         raw_timing.bus_free_duration = free;
@@ -288,7 +288,7 @@ function UTILS_I3C_CtrlGetTiming(config) {
       timing_reg1 = (raw_timing.sda_hold_time |
         raw_timing.wait_time |
         (raw_timing.bus_free_duration << I3C_TIMINGR1_FREE_POS) |
-        raw_timing.bus_idle_duration);
+        raw_timing.bus_idle_duration) >>> 0;
 
       logDebug(`timing_reg0 calculated: ${timing_reg0}`);
       logDebug(`timing_reg1 calculated: ${timing_reg1}`);
@@ -325,7 +325,7 @@ function UTILS_I3C_TgtGetTiming(clock_src_freq, bus_available_duration) {
 
   if (status === 0 && ti3cclk !== 0) {
     oneus = divRoundClosest(100*bus_available_duration, ti3cclk) - 2;
-    timing_reg1 = (oneus << I3C_TIMINGR1_AVAL_POS);
+    timing_reg1 = (oneus << I3C_TIMINGR1_AVAL_POS) >>> 0;
     logDebug(`p_timing_reg1 calculated: ${timing_reg1}`);
   }
 

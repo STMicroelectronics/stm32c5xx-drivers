@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32CubeMX2 Config:CRS",
-  "grammarVersion": "3.1",
+  "grammarVersion": "3.8",
   "type": "object",
   "properties": {
     "parameters": {
@@ -100,7 +100,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ],
                   "default": false
@@ -118,7 +119,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "($basic.trimming.auto_trimming === false) && ($basic.init === false)"
+                      "condition": "($basic.trimming.auto_trimming === false) && ($basic.init === false)",
+                      "message": "Can be configured only when the default synchronization signal is not used and auto-trimming is disabled."
                     }
                   ]
                 }
@@ -134,22 +136,28 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     },
                     {
-                      "type": "info",
-                      "condition": "($basic.sync_signal.sync_source === 'LSE') && ($get('envVar.value', 'RCC_PROJECT_LSE') !== true)",
-                      "message": "Make sure that LSE clock is enabled"
+                      "type": "error",
+                      "condition": "($basic.init === false) && ($basic.sync_signal.sync_source === 'LSE') && ($get('envVar.value', 'RCC_PROJECT_LSE') !== true)",
+                      "message": "LSE clock must be enabled."
                     },
                     {
-                      "type": "info",
-                      "condition": "($basic.sync_signal.sync_source === 'OTG_FS') || ($basic.sync_signal.sync_source === 'OTG_HS') || ($basic.sync_signal.sync_source === 'USB')",
-                      "message": "Make sure that USB clock is enabled"
+                      "type": "error",
+                      "condition": "($basic.init === false) && (($basic.sync_signal.sync_source === 'OTG_FS') || ($basic.sync_signal.sync_source === 'OTG_HS') || ($basic.sync_signal.sync_source === 'USB')) && !$get('peripheral.isBound', 'USB_DRD_FS.HOST')",
+                      "message": "USB host must be enabled."
                     },
                     {
-                      "type": "info",
-                      "condition": "($basic.sync_signal.sync_source === 'HSE_1MHZ') && ($get('envVar.value', 'RCC_PROJECT_HSE') !== true)",
-                      "message": "Make sure that HSE 1MHz clock is enabled"
+                      "type": "error",
+                      "condition": "($basic.init === false) && ($basic.sync_signal.sync_source === 'HSE_1MHZ') && ($get('envVar.value', 'RCC_PROJECT_HSE') !== true)",
+                      "message": "HSE clock must be enabled."
+                    },
+                    {
+                      "type": "error",
+                      "condition": "($basic.init === false) && ($basic.sync_signal.sync_source === 'HSE_1MHZ') && ($get('clock.frequency','HSE_Divider_RTC') !== 1000000)",
+                      "message": "HSE divider RTC frequency must be set to 1 MHz."
                     }
                   ],
                   "oneOf": [
@@ -161,7 +169,13 @@
                     {
                       "title": "LSE as synchronization source",
                       "description": "LSE is selected as sync source.",
-                      "const": "LSE"
+                      "const": "LSE",
+                      "actions": [
+                        {
+                          "type": "include",
+                          "condition": "($get('pinout.peripheralCanBeMapped', 'RCC', 'OSC32_IN') === true) && ($get('pinout.peripheralCanBeMapped', 'RCC', 'OSC32_OUT') === true)"
+                        }
+                      ]
                     },
                     {
                       "title": "USB SOF as synchronization source",
@@ -169,9 +183,29 @@
                       "const": "USB"
                     },
                     {
-                      "title": "HSE 1MHz as synchronization source",
-                      "description": "HSE 1MHz is selected as sync source.",
-                      "const": "HSE_1MHZ"
+                      "title": "HSE 1 MHz as synchronization source",
+                      "description": "HSE 1 MHz is selected as sync source.",
+                      "const": "HSE_1MHZ",
+                      "actions": [
+                        {
+                          "type": "include",
+                          "condition": "($get('pinout.peripheralCanBeMapped', 'RCC', 'OSC_IN') === true) && ($get('pinout.peripheralCanBeMapped', 'RCC', 'OSC_OUT') === true)"
+                        }
+                      ]
+                    }
+                  ],
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": " CRS_CORE_USE_HSE_SYNC ",
+                      "condition": "$value === 'HSE_1MHZ'",
+                      "semaphore": true
+                    },
+                    {
+                      "on": "update-value",
+                      "name": " CRS_CORE_USE_LSE_SYNC ",
+                      "condition": "$value === 'LSE'",
+                      "semaphore": true
                     }
                   ],
                   "default": "USB"
@@ -182,7 +216,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ],
                   "oneOf": [
@@ -203,7 +238,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ],
                   "oneOf": [
@@ -261,7 +297,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ]
                 },
@@ -278,11 +315,143 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ]
                 }
               }
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "#comment": "Use for instance for CRS",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -331,13 +500,14 @@
               "type": "object",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": false,
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ]
                 },
@@ -352,7 +522,8 @@
                     },
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ]
                 },
@@ -381,7 +552,8 @@
                     },
                     {
                       "type": "enable",
-                      "condition": "$basic.init === false"
+                      "condition": "$basic.init === false",
+                      "message": "Can be configured only when the default synchronization signal is not used."
                     }
                   ]
                 }

@@ -171,8 +171,12 @@ function helper_gpio_retrieve_exti_object(layer, gpio_ctxt, pin, exti_object) {
  *       "output_active_state": "SET",
  *       "enable_exti": true,
  *       "aliases": {
- *          "other_labels": [],
- *          "master_label": "GPIO_USER"
+ *          "other_labels": [
+ *            ["GPIO_USER_2", "GPIO_USER_3"],
+ *            ["GPIO_USER_2B"],
+ *            []
+ *          ],
+ *          "master_label": ["GPIO_USER", "GPIO_USER_B", ""]
  *         }
  *       }
  *     ]
@@ -227,6 +231,13 @@ function helper_gpio_get_gpioconfig_standalone_object(
     let hw_labels = Array.isArray(pin?.labels) ? pin.labels : (pin?.labels ? [pin.labels] : []);
     let sw_labels = Array.isArray(label_name) ? label_name : (label_name ? [label_name] : []);
 
+    // Per-pin aliases (master + secondaries) derived from the labels
+    const per_pin_aliases = helper_gpio_create_aliases(hw_labels, sw_labels);
+    const per_pin_master_label = per_pin_aliases?.master_label ? String(per_pin_aliases.master_label) : "";
+    const per_pin_other_labels = Array.isArray(per_pin_aliases?.other_labels)
+      ? per_pin_aliases.other_labels
+      : [];
+
     // Ensure list_port uniqueness
     if (current_gpio.port && !result.list_port.includes(current_gpio.port)) {
       result.list_port.push(current_gpio.port);
@@ -254,7 +265,8 @@ function helper_gpio_get_gpioconfig_standalone_object(
     if (existing) {
       // Merge pin index
       const idxStr = String(current_gpio.index);
-      if (!existing.pin.includes(idxStr)) {
+      const isNewPin = !existing.pin.includes(idxStr);
+      if (isNewPin) {
         existing.pin.push(idxStr);
       }
       // Merge EXTI config list
@@ -273,9 +285,15 @@ function helper_gpio_get_gpioconfig_standalone_object(
         existing.userLabels = existing.userLabels || [];
         existing.userLabels.push(hw_labels);
       }
-      // Preserve first alias object; for subsequent pins we do not duplicate aliases
-      if (!existing.aliases) {
-        existing.aliases = helper_gpio_create_aliases(hw_labels, sw_labels);
+      // Accumulate aliases per pin (aligned with existing.pin order)
+      if (!existing.aliases || typeof existing.aliases !== "object") {
+        existing.aliases = { master_label: [], other_labels: [] };
+      }
+      if (!Array.isArray(existing.aliases.master_label)) existing.aliases.master_label = [];
+      if (!Array.isArray(existing.aliases.other_labels)) existing.aliases.other_labels = [];
+      if (isNewPin) {
+        existing.aliases.master_label.push(per_pin_master_label);
+        existing.aliases.other_labels.push(per_pin_other_labels);
       }
     } else {
       // Create new grouped configuration entry
@@ -298,7 +316,11 @@ function helper_gpio_get_gpioconfig_standalone_object(
         output_init_state: current_config.output_init_state,
         output_active_state: current_config.output_active_state,
         enable_exti: current_config.enable_exti,
-        aliases: helper_gpio_create_aliases(hw_labels, sw_labels),
+        // Aliases are stored per pin, aligned with the grouped pin list
+        aliases: {
+          master_label: [per_pin_master_label],
+          other_labels: [per_pin_other_labels],
+        },
       };
       result.list_config_pins.push(new_cfg);
     }
@@ -480,37 +502,50 @@ function helper_gpio_merge_exti_cfg(all_exti_cfg, new_exti_cfg) {
  * @returns {Array} Array of objects, each with the shape { port: string, pins: number[] },
  *                  suitable for use in mx_pppi_template.c.hbs via GPIO_HAL_partial.hbs.
  */
-function helper_gpio_group_pins_by_port(gpio_ctxt, groupedPins) {
-  // Use the provided groupedPins array or start with an empty array
-  let result = Array.isArray(groupedPins) ? groupedPins : [];
+function helper_gpio_group_pins_by_port(cfg, grouped, layer) {
+  const result = Array.isArray(grouped) ? grouped : [];
 
   try {
-    // Check if gpio_ctxt and gpioPad with port and index exist
-    if (
-      gpio_ctxt &&
-      gpio_ctxt.gpioPad &&
-      typeof gpio_ctxt.gpioPad.port !== "undefined" &&
-      typeof gpio_ctxt.gpioPad.index !== "undefined"
-    ) {
-      const port = gpio_ctxt.gpioPad.port;
-      const index = gpio_ctxt.gpioPad.index;
+    if (!cfg || typeof cfg !== "object") return result;
+    const port = cfg.port;
+    const pins = Array.isArray(cfg.pin) ? cfg.pin : [];
+    const masterLabels = Array.isArray(cfg.aliases?.master_label) ? cfg.aliases.master_label : [];
 
-      // Try to find an existing entry for this port
-      let portEntry = result.find((entry) => entry.port === port);
+    if (port === undefined || port === null) return result;
 
-      if (portEntry) {
-        // Add the pin index if not already present
-        if (!portEntry.pins.includes(index)) {
-          portEntry.pins.push(index);
-          // Sort the pins array after adding
-          portEntry.pins.sort((a, b) => a - b);
-        }
-      } else {
-        // Create a new entry for this port
-        result.push({ port: port, pins: [index] });
-      }
+    const fallbackPrefix = layer === "LL" ? "LL_GPIO_PIN_" : "HAL_GPIO_PIN_";
+    const defaultPortParam = layer === "LL" ? `GPIO${port}` : `HAL_GPIO${port}`;
+
+    let portEntry = result.find((e) => e && typeof e === "object" && e.port === port);
+    if (!portEntry) {
+      portEntry = { port: port, port_param: defaultPortParam, _pinItems: [] };
+      result.push(portEntry);
     }
-    // If port or index is missing, do nothing (skip this gpio_ctxt)
+    if (!Array.isArray(portEntry._pinItems)) portEntry._pinItems = [];
+
+    pins.forEach((pinStr, idx) => {
+      if (pinStr === undefined || pinStr === null) return;
+      const indexNum = Number(pinStr);
+      const label = masterLabels[idx];
+      const hasLabel = typeof label === "string" && label.length > 0;
+      const macro = hasLabel ? `${label}_PIN` : `${fallbackPrefix}${pinStr}`;
+
+      // Uniqueness by port+pin number
+      if (portEntry._pinItems.some((p) => p && p.index === indexNum)) return;
+      portEntry._pinItems.push({ index: indexNum, macro, label: hasLabel ? label : "" });
+    });
+
+    // Sort by pin index for stable output
+    portEntry._pinItems.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    portEntry.pins = portEntry._pinItems.map((p) => p.macro);
+
+    // If (and only if) there is exactly one pin for this port and it has a master label,
+    // use the alias port macro in generated calls.
+    if (portEntry._pinItems.length === 1 && portEntry._pinItems[0]?.label) {
+      portEntry.port_param = `${portEntry._pinItems[0].label}_PORT`;
+    } else {
+      portEntry.port_param = defaultPortParam;
+    }
   } catch (e) {
     console.error(`helper_gpio_group_pins_by_port: ${e}`);
   }
@@ -754,6 +789,17 @@ function helper_gpio_get_allocated_resource_needs(pinout_api, current_resource) 
       if (current_config.maxSpeed && !current_config.speed) current_config.speed = current_config.maxSpeed;
       if (current_config.outputType && !current_config.output_type) current_config.output_type = current_config.outputType;
       if (current_config.pullMode && !current_config.pull) current_config.pull = current_config.pullMode;
+
+      // Per-pin aliases derived from HW + SW labels
+      const sw_labels_flat = gpio_ctxt.configuration?.label_name
+        ? (Array.isArray(gpio_ctxt.configuration.label_name) ? gpio_ctxt.configuration.label_name : [gpio_ctxt.configuration.label_name])
+        : [];
+      const hw_labels_flat = gpio_ctxt.userLabels
+        ? (Array.isArray(gpio_ctxt.userLabels) ? gpio_ctxt.userLabels : [gpio_ctxt.userLabels])
+        : [];
+      const per_pin_aliases = helper_gpio_create_aliases(hw_labels_flat, sw_labels_flat);
+      const per_pin_master_label = per_pin_aliases?.master_label ? String(per_pin_aliases.master_label) : "";
+      const per_pin_other_labels = Array.isArray(per_pin_aliases?.other_labels) ? per_pin_aliases.other_labels : [];
       let existing = result.list_config_pins.find((cfg) =>
         cfg.port === current_config.port &&
         cfg.mode === current_config.mode &&
@@ -781,6 +827,15 @@ function helper_gpio_get_allocated_resource_needs(pinout_api, current_resource) 
           if (!Array.isArray(newHw)) newHw = [newHw];
           existing.userLabels.push(newHw);
         }
+
+        // Accumulate aliases per pin (aligned with existing.pin order)
+        if (!existing.aliases || typeof existing.aliases !== "object") {
+          existing.aliases = { master_label: [], other_labels: [] };
+        }
+        if (!Array.isArray(existing.aliases.master_label)) existing.aliases.master_label = [];
+        if (!Array.isArray(existing.aliases.other_labels)) existing.aliases.other_labels = [];
+        existing.aliases.master_label.push(per_pin_master_label);
+        existing.aliases.other_labels.push(per_pin_other_labels);
       } else {
         current_config.signalName = gpio_ctxt.signalName ? [gpio_ctxt.signalName] : [];
         current_config.pin = [current_gpio.index.toString()];
@@ -800,6 +855,12 @@ function helper_gpio_get_allocated_resource_needs(pinout_api, current_resource) 
           if (!Array.isArray(hw)) hw = [hw];
           current_config.userLabels = [hw];
         }
+
+        // Aliases are stored per pin, aligned with the grouped pin list
+        current_config.aliases = {
+          master_label: [per_pin_master_label],
+          other_labels: [per_pin_other_labels],
+        };
         result.list_config_pins.push(current_config);
       }
     });

@@ -23,9 +23,9 @@
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
+ * @param {function} _get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_sw_instances     function returning the software instances (from the configuration data model) associated to the component id
- * @param {object}   cfg_data             configuration data for the current software project
+ * @param {object}   _cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -34,22 +34,22 @@
 module.exports.main_grouping_hook = function (
   component_id,
   component_templates,
-  get_hw_instances,
+  _get_hw_instances,
   get_getters_context,
-  cfg_data,
+  _cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debug_print,
-  strategy
+  _strategy
 ) {
+  const globalGetters = get_getters_context();
+  const strategy = globalGetters.envVarGettersAPI.EnvVarAPI.getVariableValue('SYSTEM_PROJECT_CODEGEN_STRATEGY');
   switch (strategy) {
     case "HW":
       return hw_grouping_hook(
         component_id,
         component_templates,
-        get_hw_instances,
         get_getters_context,
-        cfg_data,
         secure_ctxt,
         genfileslist_folder,
         debug_print
@@ -59,9 +59,7 @@ module.exports.main_grouping_hook = function (
       return sw_grouping_hook(
         component_id,
         component_templates,
-        get_hw_instances,
         get_getters_context,
-        cfg_data,
         secure_ctxt,
         genfileslist_folder,
         debug_print
@@ -80,9 +78,7 @@ module.exports.main_grouping_hook = function (
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_getters_context  function returning the DomainGettersAPI that contain the list of available getters
- * @param {object}   cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -91,9 +87,7 @@ module.exports.main_grouping_hook = function (
 function hw_grouping_hook(
   component_id,
   component_templates,
-  get_hw_instances,
   get_getters_context,
-  cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debug_print
@@ -111,8 +105,6 @@ function hw_grouping_hook(
   if (
     component_id == null ||
     component_templates == null ||
-    get_hw_instances == null ||
-    cfg_data == null ||
     secure_ctxt == null
   ) {
     if (debug === true) {
@@ -163,24 +155,24 @@ function hw_grouping_hook(
   *     }
   * For more information, see JIRA ticket: https://jira.st.com/browse/T2RM-863
   */
-  let my_hw_instances_pcd_hcd = get_hw_instances('STMicroelectronics::Device:STM32CubeMX2 Config:PCD', cfg_data);
+  let my_hw_instances_pcd_hcd = peripheralsResourceManagerAPI?.getPeripheralsBoundToSoftwareComponent('STMicroelectronics::Device:STM32CubeMX2 Config:PCD');
   let periphMappingFromComppcd = [];
   let periphMappingFromComphcd = [];
   if (my_hw_instances_pcd_hcd.length != 0) {
     my_hw_instances.push(...my_hw_instances_pcd_hcd);
     periphMappingFromComppcd = peripheralsResourceManagerAPI?.getConfigurablePeripheralsFromComponent('STMicroelectronics::Device:STM32CubeMX2 Config:PCD');
   }
-  my_hw_instances_pcd_hcd = get_hw_instances('STMicroelectronics::Device:STM32CubeMX2 Config:HCD', cfg_data);
+  my_hw_instances_pcd_hcd = peripheralsResourceManagerAPI?.getPeripheralsBoundToSoftwareComponent('STMicroelectronics::Device:STM32CubeMX2 Config:HCD');
   if (my_hw_instances_pcd_hcd.length != 0) {
     my_hw_instances.push(...my_hw_instances_pcd_hcd);
     periphMappingFromComphcd = peripheralsResourceManagerAPI?.getConfigurablePeripheralsFromComponent('STMicroelectronics::Device:STM32CubeMX2 Config:HCD');
   }
-  console.log("my_hw_instances for PCD/HCD" + JSON.stringify(my_hw_instances))
+  console.info("my_hw_instances for PCD/HCD" + JSON.stringify(my_hw_instances))
 
 
   // component_id = 'STMicroelectronics::Device:STM32CubeMX2 Config:PCD@0.2.0';
   const periphMappingFromComp = [...periphMappingFromComphcd, ...periphMappingFromComppcd]
-  console.log("periphMappingFromComp" + JSON.stringify(periphMappingFromComp))
+  console.info("periphMappingFromComp" + JSON.stringify(periphMappingFromComp))
 
   //step[2.3] ##LUT purpose##:
   // Iterate over the returned structure to extract the mapping peripherals for the current component.
@@ -255,7 +247,7 @@ function hw_grouping_hook(
     }
     peripheralMappingConfig[prefix].push(item.id);
   }
-  console.log("peripheralMappingConfig" + JSON.stringify(peripheralMappingConfig))
+  console.info("peripheralMappingConfig" + JSON.stringify(peripheralMappingConfig))
 
   /*
    * All hw instances code must end-up in the same file
@@ -285,7 +277,6 @@ function hw_grouping_hook(
       // Get the not-generated info from the Resource initialization
       // code generation param from current instance config panel
       const peripheralConfigList =
-
         peripheralsResourceManagerAPI.getSoftwareInstancesBoundToPeripheral(
           item
         ) || [];
@@ -407,9 +398,7 @@ function hw_grouping_hook(
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_sw_instances     function returning the software instances (from the configuration data model) associated to the component id
- * @param {object}   cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -418,9 +407,7 @@ function hw_grouping_hook(
 function sw_grouping_hook(
   component_id,
   component_templates,
-  get_hw_instances,
   get_sw_instances,
-  cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debugPrint

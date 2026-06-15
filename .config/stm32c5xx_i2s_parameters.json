@@ -222,46 +222,47 @@
               "default": 8000,
               "oneOf": [
                 {
-                  "title": "192kHz",
+                  "title": "192 kHz",
                   "const": 192000
                 },
                 {
-                  "title": "96kHz",
+                  "title": "96 kHz",
                   "const": 96000
                 },
                 {
-                  "title": "48kHz",
+                  "title": "48 kHz",
                   "const": 48000
                 },
                 {
-                  "title": "44kHz",
+                  "title": "44 kHz",
                   "const": 44100
                 },
                 {
-                  "title": "32kHz",
+                  "title": "32 kHz",
                   "const": 32000
                 },
                 {
-                  "title": "22kHz",
+                  "title": "22 kHz",
                   "const": 22050
                 },
                 {
-                  "title": "16kHz",
+                  "title": "16 kHz",
                   "const": 16000
                 },
                 {
-                  "title": "11kHz",
+                  "title": "11 kHz",
                   "const": 11025
                 },
                 {
-                  "title": "8kHz",
+                  "title": "8 kHz",
                   "const": 8000
                 }
               ],
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'"
+                  "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'",
+                  "message": "Audio frequency is determined by master clock."
                 }
               ]
             },
@@ -387,11 +388,11 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'"
+                  "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'",
+                  "message": "Mode must be in master"
                 },
                 {
                   "type": "set",
-                  "message": "Mode must be in master",
                   "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'",
                   "attributes": {
                     "const": false
@@ -411,11 +412,11 @@
               "actions": [
                 {
                   "type": "disable",
-                  "condition": "$basic.mode === 'MASTER_FULL_DUPLEX' || $basic.mode === 'MASTER_TX' || $basic.mode === 'MASTER_RX'"
+                  "condition": "$basic.mode === 'MASTER_FULL_DUPLEX' || $basic.mode === 'MASTER_TX' || $basic.mode === 'MASTER_RX'",
+                  "message": "Mode must be in slave"
                 },
                 {
                   "type": "set",
-                  "message": "Mode must be in slave",
                   "condition": "$basic.mode === 'MASTER_FULL_DUPLEX' || $basic.mode === 'MASTER_TX' || $basic.mode === 'MASTER_RX'",
                   "attributes": {
                     "const": false
@@ -528,11 +529,11 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'"
+                      "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'",
+                      "message": "Mode must be in master"
                     },
                     {
                       "type": "set",
-                      "message": "Mode must be in master",
                       "condition": "$basic.mode === 'SLAVE_FULL_DUPLEX' || $basic.mode === 'SLAVE_TX' || $basic.mode === 'SLAVE_RX'",
                       "attributes": {
                         "const": false
@@ -553,6 +554,136 @@
                   "default": false
                 }
               }
+            }
+          }
+        },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -634,6 +765,10 @@
                       "type": "error",
                       "message": "The selected I2S peripheral cannot be mapped to a I2S_SDI pin: no pin available in the selected package.",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'SDI')"
+                    },
+                    {
+                      "type": "exclude",
+                      "condition": "(($basic.mode == 'SLAVE_RX' || $basic.mode == 'MASTER_TX') && ($additional.i2s_io_configuration.enable_io_swap == false)) || (($basic.mode == 'SLAVE_TX' || $basic.mode == 'MASTER_RX') && ($additional.i2s_io_configuration.enable_io_swap == true))"
                     }
                   ],
                   "objectType": "need.pinout.signals",
@@ -665,6 +800,10 @@
                       "type": "error",
                       "message": "The selected I2S peripheral cannot be mapped to a I2S_SDO pin: no pin available in the selected package.",
                       "condition": "!$get('pinout.peripheralCanBeMapped', $resource.id, 'SDO')"
+                    },
+                    {
+                      "type": "exclude",
+                      "condition": "(($basic.mode == 'SLAVE_TX' || $basic.mode == 'MASTER_RX') && ($additional.i2s_io_configuration.enable_io_swap == false)) || (($basic.mode == 'SLAVE_RX' || $basic.mode == 'MASTER_TX') && ($additional.i2s_io_configuration.enable_io_swap == true))"
                     }
                   ],
                   "objectType": "need.pinout.signals",
@@ -687,6 +826,36 @@
                       }
                     }
                   ]
+                },
+                "gpio_mck": {
+                  "title": "GPIO MCK",
+                  "type": "object",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "($additional.enable_mclk_output) && ($get('pinout.peripheralCanBeMapped', $resource.id, 'MCK'))"
+                    }
+                  ],
+                  "objectType": "need.pinout.signals",
+                  "variables": [
+                    {
+                      "on": "update-value",
+                      "name": "HAL_GPIO_PROJECT_USE_HAL",
+                      "condition": "$info.layer === 'HAL'",
+                      "semaphore": true
+                    }
+                  ],
+                  "owner": "$resource.id",
+                  "needs": [
+                    {
+                      "selector": "MCK",
+                      "constraints": {
+                        "mode": {
+                          "const": "ALTERNATE"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -697,7 +866,13 @@
                 "enable_dma_tx": {
                   "title": "DMA Tx",
                   "type": "boolean",
-                  "default": false
+                  "default": false,
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "$basic.mode == 'SLAVE_RX' || $basic.mode == 'MASTER_RX'"
+                    }
+                  ]
                 },
                 "dma_config_tx": {
                   "title": "DMA Tx",
@@ -744,7 +919,13 @@
                 "enable_dma_rx": {
                   "title": "DMA Rx",
                   "type": "boolean",
-                  "default": false
+                  "default": false,
+                  "actions": [
+                    {
+                      "type": "exclude",
+                      "condition": "$basic.mode == 'SLAVE_TX' || $basic.mode == 'MASTER_TX'"
+                    }
+                  ]
                 },
                 "dma_config_rx": {
                   "type": "object",
@@ -794,23 +975,10 @@
               "type": "object",
               "title": "NVIC",
               "properties": {
-                "enable_interruption": {
-                  "title": "Interruption",
+                "enable_interrupt": {
+                  "title": "Interrupt",
                   "type": "boolean",
-                  "default": false,
-                  "actions": [
-                    {
-                      "type": "set",
-                      "condition": "($system.dma.enable_dma_rx) || ($system.dma.enable_dma_tx)",
-                      "attributes": {
-                        "const": true
-                      }
-                    },
-                    {
-                      "type": "disable",
-                      "condition": "($system.dma.enable_dma_rx) || ($system.dma.enable_dma_tx)"
-                    }
-                  ]
+                  "default": false
                 },
                 "irq_handler_generation": {
                   "type": "boolean",
@@ -819,7 +987,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$system.nvic.enable_interruption && $info.layer === 'HAL'"
+                      "condition": "$system.nvic.enable_interrupt && $info.layer === 'HAL'"
                     }
                   ]
                 },
@@ -828,7 +996,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$system.nvic.enable_interruption"
+                      "condition": "$system.nvic.enable_interrupt"
                     }
                   ],
                   "type": "object",

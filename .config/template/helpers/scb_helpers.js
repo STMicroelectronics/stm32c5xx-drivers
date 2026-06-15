@@ -16,7 +16,8 @@
  * @brief Generate SCB enabled faults configuration string based on fault_management object and driver level.
  *
  * @param {object} fault_management  Object with boolean properties enable_usage_fault, enable_bus_fault, etc.
- * @param {string} driverLevel      Driver level string: 'LL' or 'HAL'.
+ * @param {string} driverLevel       Driver level string: 'LL' or 'HAL'.
+ * @param {string} is_mpu_enabled    Indicates if MPU is enabled.
  *
  * @returns {string} Bitwise OR '|' joined string of enabled faults, or 'NONE' if all faults are disabled.
  *
@@ -25,7 +26,7 @@
  * - Fault disabled = false means do not set that fault.
  * - The returned string can be used directly in C code to configure SCB fault enable bits.
  */
-function helper_cortex_scb_get_enable_fault(fault_management, driverLevel) {
+function helper_cortex_scb_get_enable_fault(fault_management, driverLevel, is_mpu_enabled) {
   console.info(`helper_cortex_scb_get_enable_fault`);
 
   try {
@@ -68,8 +69,11 @@ function helper_cortex_scb_get_enable_fault(fault_management, driverLevel) {
 
     // If a fault is enabled (true), add the corresponding symbol
     for (const [key, symbol] of Object.entries(enableFaultsMap)) {
-      if (fault_management[key] === true) {
-        enabledFaults.push(symbol);
+      // For memory management fault, only consider it if MPU is not enabled
+      if (!(key === 'enable_mem_management_fault' && is_mpu_enabled === true)) {
+        if (fault_management[key] === true) {
+          enabledFaults.push(symbol);
+        }
       }
     }
 

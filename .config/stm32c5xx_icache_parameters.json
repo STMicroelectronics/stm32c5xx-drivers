@@ -140,7 +140,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "Enable remap region."
                       }
                     ],
                     "oneOf": [
@@ -181,7 +182,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "Enable remap region."
                       }
                     ],
                     "description": "Base address must be between 0x0 and 0x1FE00000.",
@@ -198,7 +200,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "Enable remap region."
                       }
                     ],
                     "description": "Remap address must be between 0x0 and 0xFFE00000.",
@@ -215,18 +218,19 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region && ($resource.features.Smaster !== 0)"
+                        "condition": "$item.use_region && ($resource.features.SMaster !== 0)",
+                        "message": "Enable remap region; requires multiple master ports."
                       },
                       {
                         "type": "set",
-                        "condition": "$resource.features.Smaster === 0",
+                        "condition": "$resource.features.SMaster === 0",
                         "attributes": {
                           "description": "One AHB master port: master1 port (outputs to Fast bus of main AHB bus matrix)."
                         }
                       },
                       {
                         "type": "set",
-                        "condition": "$resource.features.Smaster !== 0",
+                        "condition": "$resource.features.SMaster !== 0",
                         "attributes": {
                           "description": "Two AHB Master ports: master1 and master2 ports (outputs to Fast and Slow buses of main AHB bus matrix, respectively)."
                         }
@@ -243,7 +247,7 @@
                         "actions": [
                           {
                             "type": "exclude",
-                            "condition": "$resource.features.Smaster === 0"
+                            "condition": "$resource.features.SMaster === 0"
                           }
                         ]
                       }
@@ -256,7 +260,8 @@
                     "actions": [
                       {
                         "type": "enable",
-                        "condition": "$item.use_region"
+                        "condition": "$item.use_region",
+                        "message": "Enable remap region."
                       }
                     ],
                     "description": "This is the output burst type for cache master port read accesses.\nPossibility to configure burst type of AHB memory transaction for remapped remap_regions: INCRw or WRAPw (size w aligned on cache line size).",
@@ -304,7 +309,7 @@
               "type": "object",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": false
                 },
@@ -332,7 +337,8 @@
                       "actions": [
                         {
                           "type": "enable",
-                          "condition": "($system.nvic.enable_interruption)"
+                          "condition": "($system.nvic.enable_interruption)",
+                          "message": "Enable NVIC interrupt."
                         },
                         {
                           "type": "set",

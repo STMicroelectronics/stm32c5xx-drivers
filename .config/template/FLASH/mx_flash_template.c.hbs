@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{~log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'FLASH'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:FLASH')~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "FLASH template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
-{{~log "FLASH template current_resource:" @root.current_resource~}}
-{{~log "FLASH template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'FLASH' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "FLASH template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -48,15 +36,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'flash_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "FLASH template flash_cxt:" (toJSON @root.flash_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.flash_cxt.info.layer~}}
-    {{~log "FLASH template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'flash_cxt' config~}}
+  {{~log "FLASH template flash_cxt:" (toJSON @root.flash_cxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.flash_cxt.info.layer~}}
+  {{~log "FLASH template current_resource:" @root.current_resource~}}
   {{#if (eq @root.current_layer 'HAL')}}
 static hal_flash_handle_t h{{@root.current_resource}};
   {{/if}}
@@ -66,20 +50,13 @@ static hal_flash_handle_t h{{@root.current_resource}};
 {{~assign 'nvic_context' 'undefined'~}}
 {{~assign 'complex_nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'flash_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.flash_cxt.name~}}
-    {{~assign 'current_layer' @root.flash_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{else}}
-    {{~assign 'name' name~}}
-    {{~assign 'current_layer' info.layer~}}
-    {{~assign 'flash_cxt' this}}
-  {{/if}}
+  {{~assign 'flash_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.flash_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
   {{~log "FLASH template instance:" (toJSON this)~}}
 /******************************************************************************/
-/*     Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}})      */
+/*     Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
   {{~assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
   {{~assign 'current_index' (helper_common_inc_index @root.current_resource)}}
@@ -94,7 +71,6 @@ hal_{{lowercase @root.current_resource}}_handle_t *{{@root.fct_name}}_init(void)
   {
    return NULL;
   }
-
       {{~#with additional}}
         {{~#if use_flash_programming}}
 
@@ -116,6 +92,9 @@ hal_{{lowercase @root.current_resource}}_handle_t *{{@root.fct_name}}_init(void)
 {{~assign 'complex_nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.complex_nvic_context irq_config1.needs @root.current_resource irq_handler_generation)}}
 {{> CORTEX fct='init' layer=@root.current_layer needs=irq_config1.needs}}
         {{~/if}}
+        {{#if (and enable_interruption_nmi (eq enable_interruption_nmi true))}}
+{{~assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context nmi_config1.needs @root.current_resource irq_handler_generation_nmi)}}
+        {{/if}}
       {{~/with}}
 
 
@@ -158,6 +137,9 @@ FLASH_TypeDef *{{@root.fct_name}}_init(void)
 {{~assign 'complex_nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.complex_nvic_context irq_config1.needs @root.current_resource false)}}
 {{> CORTEX fct='init' layer=@root.current_layer needs=irq_config1.needs}}
         {{/if}}
+        {{#if (and enable_interruption_nmi (eq enable_interruption_nmi true))}}
+{{~assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context nmi_config1.needs @root.current_resource false)}}
+        {{/if}}
       {{/with}}
       {{~#with additional}}
         {{~#if enable_single_ecc_interrupt}}
@@ -189,7 +171,6 @@ void {{@root.fct_name}}_deinit(void)
 }
     {{/if}}{{!(eq @root.current_layer 'HAL')}}
   {{/with}}
-{{~assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context @root.flash_cxt.system.nvic.nmi_config1.needs @root.current_resource @root.flash_cxt.system.nvic.irq_handler_generation_nmi)}}
 {{/each}}{{! instances~}}
 {{~assign 'nvic_json' @root.flash_cxt.system.nvic}}
 {{~assign 'unitary_irq_handler' @root.nvic_json.use_unitary_irq_handlers}}

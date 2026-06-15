@@ -12,6 +12,9 @@
   *
  */
 
+
+const SHARED_EXCEPTION_LINES = ['NMI', 'HardFault', 'BusFault'];
+
 /**
  * @brief Retrieve the full list of IRQ lines needed for a SW instance (include PPP + DMA + EXTI)
  *
@@ -42,7 +45,7 @@
 function helper_cortex_nvic_get_irqline_info_list(nvic_api, nvic_context, hal_component) {
   console.info(`helper_cortex_nvic_get_irqline_info_list`);
 
-  const NO_HANDLER_IPS = ['HSEM','RCC','SBS_BusErrorBridge','RIF_IAC'];
+  const NO_HANDLER_IPS = ['HSEM','RCC','SBS_BridgeBusError','RIF_IAC','RTC', 'TAMP'];
   const list_irq = [];
 
   try {
@@ -72,11 +75,11 @@ function helper_cortex_nvic_get_irqline_info_list(nvic_api, nvic_context, hal_co
 
       let irq_info = null;
 
-      if (irq_line === "NMI") {
-        // Special case for shared NMI IRQ line - interruption
+      if (SHARED_EXCEPTION_LINES.includes(irq_line)) {
+        // Special case for shared exception IRQ lines
         irq_info = {
-          description: `${hal_component} NMI interrupt`,
-          line: `${hal_component}_NMI`,
+          description: `${hal_component} ${irq_line} interrupt`,
+          line: `${hal_component}_${irq_line}`,
           shared: true,
           generate_handler: generate_handler,
           has_handler: !NO_HANDLER_IPS.includes(hal_component),
@@ -104,12 +107,13 @@ function helper_cortex_nvic_get_irqline_info_list(nvic_api, nvic_context, hal_co
       if (irq_line.includes("EXTI")) {
         irq_info.resource_hw = irq_line;
         irq_info.component = "EXTI";
+        irq_info.has_handler = true; // EXTI lines always have handlers
       } else if (irq_line.includes("DMA") && !irq_line.includes("DMA2D")) {
         irq_info.resource_hw = irq_line;
         irq_info.component = "DMA";
-      } else if (irq_line.includes("NMI")) {
+      } else if (SHARED_EXCEPTION_LINES.includes(irq_line)) {
         irq_info.resource_hw = current_resource_hw;
-        irq_info.component = `${hal_component}_NMI`;
+        irq_info.component = `${hal_component}_${irq_line}`;
       } else {
         irq_info.resource_hw = current_resource_hw;
         irq_info.component = hal_component;
@@ -257,7 +261,7 @@ function helper_cortex_nvic_convert_system_lines(systemLines, targetLine) {
 
     let focusLines = [];
     if (targetLine === 'NVIC') {
-      focusLines = ['PendSV', 'DebugMonitor', 'SVC'];
+      focusLines = ['SVC', 'PendSV', 'DebugMonitor'];
     } else if (targetLine === 'SCB') {
       focusLines = ['MemManage', 'UsageFault', 'BusFault'];
     } else {
@@ -318,10 +322,12 @@ function helper_cortex_nvic_get_shared_irq_lines(nvic_api) {
 
     console.info(`helper_cortex_nvic_get_shared_irq_lines: ${JSON.stringify(irq_list)}`);
 
-    // Filter to keep IRQs that are either shared or are "NMI"
-    // "PendSV" case is a temporary workaround
+    // Filter to keep IRQs that are either shared or part of the shared exception list
+    // irq_exclude_list cases are temporary workarounds
+    const irq_exclude_list = ["USB", "RAMCFG", "OTG_HS", "OTG_FS"];
     const filteredIrqs = irq_list.filter(irq => {
-      return (irq.shared === true && (irq.name !== "USB" && irq.name !== "PendSV")) || irq.name === "NMI";
+      return (irq.shared === true || SHARED_EXCEPTION_LINES.includes(irq.name)) &&
+        !irq_exclude_list.includes(irq.name);
     });
 
     // Map each filtered IRQ to a simplified object with cleaned shared_with names, description, and return info
@@ -329,19 +335,18 @@ function helper_cortex_nvic_get_shared_irq_lines(nvic_api) {
       // Defensive: ensure shared_with is an array, else use empty array
       const sharedWithArray = Array.isArray(irq.shared_with) ? irq.shared_with : [];
 
-     // Simplify each shared_with entry by extracting suffix after '.' if present
+      // Simplify each shared_with entry by extracting suffix after '.' if present,
+      // then drop CORTEX core names such as CM7/CM33 because they are not SW IP users.
       const simplifiedSharedWith = sharedWithArray.map(ip => {
         const parts = ip.split(".");
         if (parts.length > 1) {
           /** Manage specific case for RAMCFG */
           return parts[0] === 'RAMCFG' ? ('RAMCFG_' + parts[1]) : parts[1];
         }
-        else {
-          return ip;
-        }
-      });
+        return ip;
+      }).filter(ip => !/^CM\d+$/i.test(ip));
 
-      const isInterrupt = irq.name !== "NMI";
+      const isInterrupt = !SHARED_EXCEPTION_LINES.includes(irq.name);
 
       return {
         name: irq.name,
@@ -349,7 +354,7 @@ function helper_cortex_nvic_get_shared_irq_lines(nvic_api) {
         shared_with: simplifiedSharedWith,
         isInterrupt: isInterrupt
       };
-    });
+    }).filter(irq => irq.shared_with.length > 0);
 
     console.info(`helper_cortex_nvic_get_shared_irq_lines: result=${JSON.stringify(simplifiedIrqs)}`);
 

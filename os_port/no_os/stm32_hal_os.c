@@ -49,35 +49,35 @@ configurations with minimal code changes, improving code reusability and maintai
   * @{
 
 # How to use the OS HAL module driver
-The OS HAL driver can be used as follows:
+Use the OS HAL driver as follows:
 
-1. Create a semaphore or mutex :
-  - To Create a new semaphore instance, use the HAL_OS_SemaphoreCreate() function.
-  - To Create a new mutex instance, use the HAL_OS_MutexCreate() function.
-  - A semaphore or a mutex is a simple uint32 variable that is set in an atomic way.
+1. Create a semaphore or mutex:
+  - Create a new semaphore instance using the HAL_OS_SemaphoreCreate() function.
+  - Create a new mutex instance using the HAL_OS_MutexCreate() function.
+  - A semaphore or a mutex is a simple uint32 variable that is set atomically.
 
-2. Delete a semaphore or mutex :
-  - To Delete a semaphore instance, use the HAL_OS_SemaphoreDelete() function.
+2. Delete a semaphore or mutex:
+  - Delete a semaphore instance using the HAL_OS_SemaphoreDelete() function.
     - The HAL_OS_SemaphoreDelete() API ensures that memory operations have been completed
-      using Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
+      using the Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
 
-  - To Delete a mutex instance, use the HAL_OS_MutexDelete() function.
+  - Delete a mutex instance using the HAL_OS_MutexDelete() function.
     - The HAL_OS_MutexDelete() API ensures that memory operations have been completed
-      using Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
+      using the Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
 
-3. Take the semaphore or mutex when the processor :
-  - To Take a semaphore, use the HAL_OS_SemaphoreTake() function.
-    - The HAL_OS_SemaphoreTake() API allow to set the semaphore variable in an atomic way using exclusive
+3. Take the semaphore or mutex when required:
+  - Take a semaphore using the HAL_OS_SemaphoreTake() function.
+    - The HAL_OS_SemaphoreTake() API allows setting the semaphore variable atomically using exclusive
       loading and storage instructions "__LDREXW" and "__STREXW".
 
-  - To Take a mutex, use HAL_OS_MutexTake() function that "behave" the same as HAL_OS_SemaphoreTake.
+  - Take a mutex using the HAL_OS_MutexTake() function, which behaves the same as HAL_OS_SemaphoreTake().
 
-4. Release the semaphore or mutex :
-  - To Release a semaphore, use the HAL_OS_SemaphoreRelease() function.
+4. Release the semaphore or mutex:
+  - Release a semaphore using the HAL_OS_SemaphoreRelease() function.
     - The HAL_OS_SemaphoreRelease() API ensures that memory operations have been completed
-      using Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
+      using the Data Memory Barrier instruction "__DMB()" before resetting the semaphore.
 
-  - To Release a mutex, use the HAL_OS_MutexRelease() function that "behave" the same as HAL_OS_SemaphoreRelease().
+  - Release a mutex using the HAL_OS_MutexRelease() function, which behaves the same as HAL_OS_SemaphoreRelease().
   */
 /**
   * @}
@@ -108,9 +108,9 @@ USE_HAL_MUTEX  | from hal_conf.h | 0 | Allows HAL PPP drivers to enable HAL PPP 
 
 /** @addtogroup NO_OS_Exported_Functions_Group1
   * @{
-This subsection provides a set of functions allowing to control access to shared resources using Semaphore:
+This subsection provides a set of functions that control access to shared resources using a semaphore:
 - Call the function HAL_OS_SemaphoreCreate() to create a new semaphore instance.
-- Call the function HAL_OS_SemaphoreTake() to to obtain a semaphore already created.
+- Call the function HAL_OS_SemaphoreTake() to obtain a previously created semaphore.
 - Call the function HAL_OS_SemaphoreRelease() to release a semaphore.
 - Call the function HAL_OS_SemaphoreDelete() to delete a semaphore.
   */
@@ -172,7 +172,7 @@ hal_os_status_t HAL_OS_SemaphoreTake(hal_os_semaphore_t *p_sem, uint32_t timeout
     } while ((time_over == 0U) && (status != HAL_OS_OK));
   }
 
-  /* Do not start any other memory access until memory barrier is complete */
+  /* Do not start any other memory access until the memory barrier is complete. */
   __DMB();
 
   return status;
@@ -192,7 +192,7 @@ hal_os_status_t HAL_OS_SemaphoreRelease(hal_os_semaphore_t *p_sem)
   {
     status = HAL_OS_OK;
 
-    /* Ensure memory operations complete before releasing p_sem */
+    /* Ensure memory operations complete before releasing p_sem. */
     __DMB();
     *p_sem = 0;
   }
@@ -214,7 +214,7 @@ hal_os_status_t HAL_OS_SemaphoreDelete(hal_os_semaphore_t *p_sem)
   {
     status = HAL_OS_OK;
 
-    /* Ensure memory operations complete before releasing p_sem */
+    /* Ensure memory operations complete before releasing p_sem. */
     __DMB();
     *p_sem = 0;
   }
@@ -228,11 +228,11 @@ hal_os_status_t HAL_OS_SemaphoreDelete(hal_os_semaphore_t *p_sem)
 
 /** @addtogroup NO_OS_Exported_Functions_Group2
   * @{
-This subsection provides a set of functions allowing to control access to shared resources using Mutex:
-- Call the function HAL_OS_MutexCreate() to create a mutex
-- Call the function HAL_OS_MutexTake() to take a mutex
-- Call the function HAL_OS_MutexRelease() to release a mutex
-- Call the function HAL_OS_MutexDelete() to delete a mutex
+This subsection provides a set of functions that control access to shared resources using a mutex:
+- Call the function HAL_OS_MutexCreate() to create a mutex.
+- Call the function HAL_OS_MutexTake() to take a mutex.
+- Call the function HAL_OS_MutexRelease() to release a mutex.
+- Call the function HAL_OS_MutexDelete() to delete a mutex.
   */
 
 /**
@@ -250,7 +250,7 @@ hal_os_status_t HAL_OS_MutexCreate(hal_os_mutex_t *p_mutex)
   * @brief  Take a mutex that was created previously.
   * @param  p_mutex       Pointer to a hal_os_mutex_t structure.
   * @param  timeout_ms    The time to wait for the mutex to become available in ms.
-  * @retval HAL_OS_OK     Semaphore taken successfully.
+  * @retval HAL_OS_OK     Mutex taken successfully.
   * @retval HAL_OS_ERROR  The timeout_ms expired without the mutex becoming available.
   */
 hal_os_status_t HAL_OS_MutexTake(hal_os_mutex_t *p_mutex, uint32_t timeout_ms)

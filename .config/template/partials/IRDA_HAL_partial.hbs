@@ -182,6 +182,7 @@ hal_uart_handle_t *{{@root.fct_name}}_gethandle(void)
   return &h{{@root.current_resource}};
 }
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
 {{!
 ################################
 ##  exported_functions_gethandle_prototype
@@ -195,6 +196,7 @@ hal_uart_handle_t *{{@root.fct_name}}_gethandle(void)
   */
 hal_uart_handle_t *{{@root.fct_name}}_gethandle(void);
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
 {{else}}
 #warning "step {{fct}} in partial IRDA_HAL not managed"
 {{/if~}}

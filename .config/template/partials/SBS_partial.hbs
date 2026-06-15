@@ -403,6 +403,22 @@
       {{/if}}
     {{/if}}
   {{/if}}
+{{else if (eq fct 'set_exti_source')}}
+  {{! ~}}
+  {{! Generate the select EXTI source function ~}}
+  {{! > SBS fct='set_exti_source' port=port pin=pin~}}
+  {{! ~}}
+  {{assign 'port' port~}}
+  {{assign 'pin' pin~}}
+  {{helper_common_gen_ll_code 'LL_SBS_SetEXTISource' (concat 'LL_SBS_EXTI_GPIO_PORT' @root.port) (concat 'LL_SBS_EXTI_GPIO_LINE' @root.pin)}}
+{{else if (eq fct 'reset_exti_source')}}
+  {{! ~}}
+  {{! Generate the reset EXTI source function ~}}
+  {{! > SBS fct='reset_exti_source' port=port pin=pin~}}
+  {{! ~}}
+  {{assign 'port' port~}}
+  {{assign 'pin' pin~}}
+  LL_SBS_SetEXTISource(LL_SBS_EXTI_GPIO_PORT{{@root.port}}, LL_SBS_EXTI_GPIO_LINE{{@root.pin}});
 {{else}}
 #warning "SBS partial called but wrong step '{{fct}}'"
 {{/if}}

@@ -15,18 +15,13 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'file_name' 'TAMP'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:TAMP')~}}
-{{else}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'file_name' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-    {{/get_myctx~}}
-{{/if}}
+{{assign "_define_" "#define"~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'TAMP' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "TAMP template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'file_name' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.file_name}}.h
@@ -45,16 +40,18 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 {{assign 'only_ll' true~}}
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'current_layer' info.layer~}}
-{{else}}
-{{assign 'tamp_cxt' (@root.SWConfigurationAPI.getInstanceConfiguration this)~}}
-{{assign 'current_resource' @root.tamp_cxt.settings.resources.id~}}
-{{assign 'current_layer' @root.tamp_cxt.settings.parameters.info.layer~}}
-{{/if}}
+{{assign 'tamp_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
+{{assign 'current_layer' @root.tamp_cxt.info.layer~}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{assign 'only_ll' false~}}
 {{/if}}
+  {{#with @root.tamp_cxt.security_privilege}}
+    {{#unless @root.include_mx_def}}
+      {{~assign 'include_mx_def' true~}}
+#include "mx_def.h"
+    {{/unless}}
+  {{/with}}
 {{/each}}
 {{#if @root.only_ll}}
 #include "stm32_ll.h"
@@ -67,66 +64,55 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 {{#each @root.instances}}
-  {{!log "GPIO template - instance:" (toJSON this)~}}
-  {{#if (eq @root.strategy "HW")}}
-    {{! ~}}
-    {{assign 'current_layer' info.layer~}}
-    {{assign 'name' name~}}
-  {{else}}
-    {{! ~}}
-    {{~assign 'tamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{assign 'name' @root.tamp_cxt.name~}}
-  {{/if}}
+  {{~assign 'tamp_cxt' config~}}
+  {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
+  {{~assign 'current_resource' current_resource~}}
   {{#if (eq @root.current_layer 'LL')}}
 #define USE_{{uppercase @root.current_resource}}
   {{/if}}
 {{helper_gpio_generate_aliases @root.pinoutAPI @root.current_resource @root.current_layer~}}
 
 /******************************************************************************/
-/* Exported defines for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported defines for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
-{{#with basic}}
-{{#with tamper_indiv_config}}
-{{#each tampers}}
-{{#if use_channel}}
-{{#if tamper_label_name}}
-{{#if (eq @root.current_layer 'HAL')}}
+  {{#with @root.tamp_cxt}}
+    {{#with basic}}
+      {{#with tamper_indiv_config}}
+        {{#each tampers}}
+          {{#if use_channel}}
+            {{#if tamper_label_name}}
+              {{#if (eq @root.current_layer 'HAL')}}
 {{@root._define_}} {{tamper_label_name}} HAL_TAMP_{{_foreignKey}}
-{{else}}
+              {{else}}
 {{@root._define_}} {{tamper_label_name}} LL_{{helper_tamp_convert _foreignKey}}
-{{/if}}
-{{/if}}{{!tamper_label_name~}}
-{{/if}}{{!use_channel~}}
-{{/each}}
-{{#each internal_tampers}}
-{{#if use_channel}}
-{{#if int_tamper_label_name}}
-{{#if (eq @root.current_layer 'HAL')}}
+              {{/if}}
+            {{/if}}
+          {{/if}}
+        {{/each}}
+        {{#each internal_tampers}}
+          {{#if use_channel}}
+            {{#if int_tamper_label_name}}
+              {{#if (eq @root.current_layer 'HAL')}}
 {{@root._define_}} {{int_tamper_label_name}} HAL_TAMP_{{_foreignKey}}
-{{else}}
+              {{else}}
 {{@root._define_}} {{int_tamper_label_name}} LL_{{helper_tamp_internal_convert _foreignKey}}
-{{/if}}
-{{/if}}{{!int_tamper_label_name~}}
-{{/if}}{{!use_channel~}}
-{{/each}}
-{{/with}}{{!tamper_indiv_config~}}
-{{/with}}{{!basic~}}
+              {{/if}}
+            {{/if}}
+          {{/if}}
+        {{/each}}
+      {{/with}}
+    {{/with}}
+  {{/with}}
 {{/each}}
 /* Exported macros -----------------------------------------------------------*/
 /* Exported variables --------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 {{assign 'current_index' 0~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'tamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'tamp_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.tamp_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 /******************************************************************************/
 /* Exported functions for TAMP in {{@root.current_layer}} layer */
 /******************************************************************************/
@@ -143,24 +129,28 @@ system_status_t {{@root.fct_name}}_init(void);
   * @brief  De-initialize {{lowercase @root.current_resource}} instance and return it.
   */
 void {{@root.fct_name}}_deinit(void);
+  {{#with @root.tamp_cxt.security_privilege}}
+    {{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/**
+  * @brief Peripheral privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_privilege(void);
+    {{else}}
+/**
+  * @brief Peripheral security and privilege configuration function
+  * @retval system_status_t
+  */
+system_status_t {{@root.fct_name}}_config_security_privilege(void);
+    {{/if}}
 
+  {{/with}}
 {{/each}}
 
-{{#each @root.irq_info_list}}
-{{#if generate_handler}}
-/******************************************************************************/
-/*                     {{description}}                    */
-/******************************************************************************/
-void {{line}}_IRQHandler(void);
-
-{{else}}
-/******************************************************************************/
-/*    {{description}} is managed directly in user code.   */
-/******************************************************************************/
-/* void {{line}}_IRQHandler(void); */
-
+{{#if (eq @root.current_layer 'HAL')}}
+{{> CORTEX fct='generate_irqhandler' type='prototype' component='TAMP'}}
 {{/if}}
-{{/each}}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

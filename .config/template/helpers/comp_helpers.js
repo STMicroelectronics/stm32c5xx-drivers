@@ -17,16 +17,17 @@
  */
 function helper_comp_transform_input_name(input) {
   try {
+    // Normalize input
+    // 1) Rename VBG/VREFINT/comp_int_vref/VrefInt (any case) to VREFINT
+    //    Allow potential leading spaces before these keywords
+    // 2) Rename fractions 1/4, 1/2, 3/4 to 1_4, 1_2, 3_4
+    input = input.replace(/\s*\b(vbg|vrefint|comp_int_vref)\b/gi, 'VREFINT');
+    input = input.replace(/1\/4/g, '1_4');
+    input = input.replace(/1\/2/g, '1_2');
+    input = input.replace(/3\/4/g, '3_4');
+
     // Handle special cases
-    if ((input === '1/4 VBG') || (input === '1/4 VREFINT') || (input === '1/4 comp_int_vref')) {
-      return '1_4VREFINT';
-    } else if ((input === '1/2 VBG') || (input === '1/2 VREFINT') || (input === '1/2 comp_int_vref')) {
-      return '1_2VREFINT';
-    } else if ((input === '3/4 VBG') || (input === '3/4 VREFINT') || (input === '3/4 comp_int_vref')) {
-      return '3_4VREFINT';
-    } else if ((input === 'VBG') || (input === 'comp_int_vref')) {
-      return 'VREFINT';
-    } else if (input === 'DAC1_INT') {
+    if (input === 'DAC1_INT') {
       return 'DAC1_CH1';
     } else if (input === 'DAC2_INT') {
       return 'DAC1_CH2';
@@ -154,53 +155,132 @@ function helper_comp_get_instance_nb(comp_resource) {
 }
 
 /**
- * From comparator resource selected, part of window pair of comparators, get the other comparator instance number
- * Example: "COMP1" --> "2"
+ * From comparator resource selected, get comparator instance number parity
+ * Example: "COMP1" --> "ODD"
+ * Example: "COMP2" --> "EVEN"
  * @param {string} comp_resource - comparator resource name
- * @returns {integer} window other comparator instance number (value null if other instance not available)
+ * @returns {string} comparator instance number parity ("ODD" or "EVEN")
  */
-function helper_comp_get_window_other_instance_nb(comp_resource) {
+function helper_comp_get_instance_nb_parity(comp_resource) {
   try {
+    // Check if the input is a string
     if (typeof comp_resource !== 'string') {
       throw new Error('Input must be a string');
     }
 
-    // Lookup table: array of window pair of comparators instances
-    const lookupTable = [
-      [1, 2],
-      [4, 3],
-      [3, 4],
-      [5, 6],
-      [7, 8],
-      [9, 10],
-      [11, 12],
-    ];
-
-    // Normalize input to lowercase
+    // Convert the input string to lowercase to handle case insensitivity
     const normalized = comp_resource.toLowerCase();
 
-    // Extract the number at the end of the string
+    // Use a regular expression to find one or more digits at the end of the string
     const match = normalized.match(/\d+$/);
     if (!match) {
+      // If no digits found at the end, throw an error
       throw new Error('No numeric instance found in input');
     }
 
+    // Parse the matched digits as an integer
     const instanceNumber = parseInt(match[0], 10);
 
-    // Find the pair that contains instanceNumber in either position
-    const foundPair = lookupTable.find(pair => pair[0] === instanceNumber || pair[1] === instanceNumber);
+    // Determine the parity of the instance number
+    const parity = instanceNumber % 2 === 0 ? 'EVEN' : 'ODD';
 
-    if (!foundPair) {
-      // No pair found containing instanceNumber
-      return null;
+    // Return the parity
+    return parity;
+  } catch (e) {
+    console.error(`transform_input_name: ${e}`);
+    return null;
+  }
+}
+
+/**
+ * From comparator resource selected, part of window pair of comparators, get the other comparator instance number
+ * Example: "COMP12.COMP1" --> "2"
+ * Example: "COMP12.COMP2" --> "1"
+ * @param {string} comp_resource_id - comparator resource id (format COMPxy.COMPz)
+ * @returns {integer} window other comparator instance number (value 0 if other instance not available)
+ */
+function helper_comp_get_window_other_instance_nb(comp_resource_id) {
+  try {
+    if (typeof comp_resource_id !== 'string') {
+      throw new Error('Input must be a string');
     }
 
-    // Return the other element of the pair
-    return (foundPair[0] === instanceNumber) ? foundPair[1] : foundPair[0];
+    // Normalize input to lowercase
+    const normalized = comp_resource_id.toLowerCase();
 
+    // Extract the comparator pair and instance (e.g., COMP12.COMP1)
+    const match = normalized.match(/comp(\d+)\.comp(\d+)$/i);
+    if (match) {
+      const pairNumber = parseInt(match[1], 10); // Extract the pair number (e.g., 12)
+      const instanceNumber = parseInt(match[2], 10); // Extract the instance number (e.g., 1)
+
+      // Split the pair number into its two components
+      const firstInstance = Math.floor(pairNumber / 10); // First digit (e.g., 1)
+      const secondInstance = pairNumber % 10; // Second digit (e.g., 2)
+
+      // Return the other instance in the pair
+      if (instanceNumber === firstInstance) {
+        return secondInstance;
+      } else if (instanceNumber === secondInstance) {
+        return firstInstance;
+      } else {
+        throw new Error('Instance number does not match the pair');
+      }
+    }
+
+    // If the input does not match the expected pattern, return "0"
+    return 0;
   } catch (e) {
     console.error(`helper_comp_get_window_other_instance_nb: ${e.message}`);
-    return null;
+    return 0;
+  }
+}
+
+/**
+ * From comparator resource selected, part of window pair of comparators, get the other comparator instance resource id
+ * Example: "COMP12.COMP1" --> "COMP12.COMP2"
+ * Example: "COMP12.COMP2" --> "COMP12.COMP1"
+ * @param {string} comp_resource_id - comparator resource id (format COMPxy.COMPz)
+ * @returns {integer} window other comparator instance number (value 0 if other instance not available)
+ */
+function helper_comp_get_window_other_instance_id(comp_resource_id) {
+  try {
+    if (typeof comp_resource_id !== 'string') {
+      throw new Error('Input must be a string');
+    }
+
+    // Normalize input to lowercase for processing
+    const normalized = comp_resource_id.toLowerCase();
+
+    // Extract the comparator pair and instance (e.g., COMP12.COMP1)
+    const match = normalized.match(/(comp\d+)\.(comp\d+)$/i);
+    if (match) {
+      const pair = match[1].toUpperCase(); // Extract the pair and convert back to uppercase (e.g., COMP12)
+      const instance = match[2].toUpperCase(); // Extract the instance and convert back to uppercase (e.g., COMP1 or COMP2)
+
+      // Extract the numeric part of the instance
+      const instanceNumber = parseInt(instance.replace('COMP', ''), 10);
+
+      // Extract the numeric parts of the pair
+      const pairNumber = parseInt(pair.replace('COMP', ''), 10);
+      const firstInstance = Math.floor(pairNumber / 10); // First digit (e.g., 1)
+      const secondInstance = pairNumber % 10; // Second digit (e.g., 2)
+
+      // Return the other instance in the pair
+      if (instanceNumber === firstInstance) {
+        return `${pair}.COMP${secondInstance}`;
+      } else if (instanceNumber === secondInstance) {
+        return `${pair}.COMP${firstInstance}`;
+      } else {
+        throw new Error('Instance number does not match the pair');
+      }
+    }
+
+    // If the input does not match the expected pattern, return "0"
+    return "0";
+  } catch (e) {
+    console.error(`helper_comp_get_window_other_instance_id: ${e.message}`);
+    return "0";
   }
 }
 
@@ -325,7 +405,9 @@ module.exports = {
   helper_comp_transform_input_name,
   helper_comp_transform_blk_src_name,
   helper_comp_get_instance_nb,
+  helper_comp_get_instance_nb_parity,
   helper_comp_get_window_other_instance_nb,
+  helper_comp_get_window_other_instance_id,
   helper_comp_is_window_instance_main,
   helper_comp_get_irq_handler
 };

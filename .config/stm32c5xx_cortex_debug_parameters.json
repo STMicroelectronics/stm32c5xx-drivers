@@ -78,7 +78,7 @@
               "variables": [
                 {
                   "on": "update-value",
-                  "name": "HAL_CORTEX_DEBUG_CORE_ENABLED",
+                  "name": "HAL_CORTEX_CORE_ENABLED",
                   "value": true
                 }
               ],
@@ -137,8 +137,12 @@
                   "const": 5
                 },
                 {
+                  "title": "Serial-wire",
+                  "const": 6
+                },
+                {
                   "title": "Serial-wire trace synchronous (1 bit)",
-                  "const": 6,
+                  "const": 7,
                   "actions": [
                     {
                       "type": "include",
@@ -148,7 +152,7 @@
                 },
                 {
                   "title": "Serial-wire trace synchronous (2 bit)",
-                  "const": 7,
+                  "const": 8,
                   "actions": [
                     {
                       "type": "include",
@@ -415,7 +419,7 @@
                   "actions": [
                     {
                       "type": "exclude",
-                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACECLK') == true) || !($basic.mode >= 2 && $basic.mode != 5)"
+                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACECLK') == true) || !($basic.mode >= 2 && $basic.mode != 5 && $basic.mode != 6)"
                     }
                   ],
                   "objectType": "need.pinout.signals",
@@ -445,7 +449,7 @@
                   "actions": [
                     {
                       "type": "exclude",
-                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACED0') == true) || !($basic.mode >= 2 && $basic.mode != 5)"
+                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACED0') == true) || !($basic.mode >= 2 && $basic.mode != 5 && $basic.mode != 6)"
                     }
                   ],
                   "objectType": "need.pinout.signals",
@@ -475,7 +479,7 @@
                   "actions": [
                     {
                       "type": "exclude",
-                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACED1') == true) || !($basic.mode == 3 || $basic.mode == 4 || $basic.mode == 7)"
+                      "condition": "!($get('pinout.peripheralCanBeMapped', $resource.name, 'TRACED1') == true) || !($basic.mode == 3 || $basic.mode == 4 || $basic.mode == 8)"
                     }
                   ],
                   "objectType": "need.pinout.signals",

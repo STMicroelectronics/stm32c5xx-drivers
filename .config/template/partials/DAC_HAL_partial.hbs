@@ -22,11 +22,6 @@
   /* Initialization of DAC instance                                           */
   /****************************************************************************/
 
-  if (HAL_DAC_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
-  {
-    return NULL;
-  }
-
   hal_dac_config_t dac_config;
   dac_config.high_frequency_mode = HAL_DAC_HIGH_FREQ_MODE_{{basic.high_frequency_mode.high_freq_mode~}};
   if (HAL_DAC_SetConfig(&h{{uppercase @root.current_resource~}}, &dac_config) != HAL_OK)
@@ -54,7 +49,15 @@
 {{else}}
   dual_channel_config.channel{{add @index 1}}_config.output_buffer     = HAL_DAC_OUTPUT_BUFFER_DISABLED;
 {{/if}}
+{{#if (eq output_connection "EXTERNAL_INTERNAL")}}
+{{#if output_buffer}}
+  dual_channel_config.channel{{add @index 1}}_config.output_connection = HAL_DAC_OUTPUT_CONNECTION_INTERNAL;
+{{else}}
+  dual_channel_config.channel{{add @index 1}}_config.output_connection = HAL_DAC_OUTPUT_CONNECTION_EXTERNAL;
+{{/if}}
+{{else}}
   dual_channel_config.channel{{add @index 1}}_config.output_connection = HAL_DAC_OUTPUT_CONNECTION_{{output_connection}};
+{{/if}}
   dual_channel_config.channel{{add @index 1}}_config.data_sign_format  = HAL_DAC_SIGN_FORMAT_{{data_sign_format}};
 {{~/with}}
 {{/each}}{{!channels}}
@@ -139,7 +142,7 @@
   dac_channel{{add @index 1}}_sawtooth_config.inc_trigger     = HAL_DAC_INC_TRIGGER_{{helper_dac_rename_trigger step_trigger.source}};
   dac_channel{{add @index 1}}_sawtooth_config.rst_trigger     = HAL_DAC_RST_TRIGGER_{{helper_dac_rename_trigger reset_trigger.source}};
   dac_channel{{add @index 1}}_sawtooth_config.direction       = HAL_DAC_SAWTOOTH_DIRECTION_{{direction}};
-  dac_channel{{add @index 1}}_sawtooth_config.reset_value     = {{reset}}U;
+  dac_channel{{add @index 1}}_sawtooth_config.reset_value     = {{helper_dac_format_sawtooth_reset_value reset}};
   dac_channel{{add @index 1}}_sawtooth_config.increment_value = {{step}}U;
   if (HAL_DAC_SetConfigChannelSawtoothWave(&h{{uppercase @root.current_resource}},
                                            HAL_DAC_CHANNEL_{{add @index 1}},

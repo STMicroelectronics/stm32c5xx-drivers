@@ -15,23 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'OPAMP'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:OPAMP')~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "OPAMP template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
-{{log "OPAMP template current_resource:" @root.current_resource~}}
-{{log "OPAMP template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'OPAMP' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "OPAMP template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 /**
   ******************************************************************************
@@ -50,15 +38,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'opamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "OPAMP template opamp_cxt:" (toJSON @root.opamp_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.opamp_cxt.info.layer~}}
-    {{~log "OPAMP template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'opamp_cxt' config~}}
+  {{~log "OPAMP template opamp_cxt:" (toJSON @root.opamp_cxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.opamp_cxt.info.layer~}}
+  {{~log "OPAMP template current_resource:" @root.current_resource~}}
   {{#if (eq @root.current_layer 'HAL')}}
 static hal_opamp_handle_t h{{@root.current_resource}};
   {{/if}}
@@ -67,23 +51,17 @@ static hal_opamp_handle_t h{{@root.current_resource}};
 {{helper_common_initialize_index~}}
 {{assign 'current_index' (helper_common_get_index @root.current_resource)~}}
 {{#each @root.instances}}
-  {{#if (eq @root.strategy "HW")}}
-    {{~assign 'name' name~}}
-    {{~assign 'current_layer' info.layer~}}
-    {{~assign 'opamp_cxt' this}}
-  {{else}}
-    {{~assign 'opamp_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'name' @root.opamp_cxt.name~}}
-    {{~assign 'current_layer' @root.opamp_cxt.info.layer~}}
-    {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
-  {{/if}}
+  {{~assign 'opamp_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'name' @root.opamp_cxt.name~}}
+  {{~assign 'current_layer' @root.opamp_cxt.info.layer~}}
+  {{~assign 'current_index' (helper_common_get_index @root.current_resource)~}}
   {{~log "OPAMP template instance:" (toJSON this)~}}
 {{! Initialize the context for LL code optimization ~}}
 {{assign 'lut_table'   (helper_opamp_get_lut_table 'OPAMPV1')~}}
 {{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
 {{assign 'current_index' (helper_common_inc_index @root.current_resource)~}}
@@ -94,6 +72,11 @@ static hal_opamp_handle_t h{{@root.current_resource}};
 {{#if (eq @root.current_layer 'HAL')}}
 hal_opamp_handle_t *{{@root.fct_name}}_init(void)
 {
+  if (HAL_OPAMP_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
+  {
+    return NULL;
+  }
+
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
 {{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource=@root.current_resource}}
 

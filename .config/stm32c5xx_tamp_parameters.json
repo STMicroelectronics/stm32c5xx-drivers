@@ -81,7 +81,7 @@
                   "description": "Initialization code is not generated."
                 }
               ],
-              "default": "called"
+              "default": "enabled"
             }
           }
         },
@@ -263,7 +263,7 @@
                         "actions": [
                           {
                             "type": "include",
-                            "condition": "($item.use_channel) && ($item.mode == 'Passive')"
+                            "condition": "($item.use_channel) && ($item.mode == 'Passive') && (['TAMPER_1','TAMPER_2','TAMPER_3'].includes($tamper.id))"
                           }
                         ]
                       },
@@ -448,22 +448,6 @@
               "type": "object",
               "title": "Global tamper(s) ",
               "properties": {
-                "rtc_clock_frequency": {
-                  "title": "Clock frequency",
-                  "type": "integer",
-                  "default": 0,
-                  "unit": "Hz",
-                  "readOnly": true,
-                  "actions": [
-                    {
-                      "type": "set",
-                      "condition": "true",
-                      "computed": {
-                        "const": "$get('clock.frequency','RTC')"
-                      }
-                    }
-                  ]
-                },
                 "passive": {
                   "type": "object",
                   "title": "Passive tamper signals",
@@ -612,6 +596,51 @@
                     }
                   ],
                   "properties": {
+                    "rtc_clock_source": {
+                      "title": "RTC clock source",
+                      "description": "Clock source can be modified in the clock tree.",
+                      "type": "string",
+                      "readOnly": true,
+                      "actions": [
+                        {
+                          "type": "include",
+                          "condition": "$common.helper_tamp_check_active_mode($basic.tamper_indiv_config.tampers)"
+                        },
+                        {
+                          "type": "set",
+                          "condition": "true",
+                          "computed": {
+                            "const": "$get('clock.input','RTC')"
+                          }
+                        },
+                        {
+                          "type": "warning",
+                          "condition": "(($get('clock.input','RTC') === 'LSE') && ($get('envVar.value', 'RCC_PROJECT_LSE') !== true))",
+                          "message": "Make sure that LSE is enabled into RCC panel"
+                        }
+                      ],
+                      "default": ""
+                    },
+                    "rtc_clock_frequency": {
+                      "title": "RTC clock frequency",
+                      "type": "integer",
+                      "default": 0,
+                      "unit": "Hz",
+                      "readOnly": true,
+                      "actions": [
+                        {
+                          "type": "include",
+                          "condition": "$common.helper_tamp_check_active_mode($basic.tamper_indiv_config.tampers)"
+                        },
+                        {
+                          "type": "set",
+                          "condition": "true",
+                          "computed": {
+                            "const": "$get('clock.frequency','RTC')"
+                          }
+                        }
+                      ]
+                    },
                     "output_periode": {
                       "type": "integer",
                       "default": 0,
@@ -763,8 +792,8 @@
             }
           ],
           "properties": {
-            "hw_boot_key_block": {
-              "title": "Hardware boot key block",
+            "boot_hw_key_lock": {
+              "title": "Boot hardware key lock",
               "type": "boolean",
               "default": false,
               "actions": [
@@ -774,73 +803,469 @@
                 }
               ]
             },
-            "use_resource_protection": {
-              "title": "Resource protection",
-              "type": "boolean",
-              "default": false,
+         "backup_register_protection": {
+         "title": "Backup registers protection",
+         "type": "object",
+         "properties": {
+            "backup_registers_protection_zone1": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "display_format": [
+                "dec"
+              ],
               "actions": [
                 {
-                  "type": "include",
-                  "condition": "$resource.parentDescription.features.num_device_secrets"
+                  "type": "warning",
+                  "condition": "($additional.backup_register_protection.backup_registers_protection_zone1 + $additional.backup_register_protection.backup_registers_protection_zone2) > $resource.parentDescription.features.backup_regs",
+                  "message": "'The total of backup registers in zone 1 and zone 2 cannot exceed maximum number of backup registers."
+                },
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "maximum": "($resource.parentDescription.features.backup_regs)"
+                  }
                 }
-              ]
+              ],
+              "title": "Number of backup registers in zone 1",
+              "description": "Number of backup registers protected against read and write access."
             },
-            "resource": {
-              "description": "Resources to be protected.",
-              "type": "string",
-              "oneOf": [
-                {
-                  "title": "SRAM2",
-                  "const": "1"
-                },
-                {
-                  "title": "RHUK, SAES, AES, CCB",
-                  "const": "2"
-                },
-                {
-                  "title": "ICACHE",
-                  "const": "3"
-                },
-                {
-                  "title": "HASH",
-                  "const": "4"
-                },
-                {
-                  "title": "PKA including PKA SRAM",
-                  "const": "5"
-                },
-                {
-                  "title": "DCACHE ",
-                  "const": "6"
-                },
-                {
-                  "title": "OTFDEC keys and OTFDEC KEYCRC",
-                  "const": "7"
-                },
-                {
-                  "title": "SRAM1",
-                  "const": "8"
-                },
-                {
-                  "title": "All Resources",
-                  "const": "S_ALL"
-                }
+            "backup_registers_protection_zone2": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "display_format": [
+                "dec"
               ],
-              "title": "Resource",
               "actions": [
                 {
-                  "type": "enable",
-                  "condition": "$additional.use_resource_protection"
+                  "type": "warning",
+                  "condition": "($additional.backup_register_protection.backup_registers_protection_zone1 + $additional.backup_register_protection.backup_registers_protection_zone2) > $resource.parentDescription.features.backup_regs",
+                  "message": "'The total of backup registers in zone 1 and zone 2 cannot exceed maximum number of backup registers."
                 },
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "maximum": "($resource.parentDescription.features.backup_regs)"
+                  }
+                }
+              ],
+              "title": "Number of backup registers in zone 2",
+              "description": "Number of backup registers protected against write access."
+            },
+            "backup_registers_protection_zone3": {
+              "type": "integer",
+              "minimum": 0,
+              "readOnly": true,
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "true",
+                  "computed": {
+                    "default": "($resource.parentDescription.features.backup_regs)",
+                    "maximum": "($resource.parentDescription.features.backup_regs)",
+                    "const": "(($resource.parentDescription.features.backup_regs) - ($additional.backup_register_protection.backup_registers_protection_zone1 + $additional.backup_register_protection.backup_registers_protection_zone2))"
+                  }
+                }
+              ],
+              "title": "Number of backup registers in zone 3",
+              "description": "Number of backup registers in zone 3."
+            }}},
+            "resource": {
+              "title": "Resources protected by tamper",
+              "description": "Resources to be protected. The backup registers are protected by default.",
+              "type": "array",
+              "rendering": "horizontal-list",
+              "itemId": "id",
+              "itemVar": "resource_item",
+              "actions": [
                 {
                   "type": "include",
                   "condition": "$resource.parentDescription.features.num_device_secrets"
                 }
               ],
-              "default": "2"
+              "items": {
+                "type": "object",
+                "properties": {
+                  "use_resource": {
+                    "title": "Protection",
+                    "type": "boolean",
+                    "actions": [
+                      {
+                        "type": "set",
+                        "computed": {
+                          "default": "$resource_item.id === '_31' ? true : false"
+                        }
+                      }
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "default": "",
+                    "title": "Resource",
+                    "actions": [
+                      {
+                        "type": "disable",
+                        "condition": "true"
+                      },
+                      {
+                        "type": "set",
+                        "condition": "true",
+                        "computed": {
+                          "const": "$resource_item.name"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
             }
           }
         },
+        "security_privilege": {
+         "title": "Security and privilege",
+         "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+         "description": "Security and privileged access levels attributes management.",
+         "properties": {
+		       "security": {
+                "title": "Security",
+                "type": "object",
+                "properties": {
+                  "set_all_items_attr": {
+                    "title": "Set all items security attribute",
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "all_items_attr": {
+                    "title": "All items security attribute",
+                    "type": "string",
+                    "oneOf": [
+                      {
+                        "title": "Secure",
+                        "const": "SEC"
+                      },
+                      {
+                        "title": "Non-secure",
+                        "const": "NSEC"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "disable",
+                        "condition": "!$security_privilege.security.set_all_items_attr"
+                      },
+                      {
+                        "type": "set",
+                        "computed": {
+                          "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'SEC' : 'NSEC'"
+                        }
+                      }
+                    ]
+                  },
+                  "access_levels": {
+                    "title": "Access levels",
+                    "type": "object",
+                    "properties": {
+                      "tamper_protection": {
+                        "title": "Tamper protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "monotonic_counter_1_protection": {
+                        "title": "Monotonic counter 1 protection",
+                        "type": "string",
+                        "default": "SEC",
+                        "oneOf": [
+                          {
+                            "title": "Secure",
+                            "const": "SEC"
+                          },
+                          {
+                            "title": "Non-secure",
+                            "const": "NSEC"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.security.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.security.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.security.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items security attribute\" is enabled."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('swproject.getCurrentEngine').secure === 'Secure-only'",
+                  "message": "In Secure-only engine, all items are Secure."
+                }
+              ]
+              },
+              "privilege": {
+                "title": "Privilege",
+                "type": "object",
+                "properties": {
+                  "set_all_items_attr": {
+                    "title": "Set all items privilege attribute",
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "all_items_attr": {
+                    "title": "All items privilege attribute",
+                    "type": "string",
+                    "oneOf": [
+                      {
+                        "title": "Privileged",
+                        "const": "PRIV"
+                      },
+                      {
+                        "title": "Unprivileged",
+                        "const": "NPRIV"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "disable",
+                        "condition": "!$security_privilege.privilege.set_all_items_attr"
+                      },
+                      {
+                        "type": "set",
+                        "computed": {
+                          "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'PRIV' : 'NPRIV'"
+                        }
+                      }
+                    ]
+                  },
+                  "access_levels": {
+                    "title": "Access levels",
+                    "type": "object",
+                    "properties": {
+                      "tamper_protection": {
+                        "title": "Tamper protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "backup_registers_zone_1_protection": {
+                        "title": "Backup registers zone 1 protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                      "backup_registers_zone_2_protection": {
+                        "title": "Backup registers zone 2 protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      },
+                        "monotonic_counter_1_protection": {
+                        "title": "Monotonic counter 1 protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      } ,
+                        "monotonic_counter_2_protection": {
+                        "title": "Monotonic counter 2 protection",
+                        "type": "string",
+                        "default": "PRIV",
+                        "oneOf": [
+                          {
+                            "title": "Privileged",
+                            "const": "PRIV"
+                          },
+                          {
+                            "title": "Unprivileged",
+                            "const": "NPRIV"
+                          }
+                        ],
+                        "actions": [
+                          {
+                            "type": "set",
+                            "condition": "($security_privilege.privilege.set_all_items_attr)",
+                            "computed": {
+                              "const": "$security_privilege.privilege.all_items_attr"
+                            }
+                          },
+                          {
+                            "type": "info",
+                            "condition": "$security_privilege.privilege.set_all_items_attr",
+                            "message": "This value cannot be changed while \"Set all items privilege attribute\" is enabled."
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "illegal_access": {
+                "title": "Illegal access interrupt",
+                "type": "boolean",
+                "default": false,
+                "synchronize": true,
+                "synchronizeOn": {
+                  "component": "ST-HAL",
+                  "path": "rif-iac-peripheral",
+                  "custom": "$resource.id"
+                },
+                "actions": [
+                  {
+                    "type": "include",
+                    "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                  },
+                  {
+                    "type": "disable",
+                    "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                  }
+                ]
+              }
+            }
+          },
         "system": {
           "type": "object",
           "title": "System",
@@ -1264,7 +1689,7 @@
                 "enable_interruption": {
                   "type": "boolean",
                   "default": false,
-                  "title": "Interruption"
+                    "title": "Interrupt"
                 },
                 "irq_handler_generation": {
                   "title": "Interrupt handler generation",
@@ -1276,45 +1701,6 @@
                       "condition": "$system.nvic.enable_interruption && $info.layer === 'HAL'"
                     }
                   ]
-                },
-                "use_unitary_irq_handlers": {
-                  "title": "Use unitary interrupt handlers apis",
-                  "type": "boolean",
-                  "default": false,
-                  "actions": [
-                    {
-                      "type": "include",
-                      "condition": "$system.nvic.irq_handler_generation"
-                    }
-                  ]
-                },
-                "unitary_apis": {
-                  "title": "List of unitary IRQ handlers",
-                  "type": "array",
-                  "allowRanking": true,
-                  "actions": [
-                    {
-                      "type": "include",
-                      "condition": "$system.nvic.use_unitary_irq_handlers"
-                    }
-                  ],
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "api_name": {
-                        "type": "string",
-                        "oneOf": [
-                          {
-                            "const": "HAL_TAMP_TamperIRQHandler"
-                          },
-                          {
-                            "const": "HAL_TAMP_InternalTamperIRQHandler"
-                          }
-                        ],
-                        "default": "HAL_TAMP_TamperIRQHandler"
-                      }
-                    }
-                  }
                 },
                 "irq_config": {
                   "title": "IRQ line priority",

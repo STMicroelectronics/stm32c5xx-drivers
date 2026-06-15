@@ -41,7 +41,7 @@ function helper_sbs_concatenate_selections(pins, layer, pin) {
     else {
       result = pins + " | " + current_pin;
     }
-    /* console.log(`[INFO] helper_concatenate_pins: result=${JSON.stringify(result)}`); */
+    /* console.info(`helper_concatenate_pins: result=${JSON.stringify(result)}`); */
   } catch (e) {
     console.error(`[ERROR] helper_concatenate_pins: ${e}`);
   }
@@ -101,7 +101,7 @@ function helper_sbs_check_i2C_smbus() {
       if (owner === "I2C3") result.I2C3 = true;
       if (owner === "I2C4") result.I2C4 = true;
     }
-    console.log(`[INFO] helper_sbs_check_i2C_smbus result:`, result);
+    console.info(`helper_sbs_check_i2C_smbus result:`, result);
   } catch (error) {
     console.error(`[ERROR] helper_sbs_check_i2C_smbus: ${error}`);
     return null;
@@ -131,69 +131,13 @@ function helper_sbs_check_peripheral(periph) {
       result = true;
     }
 
-    console.log(`[INFO] helper_sbs_check_peripheral configuration:`, configuration);
-    console.log(`[INFO] helper_sbs_check_peripheral result:`, result);
+    console.info(`helper_sbs_check_peripheral configuration:`, configuration);
+    console.info(`helper_sbs_check_peripheral result:`, result);
   } catch (error) {
     console.error(`[ERROR] helper_sbs_check_peripheral: ${error}`);
     return null;
   }
   return result;
-}
-
-/**
-  * Get security privilege items based on layer, security privilege, and access levels.
-  * @param {string} layer
-  * @param {string} security_privilege PRIV or SEC
-  * @param {Array<string>} access_levels
-  * @returns {Array<string>} The security privilege items
-  */
-function helper_sbs_get_security_privilege_items(
-  layer,
-  security_privilege,
-  enable_all,
-  access_levels
-) {
-  try {
-    console.log("[INFO] helper_sbs_get_security_privilege_items:", access_levels);
-
-    let result = "";
-    if (enable_all) {
-      result = layer + "_SBS_" + security_privilege + "_ITEM_ALL";
-    } else {
-      const map_defined_security_privilege = security_privilege === "SEC"
-        ? {
-        clock: layer + "_SBS_" + security_privilege + "_ITEM_CLOCK",
-        classb: layer + "_SBS_" + security_privilege + "_ITEM_CLASSB",
-        fpu: layer + "_SBS_" + security_privilege + "_ITEM_FPU"
-      }
-      : {
-        clock: layer + "_SBS_" + security_privilege + "_ITEM_CLOCK",
-        classb: layer + "_SBS_" + security_privilege + "_ITEM_CLASSB",
-        pm: layer + "_SBS_" + security_privilege + "_ITEM_PM",
-        bridge: layer + "_SBS_" + security_privilege + "_ITEM_BRIDGE"
-      };
-
-      let next_element = false;
-      for (const key in access_levels) {
-        if (!Object.hasOwn(access_levels, key)) continue;
-
-        const element = access_levels[key];
-        if (element === 'PRIV' && map_defined_security_privilege[key]) {
-          if (next_element) {
-            result += " | ";
-          }
-          result += map_defined_security_privilege[key];
-          next_element = true;
-        }
-      }
-    }
-    return result;
-  } catch (error) {
-    console.error(
-      `[ERROR] helper_sbs_get_security_privilege_items: ${error.message}`
-    );
-    return false;
-  }
 }
 
 /**
@@ -207,8 +151,8 @@ function helper_sbs_get_security_privilege_items(
 function helper_sbs_get_irq_handler(nvic_api, exti_api, resource, config) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_sbs_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
+    console.info(
+      `helper_sbs_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
     );
 
     /** Check the peripheral interruptions have been generated or not */
@@ -247,9 +191,138 @@ function helper_sbs_get_irq_handler(nvic_api, exti_api, resource, config) {
     }
 
   } catch (e) {
-    console.log(`[ERROR] helper_sbs_get_irq_handler: ${e}`);
+    console.error(`helper_sbs_get_irq_handler: ${e}`);
   }
   return result;
+}
+
+/**
+ * Classifies attribute settings across all access level entries for SBS.
+ * Returns an object with three booleans:
+ *  - allPositive: true only if every entry is 1 (or true)
+ *  - allNegative: true only if every entry is 0 (or false)
+ *  - allConsistent: true if all entries are either allPositive or allNegative
+ * Empty or invalid inputs return all flags false to avoid vacuous truth.
+ * @param {object} access_levels
+ * @returns {{allPositive: boolean, allNegative: boolean, allConsistent: boolean}}
+ */
+function helper_sbs_attribute_all_states(access_levels) {
+  const result = { allPositive: false, allNegative: false, allConsistent: false };
+  const map_attribute = {
+    SEC: 1,
+    PRIV: 1,
+    PUBLIC: 1,
+    NSEC: 0,
+    NPRIV: 0,
+    NPUBLIC: 0,
+  };
+  try {
+    const values = Object.values(access_levels ?? {});
+
+    let allPositive = true;
+    let allNegative = true;
+    for (let v of values) {
+      if (typeof v === "boolean") {
+        v = Number(v);
+      }
+      if (typeof v === "string") {
+        v = map_attribute[v];
+      }
+      if (v !== 1) {
+        allPositive = false;
+      }
+      if (v !== 0) {
+        allNegative = false;
+      }
+      if (!allPositive && !allNegative) {
+        break;
+      }
+    }
+
+    result.allPositive = allPositive;
+    result.allNegative = allNegative;
+    result.allConsistent = allPositive || allNegative;
+    // console.info(`helper_sbs_attribute_all_states result = ${JSON.stringify(result)}`);
+    return result;
+  } catch (e) {
+    console.error(`helper_sbs_attribute_all_states: ${e}`);
+    return result;
+  }
+}
+
+/**
+ * Get SBS attribute items based on layer, attribute, and access levels.
+ * Attribute can be "SEC", "PRIV", or "LOCK".
+ * Uses correct SBS item mapping for each attribute type.
+ * @param {string} layer
+ * @param {string} attribute
+ * @param {object} access_levels
+ * @returns {string} The selected attribute items as a bitwise OR string
+ */
+function helper_sbs_get_attribute_items(
+  layer,
+  attribute,
+  access_levels
+) {
+  try {
+    // Map for each attribute type
+    let map_defined_attribute_items = {};
+    if (attribute === "SEC") {
+      map_defined_attribute_items = {
+        clock:   layer + "_SBS_SEC_ITEM_CLOCK",
+        classb:  layer + "_SBS_SEC_ITEM_CLASSB",
+        fpu:     layer + "_SBS_SEC_ITEM_FPU"
+      };
+    } else if (attribute === "PRIV") {
+      map_defined_attribute_items = {
+        clock:   layer + "_SBS_PRIV_ITEM_CLOCK",
+        classb:  layer + "_SBS_PRIV_ITEM_CLASSB",
+        pm:      layer + "_SBS_PRIV_ITEM_PM",
+        bridge:  layer + "_SBS_PRIV_ITEM_BRIDGE"
+      };
+    } else if (attribute === "LOCK") {
+      map_defined_attribute_items = {
+        clock:   layer + "_SBS_LOCK_ITEM_CLOCK",
+        classb:  layer + "_SBS_LOCK_ITEM_CLASSB",
+        pm:      layer + "_SBS_LOCK_ITEM_PM",
+        bridge:  layer + "_SBS_LOCK_ITEM_BRIDGE",
+        fpu:     layer + "_SBS_LOCK_ITEM_FPU"
+      };
+    }
+    const map_attribute = {
+      SEC: 1,
+      PRIV: 1,
+      PUBLIC: 1,
+      NSEC: 0,
+      NPRIV: 0,
+      NPUBLIC: 0,
+    };
+
+    let result = "";
+    let next_element = 0;
+    for (const key in access_levels) {
+      if (!Object.hasOwn(access_levels, key)) continue;
+      let element = access_levels[key];
+      if (typeof element === "boolean") {
+        element = Number(element);
+      }
+      if (typeof element === "string") {
+        element = map_attribute[element];
+      }
+
+      if (element > 0 && map_defined_attribute_items[key]) {
+        if (next_element > 0) {
+          result += " | ";
+        }
+        result += map_defined_attribute_items[key];
+        next_element = 1;
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error(`[ERROR] helper_sbs_get_attribute_items: ${error.message}`);
+    return false;
+  }
 }
 
 module.exports = {
@@ -258,6 +331,7 @@ module.exports = {
   helper_sbs_any_true,
   helper_sbs_check_i2C_smbus,
   helper_sbs_check_peripheral,
-  helper_sbs_get_security_privilege_items,
-  helper_sbs_get_irq_handler
+  helper_sbs_get_irq_handler,
+  helper_sbs_attribute_all_states,
+  helper_sbs_get_attribute_items
 };

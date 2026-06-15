@@ -115,14 +115,22 @@ function helper_dac_rename_trigger(trigger){
         result = result.replace("HRTIM_", "HRTIM1_");
       }
 
-      if  (result.includes("_DAC_TRIG_OUT")) {
+      if  (result.includes("_DAC_STEP_TRIG_OUT")) {
+        result = result.replace("_DAC_STEP_TRIG_OUT", "_STP");
+      } else if (result.includes("_DAC_STEP_TRIG")) {
+        result = result.replace("_DAC_STEP_TRIG", "_STP");
+      } else if (result.includes("_DAC_STEP_TRG")) {
+        result = result.replace("_DAC_STEP_TRG", "_STP");
+      } else if (result.includes("_DAC_TRIG_OUT")) {
         result = result.replace("_DAC_TRIG_OUT", "_TRG");
       } else if (result.includes("_DAC_TRG")) {
         result = result.replace("_DAC_TRG", "_TRG");
       } else if (result.includes("_DAC_RST_TRIG_OUT")) {
-        result = result.replace("_DAC_RST_TRIG_OUT", "_RST_TRG");
+        result = result.replace("_DAC_RST_TRIG_OUT", "_RST");
+      } else if (result.includes("_DAC_RESET_TRIG")) {
+        result = result.replace("_DAC_RESET_TRIG", "_RST");
       } else if (result.includes("_DAC_RESET_TRG")) {
-        result = result.replace("_DAC_RESET_TRG", "_RST_TRG");
+        result = result.replace("_DAC_RESET_TRG", "_RST");
       }
     }
     else if (result.startsWith("PLAY")) {
@@ -162,6 +170,27 @@ function helper_dac_rename_ll_noise(noise_amplitude){
     console.error(`[ERROR] helper_dac_rename_ll_noise: ${e}`);
   }
   return result;
+}
+
+/**
+ * Formats a sawtooth reset value as a signed C literal.
+ * Values may already be stored as wrapped 32-bit unsigned integers by the
+ * configuration layer when the user entered a negative value.
+ * @param {number|string} value - Raw reset value from configuration.
+ * @returns {string|number} - Signed literal ready to be emitted in C code.
+ */
+function helper_dac_format_sawtooth_reset_value(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return value;
+  }
+
+  if (numericValue > 0x7FFFFFFF) {
+    return String(numericValue - 0x100000000);
+  }
+
+  return String(numericValue);
 }
 
 /**
@@ -234,6 +263,7 @@ function helper_dac_get_irq_handler(nvic_api, exti_api, resource, config) {
 
 module.exports = {
   helper_dac_compute_cycle_time,
+  helper_dac_format_sawtooth_reset_value,
   helper_dac_get_param_in_channel_config,
   helper_dac_get_frequency_step,
   helper_dac_rename_trigger,

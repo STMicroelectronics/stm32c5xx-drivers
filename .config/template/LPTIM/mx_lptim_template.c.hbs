@@ -1,7 +1,7 @@
 {{!--
   ******************************************************************************
   * @file           : mx_lptim_template.c.hbs
-  * @brief          : {{@root.current_resource}} Peripheral initialization
+  * @brief          : LPTIM Peripheral initialization
   ******************************************************************************
   * @attention
   *
@@ -15,24 +15,12 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-  {{~assign 'current_resource' 'LPTIM'~}}
-  {{~assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:LPTIM')~}}
-  {{~assign 'dma_resource' 'STM32CubeMX2 Config:LPTIM'~}}
-{{else}}
-  {{~assign "strategy" 'HW'~}}
-  {{#get_myctx~}}
-    {{#with _myctx~}}
-      {{~log "LPTIM template _myctx:" this~}}
-      {{~assign 'current_resource' resource~}}
-      {{~assign 'dma_resource' resource~}}
-      {{~assign 'instances' instances~}}
-    {{/with~}}
-  {{/get_myctx~}}
-{{/if}}
-{{log "LPTIM template current_resource:" @root.current_resource~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'LPTIM' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "LPTIM template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'strategy' @root.codegen_ctxt.strategy~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign 'dma_resource' @root.codegen_ctxt.dma_resource~}}
 {{> SYSTEM fct='system_check_ll_optim'}}
 /**
   ******************************************************************************
@@ -57,15 +45,11 @@
 ~}}
 {{assign 'hal_handle_exist' false~}}
 {{#each @root.instances~}}
-  {{#if (eq @root.strategy "SW")}}
-    {{~assign 'lptim_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-    {{~log "LPTIM template lptim_cxt:" (toJSON @root.lptim_cxt)~}}
-    {{~assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
-    {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
-    {{~log "LPTIM template current_resource:" @root.current_resource~}}
-  {{else}}
-    {{~assign 'current_layer' info.layer~}}
-  {{/if}}
+  {{~assign 'lptim_cxt' config~}}
+  {{~log "LPTIM template lptim_cxt:" (toJSON @root.lptim_cxt)~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
+  {{~log "LPTIM template current_resource:" @root.current_resource~}}
   {{#if (eq @root.current_layer 'HAL')}}
     {{#unless @root.hal_handle_exist}}
       {{~assign 'hal_handle_exist' true~}}
@@ -84,8 +68,9 @@ static hal_lptim_handle_t h{{@root.current_resource}};
 {{assign 'nvic_context' 'undefined'~}}
 {{assign 'hal_handle_lptim_exist' 0~}}
 {{#each instances}}
-{{assign 'current_layer' info.layer~}}
-{{assign 'current_instance_index' index~}}
+  {{~assign 'lptim_cxt' config~}}
+  {{~assign 'current_resource' current_resource~}}
+  {{~assign 'current_layer' @root.lptim_cxt.info.layer~}}
 {{! Initialize the context for LL code optimization ~}}
 {{assign 'lut_table'   (helper_lptim_get_lut_table 'LPTIMV1')~}}
 {{helper_common_initialize_ll_code @root.optim_enable @root.lut_table @root.current_resource~}}
@@ -93,6 +78,7 @@ static hal_lptim_handle_t h{{@root.current_resource}};
 /* Exported functions for SW instance{{index}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{assign 'from_where' 'lptim_fct_exp_def'~}}
+{{#with @root.lptim_cxt}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer @root.current_index)~}}
 {{assign 'current_index' (add @root.current_index 1)~}}
 {{assign 'IsEnableDithering' false~}}
@@ -103,6 +89,13 @@ static hal_lptim_handle_t h{{@root.current_resource}};
 
 hal_lptim_handle_t *{{@root.fct_name}}_init(void)
 {
+{{#with system}}
+{{#with gpio}}
+  /* Init GPIO */
+{{> GPIO_HAL fct='init_resource' resource=@root.current_resource return_if_failed='NULL'}}
+{{/with}}{{! gpio~}}
+{{/with}}{{! system}}
+
   hal_lptim_config_t  config;
 
   if (HAL_LPTIM_Init(&h{{@root.current_resource}}, HAL_{{uppercase @root.current_resource}}) != HAL_OK)
@@ -238,10 +231,6 @@ hal_lptim_handle_t *{{@root.fct_name}}_init(void)
 {{/if}}{{! use_external_trigger ~}}
 {{/with}}{{! additional ~}}
 {{#with system}}
-{{#with gpio}}
-  /* Init GPIO */
-{{> GPIO_HAL fct='init_resource' resource=@root.current_resource return_if_failed='NULL'}}
-{{/with}}{{! gpio~}}
 {{!==================== NVIC for LPTIM ====================}}
 {{#with nvic}}
 {{#if enable_interruption}}
@@ -323,6 +312,7 @@ hal_lptim_handle_t *{{@root.fct_name}}_gethandle(void)
 {
   return &h{{@root.current_resource}};
 }
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
 {{/if}}
 {{/if}}
 
@@ -333,6 +323,16 @@ hal_lptim_handle_t *{{@root.fct_name}}_gethandle(void)
 ~}}
 LPTIM_TypeDef *{{@root.fct_name}}_init(void)
 {
+{{#with system}}
+{{#with gpio}}
+  /* Init GPIO */
+{{> GPIO_LL fct='init_resource' resource=@root.current_resource}}
+{{! The LPTIM lut_table is re-initialized here because when we call init_resource for GPIO before the LPTIM configuration,
+    we overwrite the instance that was already initialized during the first call of helper_common_initialize_ll_code.
+    Jira: https://jira.st.com/browse/E3HAL-33654 }}
+{{~helper_common_initialize_ll_code @root.optim_enable (helper_lptim_get_lut_table 'LPTIMV1') @root.current_resource~}}
+{{/with}}{{! gpio~}}
+{{/with}}{{! system~}}
 
 {{> RCC fct='generate_kernel_clock' hw_resource=@root.current_resource sw_resource='LPTIM'}}
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.current_resource}}
@@ -351,6 +351,7 @@ LPTIM_TypeDef *{{@root.fct_name}}_init(void)
 {{#if (eq counter.period 0)}}
 {{assign 'period_value_hex' '0000'~}}
 {{/if}}
+
   /*Configure the low power timer's time-base unit.*/
   {{helper_common_gen_ll_code 'LL_LPTIM_Enable'}}
   {{helper_common_gen_ll_code 'LL_LPTIM_WRITE_REG' 'ICR' 'LL_LPTIM_FLAG_ALL'}}
@@ -503,10 +504,6 @@ LPTIM_TypeDef *{{@root.fct_name}}_init(void)
   {{helper_common_gen_ll_code 'LL_LPTIM_SetUpdateMode' 'LL_LPTIM_PRELOAD_ENABLED'}}
 {{/if}}
 {{#with system}}
-{{#with gpio}}
-  /* Init GPIO */
-{{> GPIO_LL fct='init_resource' resource=@root.current_resource}}
-{{/with}}{{! gpio~}}
 {{!==================== NVIC for LPTIM ====================}}
 {{#with nvic}}
 {{#if enable_interruption}}
@@ -564,6 +561,37 @@ void {{@root.fct_name}}_deinit(void)
 }
 {{> DMA_LL fct='get_dma_lli_reg' resource=@root.dma_resource strategy=@root.strategy type='implementation'}}
 {{/if}}
+{{#with security_privilege}}
+
+{{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                      Privileged attribute management                       */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+{{else}}
+/******************************************************************************/
+/*                Security and privileged attributes management               */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+{{/if}}
+{
+
+{{#> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}{{/RIF}}
+
+  {{#if (eq @root.current_layer 'HAL')~}}
+{{#> DMA_HAL fct='dma_config_security' resource=@root.current_resource}}{{/DMA_HAL}}
+{{#> GPIO_HAL fct='gpio_config_security' resource=@root.current_resource}}{{/GPIO_HAL}}
+  {{else}}
+{{#> DMA_LL fct='dma_config_security' resource=@root.current_resource}}{{/DMA_LL}}
+{{#> GPIO_LL fct='gpio_config_security' resource=@root.current_resource}}{{/GPIO_LL}}
+  {{/if}}
+
+  return SYSTEM_OK;
+}
+{{/with}}
+
+{{/with}}
 {{/each}}{{! instances ~}}
 
 {{> CORTEX fct='generate_irqhandler' type='implementation' component='LPTIM'}}

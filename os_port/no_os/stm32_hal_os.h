@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    stm32_hal_os.h
-  * @brief   Header file of STM32 HAL OS: implementation for NO OS.
+  * @brief   Header file for STM32 HAL OS: implementation for NO OS.
   ******************************************************************************
   * @attention
   *

@@ -118,7 +118,13 @@
                     },
                     {
                       "title": "Hyperbus",
-                      "const": "HYPERBUS"
+                      "const": "HYPERBUS",
+                      "actions": [
+                        {
+                          "type": "include",
+                          "condition": "$resource.parentDescription.features.reduced_features != 1"
+                        }
+                      ]
                     },
                     {
                       "title": "AP Memory 16-bit",
@@ -374,6 +380,12 @@
                   "title": "Chip select boundary",
                   "description": "Granularity at which the chip select signal can be toggled.",
                   "default": "NONE",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$resource.parentDescription.features.reduced_features != 1 "
+                    }
+                  ],
                   "oneOf": [
                     {
                       "title": "CS boundary disabled",
@@ -544,7 +556,13 @@
                   "default": 0,
                   "display_format": [
                       "hex"
-                    ]
+                  ],
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$resource.parentDescription.features.reduced_features != 1"
+                    }
+                  ]
                 },
                 "cs_refresh_time_converted": {
                   "type": "string",
@@ -552,6 +570,10 @@
                   "description": "This feature is applicable to RAM memory only.",
                   "readOnly": true,
                   "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$resource.parentDescription.features.reduced_features != 1"
+                    },
                     {
                       "type": "set",
                       "condition": "($basic.memory_config.cs_refresh_time * ($basic.timing_config.clk_prescaler + 1) / ($get('clock.frequency',$resource.id) / 1000000)) >= 1",
@@ -574,6 +596,12 @@
                   "title": "Wrap size",
                   "description": "Wrap size if wrapped reads are supported by the memory.",
                   "default": "NOT_SUPPORTED",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$resource.parentDescription.features.reduced_features != 1"
+                    }
+                  ],
                   "oneOf": [
                     {
                       "title": "Not supported",
@@ -825,7 +853,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.delay_block_config.auto_evaluate_delay == true",
-                      "computed": {
+                      "attributes": {
                         "const": 0
                       }
                     },
@@ -887,7 +915,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.hsic_configuration.enable_hsic_config == false",
-                      "computed": {
+                      "attributes": {
                         "const": "FULL_CYCLE"
                       }
                     }
@@ -908,7 +936,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.hsic_configuration.enable_hsic_config == false",
-                      "computed": {
+                      "attributes": {
                         "const": 0
                       }
                     }
@@ -929,7 +957,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.hsic_configuration.enable_hsic_config == false",
-                      "computed": {
+                      "attributes": {
                         "const": 0
                       }
                     }
@@ -958,7 +986,7 @@
                     {
                       "type": "set",
                       "condition": "$additional.hsic_configuration.enable_hsic_config == false",
-                      "computed": {
+                      "attributes": {
                         "const": "NOT_REACHED"
                       }
                     }
@@ -1018,6 +1046,136 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -1042,7 +1200,7 @@
                     {
                       "type": "set",
                       "condition": "true",
-                      "computed": {
+                      "attributes": {
                         "const": "'Managed in XSPIM/OCTOSPIM panel'"
                       }
                     },
@@ -2146,7 +2304,7 @@
               "title": "NVIC",
               "properties": {
                 "enable_interruption": {
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "type": "boolean",
                   "default": false
                 },

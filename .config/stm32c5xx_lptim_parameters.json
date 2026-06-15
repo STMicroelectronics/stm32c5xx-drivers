@@ -104,7 +104,8 @@
                       "actions": [
                         {
                           "type": "disable",
-                          "condition": "$resource.features.nb_cc === 0"
+                          "condition": "$resource.features.nb_cc === 0",
+                          "message": "The clock source configuration is not available when the timer has no channel."
                         }
                       ],
                       "oneOf": [
@@ -141,35 +142,35 @@
                       "description": "Clock prescaler division factor applied to the LPTIM internal clock.",
                       "oneOf": [
                         {
-                          "title": "DIV1",
+                          "title": "\u00F7 1",
                           "const": 1
                         },
                         {
-                          "title": "DIV2",
+                          "title": "\u00F7 2",
                           "const": 2
                         },
                         {
-                          "title": "DIV4",
+                          "title": "\u00F7 4",
                           "const": 4
                         },
                         {
-                          "title": "DIV8",
+                          "title": "\u00F7 8",
                           "const": 8
                         },
                         {
-                          "title": "DIV16",
+                          "title": "\u00F7 16",
                           "const": 16
                         },
                         {
-                          "title": "DIV32",
+                          "title": "\u00F7 32",
                           "const": 32
                         },
                         {
-                          "title": "DIV64",
+                          "title": "\u00F7 64",
                           "const": 64
                         },
                         {
-                          "title": "DIV128",
+                          "title": "\u00F7 128",
                           "const": 128
                         }
                       ],
@@ -184,7 +185,7 @@
                     },
                     "frequency": {
                       "type": "number",
-                      "title": "Timer output frequency (in Hz)",
+                      "title": "Timer output frequency",
                       "description": "Calculated Timer output frequency depending on LPTIM kernel clock, period and prescaler configuration.",
                       "display_format": [
                         "dec"
@@ -285,8 +286,8 @@
                         },
                         {
                           "type": "info",
-                          "condition": "$common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input1) == false",
-                          "message": "The selected interconnect must be configured manually"
+                          "condition": "true",
+                          "message": "All selected interconnects, either GPIO , must be configured manually"
                         }
                       ],
                       "objectType": "query",
@@ -307,8 +308,8 @@
                         },
                         {
                           "type": "info",
-                          "condition": "$common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input2) == false",
-                          "message": "The selected interconnect must be configured manually"
+                          "condition": "true",
+                          "message": "All selected interconnects, either GPIO , must be configured manually"
                         }
                       ],
                       "objectType": "query",
@@ -429,7 +430,7 @@
                   {
                     "type": "set",
                     "condition": "(($channel.id === 'CH1') || ($channel.id === 'CH2')) && ($basic.time_base.clock_source_configuration.clock_source.includes('ENCODER'))",
-                    "computed": {
+                    "attributes": {
                       "const": "Input"
                     }
                   }
@@ -501,19 +502,19 @@
                     "description": "Division factor applied to the frequency of input capture events.",
                     "oneOf": [
                       {
-                        "title": "DIV1",
+                        "title": "\u00F7 1",
                         "const": 1
                       },
                       {
-                        "title": "DIV2",
+                        "title": "\u00F7 2",
                         "const": 2
                       },
                       {
-                        "title": "DIV4",
+                        "title": "\u00F7 4",
                         "const": 4
                       },
                       {
-                        "title": "DIV8",
+                        "title": "\u00F7 8",
                         "const": 8
                       }
                     ],
@@ -696,7 +697,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.external_trigger_config.use_external_trigger == true"
+                      "condition": "$additional.external_trigger_config.use_external_trigger == true",
+                      "message": "Enable external trigger source"
                     },
                     {
                       "type": "info",
@@ -708,7 +710,7 @@
                   "query": {
                     "entity": "peripheral.interconnect.external input trigger",
                     "parent": "$resource.id",
-                    "where": "(($entity.source != 'AFI') || (($entity.source == 'GPIO') && ($get('pinout.peripheralCanBeMapped', $resource.id, 'ETR') == true)))",
+                    "where": "((($entity.source != 'AFI') && ($entity.source != 'GPIO')) || ($get('pinout.peripheralCanBeMapped', $resource.id, 'ETR') == true))",
                     "title": "{{source.toUpperCase().replace('AFI', 'GPIO')}}"
                   }
                 },
@@ -719,7 +721,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.external_trigger_config.use_external_trigger == true"
+                      "condition": "$additional.external_trigger_config.use_external_trigger == true",
+                      "message": "Enable external trigger polarity"
                     }
                   ],
                   "oneOf": [
@@ -748,7 +751,8 @@
                   "actions": [
                     {
                       "type": "enable",
-                      "condition": "$additional.external_trigger_config.use_external_trigger == true"
+                      "condition": "$additional.external_trigger_config.use_external_trigger == true",
+                      "message": "Enable external trigger filter"
                     }
                   ],
                   "oneOf": [
@@ -775,6 +779,136 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -785,7 +919,7 @@
               "actions": [
                 {
                   "type": "include",
-                  "condition": "($additional.external_trigger_config.use_external_trigger && $additional.external_trigger_config.source.source === 'GPIO') || $common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input1) == true || $common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input2) == true || $common.helper_lptim_need_gpio_channel($channels, 'CH1') == true || $common.helper_lptim_need_gpio_channel($channels, 'CH2') == true"
+                  "condition": "($additional.external_trigger_config.use_external_trigger && ($additional.external_trigger_config.source.source === 'GPIO' || $additional.external_trigger_config.source.source === 'AFI')) || $common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input1) == true || $common.helper_lptim_need_gpio_input($basic.time_base.clock_source_configuration.input2) == true || $common.helper_lptim_need_gpio_channel($channels, 'CH1') == true || $common.helper_lptim_need_gpio_channel($channels, 'CH2') == true"
                 }
               ],
               "properties": {
@@ -949,7 +1083,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($additional.external_trigger_config.use_external_trigger == true) && ($additional.external_trigger_config.source.source === 'GPIO')"
+                      "condition": "($additional.external_trigger_config.use_external_trigger == true) && (($additional.external_trigger_config.source.source === 'GPIO') || ($additional.external_trigger_config.source.source === 'AFI'))"
                     },
                     {
                       "type": "set",
@@ -1048,7 +1182,8 @@
                     },
                     {
                       "type": "enable",
-                      "condition": "$common.helper_lptim_find_channel_config($channels, 'CH1')"
+                      "condition": "$common.helper_lptim_find_channel_config($channels, 'CH1')",
+                      "message": "Enable dma request for channel 1"
                     }
                   ],
                   "default": false
@@ -1115,7 +1250,8 @@
                     },
                     {
                       "type": "enable",
-                      "condition": "$common.helper_lptim_find_channel_config($channels, 'CH2')"
+                      "condition": "$common.helper_lptim_find_channel_config($channels, 'CH2')",
+                      "message": "Enable dma request for channel 2"
                     }
                   ],
                   "default": false

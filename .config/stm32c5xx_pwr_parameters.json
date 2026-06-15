@@ -90,7 +90,7 @@
           "type": "object",
           "properties": {
             "wakeup_pins_configuration": {
-              "title": "Wakeup pins",
+              "title": "Wake-up pins",
               "type": "object",
               "actions": [
                 {
@@ -109,6 +109,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_1_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 1 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 1",
                       "type": "boolean",
@@ -136,7 +160,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_1_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 1 is enabled."
+                          "message": "Can be configured only when the wake-up pin 1 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -167,7 +191,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_1_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 1 is enabled."
+                          "message": "Can be configured only when the wake-up pin 1 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -175,23 +199,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -202,15 +226,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_1_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 1 is enabled."
+                          "message": "Can be configured only when the wake-up pin 1 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 1.",
+                      "description": "Enable interrupt mode for the wake-up pin 1.",
                       "default": false,
                       "actions": [
                         {
@@ -231,6 +255,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_2_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 2 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 2",
                       "type": "boolean",
@@ -258,7 +306,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_2_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 2 is enabled."
+                          "message": "Can be configured only when the wake-up pin 2 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -289,7 +337,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_2_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 2 is enabled."
+                          "message": "Can be configured only when the wake-up pin 2 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -297,23 +345,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -324,15 +372,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_2_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 2 is enabled."
+                          "message": "Can be configured only when the wake-up pin 2 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 2.",
+                      "description": "Enable interrupt mode for the wake-up pin 2.",
                       "default": false,
                       "actions": [
                         {
@@ -353,6 +401,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_3_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 3 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 3",
                       "type": "boolean",
@@ -380,7 +452,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_3_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 3 is enabled."
+                          "message": "Can be configured only when the wake-up pin 3 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -411,7 +483,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_3_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 3 is enabled."
+                          "message": "Can be configured only when the wake-up pin 3 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -419,23 +491,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -446,15 +518,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_3_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 3 is enabled."
+                          "message": "Can be configured only when the wake-up pin 3 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 3.",
+                      "description": "Enable interrupt mode for the wake-up pin 3.",
                       "default": false,
                       "actions": [
                         {
@@ -475,6 +547,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_4_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 4 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 4",
                       "type": "boolean",
@@ -502,7 +598,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_4_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 4 is enabled."
+                          "message": "Can be configured only when the wake-up pin 4 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -533,7 +629,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_4_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 4 is enabled."
+                          "message": "Can be configured only when the wake-up pin 4 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -541,23 +637,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -568,15 +664,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_4_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 4 is enabled."
+                          "message": "Can be configured only when the wake-up pin 4 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 4.",
+                      "description": "Enable interrupt mode for the wake-up pin 4.",
                       "default": false,
                       "actions": [
                         {
@@ -597,6 +693,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_5_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 5 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 5",
                       "type": "boolean",
@@ -624,7 +744,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_5_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 5 is enabled."
+                          "message": "Can be configured only when the wake-up pin 5 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -655,7 +775,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_5_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 5 is enabled."
+                          "message": "Can be configured only when the wake-up pin 5 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -663,23 +783,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -690,15 +810,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_5_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 5 is enabled."
+                          "message": "Can be configured only when the wake-up pin 5 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 5.",
+                      "description": "Enable interrupt mode for the wake-up pin 5.",
                       "default": false,
                       "actions": [
                         {
@@ -719,6 +839,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_6_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 6 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 6",
                       "type": "boolean",
@@ -746,7 +890,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_6_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 6 is enabled."
+                          "message": "Can be configured only when the wake-up pin 6 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -777,7 +921,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_6_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 6 is enabled."
+                          "message": "Can be configured only when the wake-up pin 6 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -785,23 +929,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -812,15 +956,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_6_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 6 is enabled."
+                          "message": "Can be configured only when the wake-up pin 6 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 6.",
+                      "description": "Enable interrupt mode for the wake-up pin 6.",
                       "default": false,
                       "actions": [
                         {
@@ -841,6 +985,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_7_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 7 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 7",
                       "type": "boolean",
@@ -868,7 +1036,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_7_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 7 is enabled."
+                          "message": "Can be configured only when the wake-up pin 7 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -899,7 +1067,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_7_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 7 is enabled."
+                          "message": "Can be configured only when the wake-up pin 7 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -907,23 +1075,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -934,15 +1102,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_7_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 7 is enabled."
+                          "message": "Can be configured only when the wake-up pin 7 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 7.",
+                      "description": "Enable interrupt mode for the wake-up pin 7.",
                       "default": false,
                       "actions": [
                         {
@@ -963,6 +1131,30 @@
                     }
                   ],
                   "properties": {
+                    "labels": {
+                      "type": "array",
+                      "title": "Add a label",
+                      "description": "Labels allow to create alias inside mx_pwr.h file. This alias can be used on application side.",
+                      "items": {
+                        "type": "string",
+                        "actions": [
+                          {
+                            "type": "error",
+                            "condition": "!/^[A-Za-z_][A-Za-z0-9_]*$/.test($value)",
+                            "message": "Name must be a valid C identifier: start with a letter or underscore, and contain only letters, digits, or underscores."
+                          },
+                          {
+                            "type": "enable",
+                            "condition": "$additional.wakeup_pins_configuration.wkup_8_configuration.enable == true",
+                            "message": "Can be configured only when the wake-up pin 8 is enabled."
+                          }
+                        ],
+                        "minLength": 0,
+                        "maxLength": 32,
+                        "unique": "project",
+                        "default": ""
+                      }
+                    },
                     "enable": {
                       "title": "Wake-up pin 8",
                       "type": "boolean",
@@ -990,7 +1182,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_8_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 8 is enabled."
+                          "message": "Can be configured only when the wake-up pin 8 is enabled."
                         }
                       ],
                       "default": "HIGH"
@@ -1021,7 +1213,7 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_8_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 8 is enabled."
+                          "message": "Can be configured only when the wake-up pin 8 is enabled."
                         }
                       ],
                       "default": "NO"
@@ -1029,23 +1221,23 @@
                     "source": {
                       "title": "Source",
                       "type": "integer",
-                      "description": "Selects the signal origin used to generate the wakeup event.",
+                      "description": "Selects the signal origin used to generate the wake-up event.",
                       "oneOf": [
                         {
                           "title": "0",
-                          "const": "0"
+                          "const": 0
                         },
                         {
                           "title": "1",
-                          "const": "1"
+                          "const": 1
                         },
                         {
                           "title": "2",
-                          "const": "2"
+                          "const": 2
                         },
                         {
                           "title": "3",
-                          "const": "3"
+                          "const": 3
                         }
                       ],
                       "actions": [
@@ -1056,15 +1248,15 @@
                         {
                           "type": "enable",
                           "condition": "$additional.wakeup_pins_configuration.wkup_8_configuration.enable == true",
-                          "message": "Can be configured only when the wakeup pin 8 is enabled."
+                          "message": "Can be configured only when the wake-up pin 8 is enabled."
                         }
                       ],
-                      "default": "0"
+                      "default": 0
                     },
                     "enable_exti": {
                       "title": "EXTI",
                       "type": "boolean",
-                      "description": "Enable interrupt mode for the wakeup pin 8.",
+                      "description": "Enable interrupt mode for the wake-up pin 8.",
                       "default": false,
                       "actions": [
                         {
@@ -1443,7 +1635,8 @@
                         },
                         {
                           "type": "enable",
-                          "condition": "$additional.voltage_detection_configuration.pvd_configuration.enable == true"
+                          "condition": "$additional.voltage_detection_configuration.pvd_configuration.enable == true",
+                          "message": "Can be configured only when the PVD is enabled."
                         }
                       ],
                       "default": "0"
@@ -1459,7 +1652,8 @@
                         },
                         {
                           "type": "enable",
-                          "condition": "$additional.voltage_detection_configuration.pvd_configuration.enable == true"
+                          "condition": "$additional.voltage_detection_configuration.pvd_configuration.enable == true",
+                          "message": "Can be configured only when the PVD is enabled."
                         }
                       ]
                     }
@@ -1612,7 +1806,8 @@
                         },
                         {
                           "type": "enable",
-                          "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true"
+                          "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true",
+                          "message": "Can be configured only when the AVD is enabled."
                         }
                       ],
                       "default": "0"
@@ -1628,7 +1823,8 @@
                         },
                         {
                           "type": "enable",
-                          "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true"
+                          "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true",
+                          "message": "Can be configured only when the AVD is enabled."
                         }
                       ]
                     }
@@ -1645,7 +1841,8 @@
                     },
                     {
                       "type": "enable",
-                      "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true || $additional.voltage_detection_configuration.pvd_configuration.enable == true"
+                      "condition": "$additional.voltage_detection_configuration.avd_configuration.enable == true || $additional.voltage_detection_configuration.pvd_configuration.enable == true",
+                      "message": "Can be configured only when the AVD or the PVD is enabled."
                     }
                   ]
                 },
@@ -1867,7 +2064,7 @@
               "type": "object",
               "properties": {
                 "wkup1_exti_config": {
-                  "title": "Wakeup 1 EXTI",
+                  "title": "Wake-up 1",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -1892,7 +2089,7 @@
                   ]
                 },
                 "wkup2_exti_config": {
-                  "title": "Wakeup 2 EXTI",
+                  "title": "Wake-up 2",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -1917,7 +2114,7 @@
                   ]
                 },
                 "wkup3_exti_config": {
-                  "title": "Wakeup 3 EXTI",
+                  "title": "Wake-up 3",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -1942,7 +2139,7 @@
                   ]
                 },
                 "wkup4_exti_config": {
-                  "title": "Wakeup 4 EXTI",
+                  "title": "Wake-up 4",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -1967,7 +2164,7 @@
                   ]
                 },
                 "wkup5_exti_config": {
-                  "title": "Wakeup 5 EXTI",
+                  "title": "Wake-up 5",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -1992,7 +2189,7 @@
                   ]
                 },
                 "wkup6_exti_config": {
-                  "title": "Wakeup 6 EXTI",
+                  "title": "Wake-up 6",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -2017,7 +2214,7 @@
                   ]
                 },
                 "wkup7_exti_config": {
-                  "title": "Wakeup 7 EXTI",
+                  "title": "Wake-up 7",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -2042,7 +2239,7 @@
                   ]
                 },
                 "wkup8_exti_config": {
-                  "title": "Wakeup 8 EXTI",
+                  "title": "Wake-up 8",
                   "type": "object",
                   "objectType": "need.exti.lines",
                   "variables": [
@@ -2244,7 +2441,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$runtime.enable === true"
+                  "condition": "$runtime.enable === true",
+                  "message": "Can be configured only when the runtime APIs are enabled."
                 }
               ]
             },
@@ -2255,7 +2453,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$runtime.enable === true"
+                  "condition": "$runtime.enable === true",
+                  "message": "Can be configured only when the runtime APIs are enabled."
                 }
               ]
             },
@@ -2273,7 +2472,8 @@
                   "actions": [
                     {
                       "type": "disable",
-                      "condition": "$runtime.mode === 'STANDBY_MODE' || $runtime.mode === 'SHUTDOWN_MODE'"
+                      "condition": "$runtime.mode === 'STANDBY_MODE' || $runtime.mode === 'SHUTDOWN_MODE'",
+                      "message": "Can be selected only when the selected low power mode is Sleep, Stop 0 or Stop 1."
                     }
                   ]
                 }
@@ -2282,7 +2482,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$runtime.enable === true && $runtime.lp_entry === true"
+                  "condition": "$runtime.enable === true && $runtime.lp_entry === true",
+                  "message": "Can be configured only when the runtime APIs are enabled and low power entry is enabled."
                 }
               ]
             },
@@ -2293,7 +2494,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$runtime.enable === true"
+                  "condition": "$runtime.enable === true",
+                  "message": "Can be configured only when the runtime APIs are enabled."
                 },
                 {
                   "type": "warning",
@@ -2310,17 +2512,8 @@
               "actions": [
                 {
                   "type": "enable",
-                  "condition": "$runtime.enable === true"
-                },
-                {
-                  "type": "error",
-                  "condition": "$runtime.lp_check === true && $runtime.mode === 'SLEEP_MODE'",
-                  "message": "No flag to check in sleep mode, disable this parameter."
-                },
-                {
-                  "type": "error",
-                  "condition": "$runtime.lp_check === true && $runtime.mode === 'SHUTDOWN_MODE'",
-                  "message": "No flag to check in shutdown mode, disable this parameter."
+                  "condition": "$runtime.enable === true",
+                  "message": "Can be configured only when the runtime APIs are enabled."
                 }
               ]
             }

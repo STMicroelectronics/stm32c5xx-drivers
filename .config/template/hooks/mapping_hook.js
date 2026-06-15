@@ -24,9 +24,9 @@
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
+ * @param {function} _get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_sw_instances     function returning the software instances (from the configuration data model) associated to the component id
- * @param {object}   cfg_data             configuration data for the current software project
+ * @param {object}   _cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -35,22 +35,23 @@
 module.exports.main_grouping_hook = function (
   component_id,
   component_templates,
-  get_hw_instances,
+  _get_hw_instances,
   get_getters_context,
-  cfg_data,
+  _cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debug_print,
-  strategy
+  _strategy
 ) {
+
+  const globalGetters = get_getters_context();
+  const strategy = globalGetters.envVarGettersAPI.EnvVarAPI.getVariableValue('SYSTEM_PROJECT_CODEGEN_STRATEGY');
   switch (strategy) {
     case "HW":
       return hw_grouping_hook(
         component_id,
         component_templates,
-        get_hw_instances,
         get_getters_context,
-        cfg_data,
         secure_ctxt,
         genfileslist_folder,
         debug_print
@@ -60,9 +61,7 @@ module.exports.main_grouping_hook = function (
       return sw_grouping_hook(
         component_id,
         component_templates,
-        get_hw_instances,
         get_getters_context,
-        cfg_data,
         secure_ctxt,
         genfileslist_folder,
         debug_print
@@ -81,9 +80,7 @@ module.exports.main_grouping_hook = function (
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_getters_context  function returning the DomainGettersAPI that contain the list of available getters
- * @param {object}   cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -92,9 +89,7 @@ module.exports.main_grouping_hook = function (
 function hw_grouping_hook(
   component_id,
   component_templates,
-  get_hw_instances,
   get_getters_context,
-  cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debug_print
@@ -112,8 +107,6 @@ function hw_grouping_hook(
   if (
     component_id == null ||
     component_templates == null ||
-    get_hw_instances == null ||
-    cfg_data == null ||
     secure_ctxt == null
   ) {
     if (debug === true) {
@@ -129,15 +122,24 @@ function hw_grouping_hook(
     }
   }
 
-  /*
-   * Retrieve all hardware instances associated to component_id in the configuration data
-   */
-  my_hw_instances = get_hw_instances(component_id, cfg_data);
-
   /**
-    *   DomainGettersAPI { resourceManagerGettersAPI, pinoutGettersAPI, clockGettersAPI, swProjectLevelGettersAPI, swConfigGettersAPI, dmaGettersAPI, nvicGettersAPI, extiGettersAPI, envVarGettersAPI, hwPlateformGetters}
-    */
-  const globalGetters = get_getters_context();
+   *   DomainGettersAPI { resourceManagerGettersAPI, pinoutGettersAPI, clockGettersAPI, swProjectLevelGettersAPI, swConfigGettersAPI, dmaGettersAPI, nvicGettersAPI, extiGettersAPI, envVarGettersAPI, hwPlateformGetters}
+  */
+ const globalGetters = get_getters_context();
+ /*
+  * Retrieve all hardware instances associated to component_id in the configuration data
+  */
+  if (component_id.includes("STMicroelectronics::Device:STM32CubeMX2 Config:GPIO")) {
+    my_hw_instances =
+      globalGetters?.pinoutGettersAPI?.pinoutAPI.getGpioGroupsIdentifiers(component_id);
+  }
+  else if (component_id.includes("STMicroelectronics::Device:STM32CubeMX2 Config:DMA@")) {
+    my_hw_instances =
+      globalGetters?.dmaGettersAPI?.DmaAPI.getAllAllocatedDMAResourcesBoundToStandalone(component_id);
+  } else {
+    my_hw_instances =
+      globalGetters?.resourceManagerGettersAPI?.peripheralsResourceManagerAPI?.getPeripheralsBoundToSoftwareComponent(component_id);
+  }
 
   /**
     * Domain name: peripheralsResourceManagerAPI
@@ -167,7 +169,7 @@ function hw_grouping_hook(
      * All hw instances code must end-up in the same file
      */
     let array_index = 0;
-    for (const hw_instance of my_hw_instances) {
+    for (let hw_instance of my_hw_instances) {
 
       let shouldGenerateCode = true; // default value
       let initTypeFromPeripheralConfig = "";
@@ -176,12 +178,14 @@ function hw_grouping_hook(
       if (component_id.includes("STMicroelectronics::Device:STM32CubeMX2 Config:GPIO")) {
         peripheralConfigList =
           globalGetters?.pinoutGettersAPI?.pinoutAPI.getGpioGroupSoftwareConfigurations(
-            "default_gpio_group_id",
+            hw_instance.id,
             component_id,
           ) || [];
         firstPeripheralConfig = peripheralConfigList[0].settings.parameters;
+        hw_instance = hw_instance.name;
       }
-      else if (component_id.includes("STMicroelectronics::Device:STM32CubeMX2 Config:DMA")) {
+      else if (component_id.includes("STMicroelectronics::Device:STM32CubeMX2 Config:DMA@")) {
+        hw_instance = hw_instance.resourceId;
         peripheralConfigList =
           globalGetters?.dmaGettersAPI?.DmaAPI.getSoftwareInstancesBoundToStandalone(
             component_id,
@@ -200,7 +204,7 @@ function hw_grouping_hook(
       }
         initTypeFromPeripheralConfig =
           firstPeripheralConfig?.info?.init_type;
-      console.log(
+      console.info(
         "initTypeFromPeripheralConfig:",
         initTypeFromPeripheralConfig,
       );
@@ -338,9 +342,7 @@ function hw_grouping_hook(
  *
  * @param {string}   component_id         identifier of the component being processed by the codegen service
  * @param {array}    component_templates  array of templates for component_id
- * @param {function} get_hw_instances     function returning the hardware instances (from the configuration data model) associated to the component id
  * @param {function} get_sw_instances     function returning the software instances (from the configuration data model) associated to the component id
- * @param {object}   cfg_data             configuration data for the current software project
  * @param {string}   secure_ctxt          indicates if the context is 'None' (no security), 'Secure' (secure context), 'Non-secure' (non-secure context)
  * @param {string}   genfileslist_folder  where to write the list of files to be generated
  * @param {function} debug_print          function to evacuate logs
@@ -349,9 +351,7 @@ function hw_grouping_hook(
 function sw_grouping_hook(
   component_id,
   component_templates,
-  get_hw_instances,
   get_sw_instances,
-  cfg_data,
   secure_ctxt,
   genfileslist_folder,
   debugPrint

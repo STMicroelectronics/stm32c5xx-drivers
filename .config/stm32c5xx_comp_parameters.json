@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "version": "0.0.1",
   "componentid": "::Device:STM32 MX Config:COMP",
-  "grammarVersion": "3.31",
+  "grammarVersion": "3.8",
   "type": "object",
   "functions": [
     {
@@ -85,7 +85,14 @@
                   "description": "Initialization code is not generated."
                 }
               ],
-              "default": "called"
+              "default": "called",
+              "actions": [
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode == 'multi_inst_window_sec') && ($info.init_type != 'enabled')",
+                  "message": "Window mode: comparator window secondary instance must be in initialization mode ''Generated'' (called by comparator window main instance)."
+                }
+              ]
             }
           }
         },
@@ -93,201 +100,154 @@
           "type": "object",
           "title": "Main features",
           "properties": {
-            "comp_mode_1_2": {
-              "title": "Windows mode COMP1/2",
-              "description": "Ability to combine 2 comparator instances for common operation (COMP1 and COMP2, COMP3 and COMP4, ...).",
+            "multi_inst_mode": {
+              "title": "Multi instances mode",
+              "description": "Ability to combine 2 comparator instances (COMP1 and COMP2, COMP3 and COMP4, ...) for common operation. If an instance is set to mode independent, the other one must also be in mode independent. If an instance is set to mode window main/secondary, the other one must be in mode secondary/main.",
               "type": "string",
+              "default": "multi_inst_independent",
               "oneOf": [
                 {
                   "title": "Independent",
                   "description": "Comparator instance independent (versus other comparator instances). Default mode.",
-                  "const": "mode_independent"
+                  "const": "multi_inst_independent"
                 },
                 {
-                  "title": "Window",
-                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds.",
-                  "const": "mode_window",
+                  "title": "Window main instance",
+                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds. Main instance: Input plus of this comparator used as common input, input minus as upper threshold.",
+                  "const": "multi_inst_window_main"
+                },
+                {
+                  "title": "Window secondary instance",
+                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds. Secondary instance: Input plus of the other comparator used as common input, input minus as lower threshold.",
+                  "const": "multi_inst_window_sec"
+                }
+              ],
+              "variables": [
+                {
+                  "on": "update-value",
+                  "name": "COMP_CORE_USE_HAL_COMP_WINDOW_MODE",
+                  "computed_value": "($basic.multi_inst_mode == 'multi_inst_window_main') && ($info.layer === 'HAL')",
+                  "semaphore": true
+                }
+              ],
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "$resource.entityType == 'peripheralBlock'"
+                },
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode != 'multi_inst_independent') && ($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0] == null)",
+                  "message": "Window mode requires both comparators to be bound, please perform bind in the other comparator instance."
+                },
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode != 'multi_inst_independent') && ($info.layer != $get('sw-config.sibling-blocks-parameter-values', $resource.id, 'layer')[0].value)",
+                  "message": "Window mode requires both comparators with the same software layer."
+                },
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode != 'multi_inst_independent') && ($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'multi_inst_mode')[0].value == 'multi_inst_independent')",
+                  "message": "Multi instances mode mismatch: other linked comparator instance set in mode independent. Need to change either this instance (to independent mode) or the other instance mode."
+                },
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode != 'multi_inst_window_main') && ($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'multi_inst_mode')[0].value == 'multi_inst_window_sec')",
+                  "message": "Multi instances mode mismatch: other linked comparator instance set in mode window secondary. Need to change either this instance (to window main mode) or the other instance mode."
+                },
+                {
+                  "type": "error",
+                  "condition": "($basic.multi_inst_mode != 'multi_inst_window_sec') && ($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'multi_inst_mode')[0].value == 'multi_inst_window_main')",
+                  "message": "Multi instances mode mismatch: other linked comparator instance set in mode window main. Need to change either this instance (to window secondary mode) or the other instance mode."
+                }
+              ]
+            },
+            "multi_inst_info": {
+              "title": "Multi instances: linked comparator info",
+              "type": "object",
+              "properties": {
+                "multi_inst_other_inst_name": {
+                  "title": "Instance",
+                  "type": "string",
+                  "default": "COMPx",
                   "actions": [
                     {
-                      "type": "exclude",
-                      "condition": "true"
+                      "type": "include",
+                      "condition": "$basic.multi_inst_mode != 'multi_inst_independent'"
+                    },
+                    {
+                      "type": "set",
+                      "computed": {
+                        "const": "'COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id)"
+                      }
+                    },
+                    {
+                      "type": "error",
+                      "condition": "($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0] != null) && ($get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0].block != $common.helper_comp_get_window_other_inst_id($resource.id))",
+                      "message": "Comparators common instance error: COMPxy not matching with instances COMPx and COMPy."
+                    }
+                  ]
+                },
+                "multi_inst_other_inst_is_bound": {
+                  "title": "Is bound",
+                  "description": "Window mode requires both comparators to be bound, please perform bind in the other linked comparator instance.",
+                  "type": "string",
+                  "default": "false",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$basic.multi_inst_mode != 'multi_inst_independent'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0] == null ? 'False' : 'True'"
+                      }
+                    },
+                    {
+                      "type": "error",
+                      "condition": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0] == null",
+                      "message": "Window mode requires both comparators to be bound, please perform bind in the other comparator instance."
+                    },
+                    {
+                      "type": "error",
+                      "condition": "$info.layer != $get('sw-config.sibling-blocks-parameter-values', $resource.id, 'layer')[0].value",
+                      "message": "Window mode requires both comparators with the same software layer."
+                    }
+                  ]
+                },
+                "multi_inst_other_inst_mode": {
+                  "title": "Mode",
+                  "description": "Multi instances mode selected by the other comparator.",
+                  "type": "string",
+                  "default": "x",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$basic.multi_inst_mode != 'multi_inst_independent'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'multi_inst_mode')[0].value"
+                      }
                     }
                   ]
                 }
-              ],
-              "default": "mode_independent",
-              "synchronize": true,
+              },
               "actions": [
                 {
                   "type": "include",
-                  "condition": "false && (($resource.name == 'COMP1') || ($resource.name == 'COMP2'))"
-                }
-              ]
-            },
-            "comp_mode_3_4": {
-              "title": "Windows mode COMP3/4",
-              "description": "Ability to combine 2 comparator instances for common operation (COMP1 and COMP2, COMP3 and COMP4, ...).",
-              "type": "string",
-              "oneOf": [
-                {
-                  "title": "Independent",
-                  "description": "Comparator instance independent (versus other comparator instances). Default mode.",
-                  "const": "mode_independent"
-                },
-                {
-                  "title": "Window",
-                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds.",
-                  "const": "mode_window",
-                  "actions": [
-                    {
-                      "type": "exclude",
-                      "condition": "true"
-                    }
-                  ]
-                }
-              ],
-              "default": "mode_independent",
-              "synchronize": true,
-              "actions": [
-                {
-                  "type": "include",
-                  "condition": "($resource.name == 'COMP3') || ($resource.name == 'COMP4')"
-                },
-                {
-                  "type": "disable",
-                  "condition": "($resource.name == 'COMP4')"
-                }
-              ]
-            },
-            "comp_mode_5_6": {
-              "title": "Windows mode COMP5/6",
-              "description": "Ability to combine 2 comparator instances for common operation (COMP1 and COMP2, COMP3 and COMP4, ...).",
-              "type": "string",
-              "oneOf": [
-                {
-                  "title": "Independent",
-                  "description": "Comparator instance independent (versus other comparator instances). Default mode.",
-                  "const": "mode_independent"
-                },
-                {
-                  "title": "Window",
-                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds.",
-                  "const": "mode_window",
-                  "actions": [
-                    {
-                      "type": "exclude",
-                      "condition": "true"
-                    }
-                  ]
-                }
-              ],
-              "default": "mode_independent",
-              "synchronize": true,
-              "actions": [
-                {
-                  "type": "include",
-                  "condition": "($resource.name == 'COMP5') || ($resource.name == 'COMP6')"
-                }
-              ]
-            },
-            "comp_mode_7_8": {
-              "title": "Windows mode COMP7/8",
-              "description": "Ability to combine 2 comparator instances for common operation (COMP1 and COMP2, COMP3 and COMP4, ...).",
-              "type": "string",
-              "oneOf": [
-                {
-                  "title": "Independent",
-                  "description": "Comparator instance independent (versus other comparator instances). Default mode.",
-                  "const": "mode_independent"
-                },
-                {
-                  "title": "Window",
-                  "description": "Combine multiple COMP instances for voltage comparison to 2 thresholds.",
-                  "const": "mode_window",
-                  "actions": [
-                    {
-                      "type": "exclude",
-                      "condition": "true"
-                    }
-                  ]
-                }
-              ],
-              "default": "mode_independent",
-              "synchronize": true,
-              "actions": [
-                {
-                  "type": "include",
-                  "condition": "($resource.name == 'COMP7') || ($resource.name == 'COMP8')"
-                }
-              ]
-            },
-            "comp_mode": {
-              "title": "Mode status",
-              "description": "Ability to combine 2 comparator instances for common operation (COMP1 and COMP2, COMP3 and COMP4, ...).",
-              "type": "string",
-              "default": "mode_independent",
-              "actions": [
-                {
-                  "type": "set",
-                  "computed": {
-                    "const": "($basic.comp_mode_1_2 ? $basic.comp_mode_1_2 : ($basic.comp_mode_3_4 ? $basic.comp_mode_3_4 : ($basic.comp_mode_5_6 ? $basic.comp_mode_5_6 : ($basic.comp_mode_7_8 ? $basic.comp_mode_7_8 : 'error_window_inst')))).replace('x_', '')"
-                  }
-                },
-                {
-                  "type": "disable",
-                  "condition": "true"
-                },
-                {
-                  "type": "exclude",
-                  "condition": "true"
-                }
-              ]
-            },
-            "comp_mode_window_control_inst_main": {
-              "title": "Window controlling comparator instance",
-              "type": "string",
-              "default": "COMPx",
-              "actions": [
-                {
-                  "type": "set",
-                  "computed": {
-                    "const": "'COMP' + $common.helper_comp_get_window_other_instance_nb($resource.name)"
-                  }
-                },
-                {
-                  "type": "disable",
-                  "condition": "true"
-                },
-                {
-                  "type": "include",
-                  "condition": "($common.helper_comp_is_window_instance_main($resource.name) == true) && ($comp_mode == 'mode_window')"
-                }
-              ]
-            },
-            "comp_mode_window_control_inst_sec": {
-              "title": "Window controlled by comparator instance",
-              "type": "string",
-              "default": "COMPx",
-              "actions": [
-                {
-                  "type": "set",
-                  "computed": {
-                    "const": "'COMP' + $common.helper_comp_get_window_other_instance_nb($resource.name)"
-                  }
-                },
-                {
-                  "type": "disable",
-                  "condition": "true"
-                },
-                {
-                  "type": "include",
-                  "condition": "($common.helper_comp_is_window_instance_main($resource.name) != true) && ($comp_mode == 'mode_window')"
+                  "condition": "false && ($basic.multi_inst_mode != 'multi_inst_independent') && ($resource.entityType == 'peripheralBlock')"
                 }
               ]
             },
             "power_mode": {
-              "type": "string",
+              "title": "Power mode",
               "description": "Select tradeoff between comparator speed and power consumption.",
+              "type": "string",
               "default": "HIGH_SPEED",
               "oneOf": [
                 {
@@ -303,7 +263,20 @@
                   "const": "ULTRA_LOW_POWER"
                 }
               ],
-              "title": "Power mode"
+              "actions": [
+                {
+                  "type": "set",
+                  "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                  "computed": {
+                    "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'power_mode')[0].value"
+                  }
+                },
+                {
+                  "type": "info",
+                  "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                  "message": "Window mode: selected by the comparator window main instance."
+                }
+              ]
             },
             "input": {
               "title": "Input",
@@ -327,8 +300,34 @@
                   "select": "first",
                   "actions": [
                     {
+                      "type": "exclude",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'"
+                    }
+                  ]
+                },
+                "input_plus_window_other_inst": {
+                  "title": "Plus",
+                  "description": "Input plus for the comparator window mode, selected by the other comparator instance.",
+                  "type": "string",
+                  "default": "x",
+                  "actions": [
+                    {
                       "type": "include",
-                      "condition": "true"
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_plus')[0].value.source.replace(/COMP\\d+_INP(\\w+)/g, 'IO$1').replace('DAC1_INT', 'DAC1 channel 1').replace('DAC2_INT', 'DAC1 channel 2').replace(/opamp(\\d+)_int/g, 'OPAMP$1 output')"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'Plus (input COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id) + ')'"
+                      }
                     }
                   ]
                 },
@@ -351,59 +350,103 @@
                   "actions": [
                     {
                       "type": "exclude",
-                      "condition": "($basic.comp_mode_1_2 === 'mode_window') || ($basic.comp_mode_3_4 === 'mode_window') || ($basic.comp_mode_5_6 === 'mode_window') || ($basic.comp_mode_7_8 === 'mode_window')"
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_main'",
+                      "attributes": {
+                        "title": "Window upper threshold"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_main'",
+                      "attributes": {
+                        "description": "Select the upper threshold for the comparator window mode (window comparator main instance input minus)."
+                      }
                     }
                   ]
                 },
-                "window_upper_threshold": {
-                  "description": "Select the upper threshold for the comparator window mode.",
+                "input_minus_window_upper_threshold_other_inst": {
                   "title": "Window upper threshold",
-                  "type": "object",
-                  "objectType": "query",
-                  "query": {
-                    "parent": "$resource.name",
-                    "title": "{{source.replace(/COMP\\d+_INM(\\w+)/g, 'IO$1').replace('VBG', 'VrefInt').replace(/DAC(\\d+)_INT/g, 'DAC1 channel $1').replace(/dac(\\d+)_out(\\d+)/g, 'DAC$1 channel $2').replace('VSENS', 'Temperature sensor')}}",
-                    "entity": [
-                      "peripheral.interconnect.analog input minus",
-                      "peripheralBlock.interconnect.analog input minus"
-                    ],
-                    "where": "($entity.source != 'VSSA') && ($entity.source != 'GND') && (!($entity.source.startsWith('COMP')) || ($get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace(/COMP\\d+_INM(\\w+)/g, 'INM$1')) == true))",
-                    "sharing": false
-                  },
-                  "select": "first",
+                  "description": "Upper threshold for the comparator window mode (window comparator secondary instance input minus).",
+                  "type": "string",
+                  "default": "x",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.comp_mode_1_2 === 'mode_window') || ($basic.comp_mode_3_4 === 'mode_window') || ($basic.comp_mode_5_6 === 'mode_window') || ($basic.comp_mode_7_8 === 'mode_window')"
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_minus')[0].value.source.replace(/COMP\\d+_INM(\\w+)/g, 'IO$1').replace('VBG', 'VrefInt').replace(/DAC(\\d+)_INT/g, 'DAC1 channel $1').replace(/dac(\\d+)_out(\\d+)/g, 'DAC$1 channel $2').replace('VSENS', 'Temperature sensor')"
+                      }
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'Window upper threshold (input COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id) + ')'"
+                      }
                     }
                   ]
                 },
-                "window_lower_threshold": {
-                  "description": "Select the lower threshold for the comparator window mode.",
+                "input_minus_window_lower_threshold": {
+                  "description": "Select the lower threshold for the comparator window mode (window comparator secondary instance input minus).",
                   "title": "Window lower threshold",
                   "type": "object",
                   "objectType": "query",
                   "query": {
-                    "parent": "$resource.name",
+                    "parent": "'COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id)",
                     "title": "{{source.replace(/COMP\\d+_INM(\\w+)/g, 'IO$1').replace('VBG', 'VrefInt').replace(/DAC(\\d+)_INT/g, 'DAC1 channel $1').replace(/dac(\\d+)_out(\\d+)/g, 'DAC$1 channel $2').replace('VSENS', 'Temperature sensor')}}",
                     "entity": [
                       "peripheral.interconnect.analog input minus",
                       "peripheralBlock.interconnect.analog input minus"
                     ],
-                    "where": "($entity.source != 'VSSA') && ($entity.source != 'GND') && (!($entity.source.startsWith('COMP')) || ($get('pinout.peripheralCanBeMapped', $resource.name, $entity.source.replace(/COMP\\d+_INM(\\w+)/g, 'INM$1')) == true))",
+                    "where": "($entity.source != 'VSSA') && ($entity.source != 'GND') && (!($entity.source.startsWith('COMP')) || ($get('pinout.peripheralCanBeMapped', 'COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id), $entity.source.replace(/COMP\\d+_INM(\\w+)/g, 'INM$1')) == true))",
                     "sharing": false
                   },
                   "select": "first",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "($basic.comp_mode_1_2 === 'mode_window') || ($basic.comp_mode_3_4 === 'mode_window') || ($basic.comp_mode_5_6 === 'mode_window') || ($basic.comp_mode_7_8 === 'mode_window')"
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_main'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "title": "'Window lower threshold (input COMP' + $common.helper_comp_get_window_other_instance_nb($resource.id) + ')'"
+                      }
+                    }
+                  ]
+                },
+                "input_minus_window_lower_threshold_other_inst": {
+                  "title": "Window lower threshold",
+                  "description": "Select the lower threshold for the comparator window mode (window comparator secondary instance input minus).",
+                  "type": "string",
+                  "default": "x",
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'"
+                    },
+                    {
+                      "type": "set",
+                      "condition": "true",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_minus_window_lower_threshold')[0].value.source.replace(/COMP\\d+_INM(\\w+)/g, 'IO$1').replace('VBG', 'VrefInt').replace(/DAC(\\d+)_INT/g, 'DAC1 channel $1').replace(/dac(\\d+)_out(\\d+)/g, 'DAC$1 channel $2').replace('VSENS', 'Temperature sensor')"
+                      }
                     }
                   ]
                 },
                 "input_hysteresis": {
-                  "type": "string",
+                  "title": "Hysteresis",
                   "description": "Set hysteresis applied to input plus, subtracted to input voltage value.",
+                  "type": "string",
                   "default": "NONE",
                   "oneOf": [
                     {
@@ -423,7 +466,20 @@
                       "const": "HIGH"
                     }
                   ],
-                  "title": "Hysteresis"
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'input_hysteresis')[0].value"
+                      }
+                    },
+                    {
+                      "type": "info",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "message": "Window mode: selected by the comparator window main instance."
+                    }
+                  ]
                 }
               }
             },
@@ -432,8 +488,9 @@
               "type": "object",
               "properties": {
                 "output_polarity": {
-                  "type": "string",
+                  "title": "Polarity",
                   "description": "Select output logical level corresponding to input analog comparison state.",
+                  "type": "string",
                   "default": "NONINVERTED",
                   "oneOf": [
                     {
@@ -445,11 +502,26 @@
                       "const": "INVERTED"
                     }
                   ],
-                  "title": "Polarity"
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'output_polarity')[0].value"
+                      }
+                    },
+                    {
+                      "type": "info",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "message": "Window mode: selected by the comparator window main instance."
+                    }
+                  ]
                 },
                 "output_trigger": {
-                  "type": "string",
+                  "title": "Trigger to system",
                   "description": "Select COMP output trigger to system (wake up from system low power mode, CPU event, interrupt).",
+                  "type": "string",
+                  "default": "NONE",
                   "oneOf": [
                     {
                       "title": "None",
@@ -461,20 +533,34 @@
                       "description": "Refer to EXTI panel for trigger configuration (edge detection, interrupt)."
                     }
                   ],
-                  "title": "Trigger to system",
-                  "default": "NONE",
                   "variables": [
                     {
                       "on": "update-value",
-                      "name": "COMP_USE_HAL_COMP_EXTI",
+                      "name": "COMP_CORE_USE_HAL_COMP_EXTI",
                       "computed_value": "($basic.output.output_trigger == 'EXTI') && ($info.layer === 'HAL')",
                       "semaphore": true
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'output_trigger')[0].value"
+                      }
+                    },
+                    {
+                      "type": "info",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "message": "Window mode: selected by the comparator window main instance."
                     }
                   ]
                 },
                 "window_output_mode": {
-                  "type": "string",
+                  "title": "Window output mode",
                   "description": "Window comparators output combination.",
+                  "type": "string",
+                  "default": "INDEPT",
                   "oneOf": [
                     {
                       "title": "Independent",
@@ -484,15 +570,24 @@
                     {
                       "title": "XOR",
                       "const": "XOR",
-                      "description": "Comparators window output synthesized on a single comparator output: comparator no more indicating its own state, but window state (XOR: logical \"exclusive or\"). Logical high means monitored signal is within comparators window thresholds. Comparator instance selected corresponds to handle assigned as upper threshold in @ref HAL_COMP_WINDOW_SetHandle().\nNote: impacts only comparator output signal level (propagated to GPIO, EXTI lines, timers, ...), does not impact output digital state (hal_comp_output_level_t) always reflecting each comparator output state. */."
+                      "description": "Comparators window output synthesized on a single comparator output: comparator no more indicating its own state, but window state (XOR: logical \"exclusive or\"). Logical high means monitored signal is within comparators window thresholds."
                     }
                   ],
-                  "title": "Window output mode",
-                  "default": "INDEPT",
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "$comp_mode === 'mode_window'"
+                      "condition": "($basic.multi_inst_mode == 'multi_inst_window_main') || ($basic.multi_inst_mode == 'multi_inst_window_sec')"                    },
+                    {
+                      "type": "set",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "computed": {
+                        "const": "$get('sw-config.sibling-blocks-parameter-values', $resource.id, 'window_output_mode')[0].value"
+                      }
+                    },
+                    {
+                      "type": "info",
+                      "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+                      "message": "Window mode: selected by the comparator window main instance."
                     }
                   ]
                 }
@@ -501,15 +596,16 @@
           },
           "actions": [
             {
-              "type": "disable",
-              "condition": "($common.helper_comp_is_window_instance_main($resource.name) != true) && ($comp_mode == 'mode_window')"
+              "type": "info",
+              "condition": "$basic.multi_inst_mode == 'multi_inst_window_sec'",
+              "message": "Window mode: parameters selected by the comparator window main instance."
             }
           ]
         },
         "additional": {
           "type": "object",
-          "description": "Enable output blanking to temporarily suppress the COMP output during specific events.",
           "title": "Advanced features",
+          "description": "Enable output blanking to temporarily ignore the comparison during specific events.",
           "properties": {
             "output_blanking_state": {
               "title": "Output blanking",
@@ -517,8 +613,8 @@
               "default": false
             },
             "output_blanking_src": {
-              "description": "Select the internal signal that triggers output blanking.",
               "title": "Output blanking source",
+              "description": "Signal from another peripheral that triggers output blanking.",
               "type": "object",
               "objectType": "query",
               "query": {
@@ -535,16 +631,15 @@
                 {
                   "type": "include",
                   "condition": "$additional.output_blanking_state"
+                },
+               {
+                  "type": "info",
+                  "condition": "true",
+                  "message": "The selected interconnect must be configured manually."
                 }
               ]
             }
-          },
-          "actions": [
-            {
-              "type": "disable",
-              "condition": "($common.helper_comp_is_window_instance_main($resource.name) != true) && ($comp_mode == 'mode_window')"
-            }
-          ]
+          }
         },
         "system": {
           "type": "object",
@@ -682,7 +777,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.input.input_minus?.source.includes('INM1')) || ($basic.input.window_upper_threshold?.source.includes('INM1')) || ($basic.input.window_lower_threshold.source?.includes('INM1'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM1')) == true"
+                      "condition": "((($basic.input.input_minus?.source.includes('INM1')) || ($basic.input.input_minus_window_lower_threshold_other_inst?.includes('IO1'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM1')) == true"
                     }
                   ]
                 },
@@ -715,7 +810,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.input.input_minus?.source.includes('INM2')) || ($basic.input.window_upper_threshold?.source.includes('INM2')) || ($basic.input.window_lower_threshold.source?.includes('INM2'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM2')) == true"
+                      "condition": "((($basic.input.input_minus?.source.includes('INM2')) || ($basic.input.input_minus_window_lower_threshold_other_inst?.includes('IO2'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM2')) == true"
                     }
                   ]
                 },
@@ -748,7 +843,7 @@
                   "actions": [
                     {
                       "type": "include",
-                      "condition": "((($basic.input.input_minus?.source.includes('INM3')) || ($basic.input.window_upper_threshold?.source.includes('INM3')) || ($basic.input.window_lower_threshold.source?.includes('INM3'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM3')) == true"
+                      "condition": "((($basic.input.input_minus?.source.includes('INM3')) || ($basic.input.input_minus_window_lower_threshold_other_inst?.includes('IO3'))) && $get('pinout.peripheralCanBeMapped', $resource.name, 'INM3')) == true"
                     }
                   ]
                 },
@@ -756,7 +851,13 @@
                   "title": "Comparator output to GPIO",
                   "description": "Output connection to GPIO (digital mode), optional.",
                   "type": "boolean",
-                  "default": false
+                  "default": false,
+                  "actions": [
+                    {
+                      "type": "include",
+                      "condition": "$get('pinout.peripheralCanBeMapped', $resource.name, 'OUT')"
+                    }
+                  ]
                 },
                 "comp_output_gpio": {
                   "title": "GPIO for comparator output",
@@ -819,8 +920,8 @@
               ],
               "actions": [
                 {
-                  "type": "exclude",
-                  "condition": "$basic.output.output_trigger != 'EXTI'"
+                  "type": "include",
+                  "condition": "($basic.output.output_trigger == 'EXTI')"
                 }
               ]
             }

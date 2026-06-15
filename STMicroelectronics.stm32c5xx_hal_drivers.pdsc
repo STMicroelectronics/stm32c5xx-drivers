@@ -7,6 +7,21 @@
       <stm32:pack type="HAL" friendlyName="stm32c5xx_drivers" shortDesc="STM32C5xx HAL Drivers">
         <relocation-info parent="" layer="" element=""/>
         <compatibility>
+          <release version="2.1.0">
+            <applicable-schema schemaType="sw-configuration" schemaVersion="3.8.0" />
+            <applicable-api-group apiType="codegen-getters">
+              <applicable-api apiType="clockAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="DmaAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="EnvVarAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="ExtiAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="hwPlatformAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="NvicAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="peripheralsResourceManagerAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="pinoutAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="SWConfigurationAPI" apiVersion="1.0.0" />
+              <applicable-api apiType="SWProjectAPI" apiVersion="1.0.0" />
+            </applicable-api-group>
+          </release>
           <release version="2.0.0">
             <applicable-schema schemaType="sw-configuration" schemaVersion="3.8.0" />
             <applicable-api-group apiType="codegen-getters">
@@ -37,6 +52,14 @@
     <changelog id="Release Notes" name="Release_Notes.html"/>
   </changelogs>
   <releases>
+    <release version="2.1.0" date="2026-05-04">
+
+Second Official release of STM32C5xx HAL Drivers supporting:
+- STM32C551xx, STM32C552xx, STM32C562xx devices
+- STM32C531xx, STM32C532xx, STM32C542xx devices
+- STM32C591xx, STM32C593xx, STM32C5A3xx devices
+
+    </release>
     <release version="2.0.0" date="2026-02-12">
 
 First Official release of STM32C5xx HAL Drivers supporting:
@@ -45,6 +68,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
 - STM32C591xx, STM32C593xx, STM32C5A3xx devices
 
     </release>
+
   </releases>
   <keywords>
     <keyword>ST</keyword>
@@ -55,7 +79,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
   </keywords>
   <requirements>
     <packages>
-      <package vendor="STMicroelectronics" name="stm32c5xx_dfp" version="2.0.0"/>
+      <package vendor="STMicroelectronics" name="stm32c5xx_dfp" version="2.1.0"/>
     </packages>
   </requirements>
   <conditions>
@@ -309,7 +333,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
       <require condition="HAL Generated code"/>
       <!-- <require condition="HAL GPIO Init"/>
       <require Cclass="Device" Cgroup="STM32 HAL" Csub="PWR"/>
-      <require Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH"/> -->
+      <require Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH_ITF"/> -->
     </condition>
     <condition id="HAL CORE GPIO Init and PWR">
       <description>STMicroelectronics HAL PWR Init</description>
@@ -637,9 +661,9 @@ First Official release of STM32C5xx HAL Drivers supporting:
     <component Cclass="Device" Cgroup="STM32 HAL" Csub="RTC timebase template" Cversion="2.0.0" condition="HAL Common">
       <description>HAL RTC templates used for timebases based on RTC alarm or RTC wakeup</description>
       <files>
-        <file category="header" name="templates/timebases/stm32_hal_timebase.h" attr="template" select="timebase" version="0.1.0"/>
-        <file category="header" name="templates/timebases/mx_rtc.h" attr="config" version="0.1.0"/>
-        <file category="source" name="templates/timebases/mx_rtc.c" attr="config" version="0.1.0"/>
+        <file category="header" name="templates/timebases/stm32_hal_timebase.h" attr="template" select="timebase" version="2.0.0"/>
+        <file category="header" name="templates/timebases/mx_rtc.h" attr="config" version="2.0.0"/>
+        <file category="source" name="templates/timebases/mx_rtc.c" attr="config" version="2.0.0"/>
       </files>
     </component>
     <component Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="RTC_ALARM" Cversion="2.0.0" condition="Timebase HAL RTC ALARM or WKUP">
@@ -657,9 +681,9 @@ First Official release of STM32C5xx HAL Drivers supporting:
     <component Cclass="Device" Cgroup="STM32 HAL" Csub="TIM timebase template" Cversion="2.0.0" condition="HAL Common">
       <description>HAL templates</description>
       <files>
-        <file category="header" name="templates/timebases/stm32_hal_timebase.h" attr="template" select="timebase" version="0.1.0"/>
-        <file category="header" name="templates/timebases/mx_timx.h" attr="template" select="timebase" version="0.1.0"/>
-        <file category="source" name="templates/timebases/mx_timx.c" attr="template" select="timebase" version="0.1.0"/>
+        <file category="header" name="templates/timebases/stm32_hal_timebase.h" attr="template" select="timebase" version="2.0.0"/>
+        <file category="header" name="templates/timebases/mx_timx.h" attr="template" select="timebase" version="2.0.0"/>
+        <file category="source" name="templates/timebases/mx_timx.c" attr="template" select="timebase" version="2.0.0"/>
       </files>
     </component>
     <component Cclass="Device" Cgroup="STM32 HAL" Csub="timebases" Cvariant="TIM" Cversion="2.0.0" condition="Timebase HAL TIM">
@@ -706,48 +730,48 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="utils/i3c_timing/stm32_utils_i3c.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL UTILS" Csub="FDCAN" Cversion="2.0.0" condition="HAL Common">
+    <component Cclass="Device" Cgroup="STM32 HAL UTILS" Csub="FDCAN" Cversion="2.0.1" condition="HAL Common">
       <description>Utilities FDCAN</description>
       <files>
         <file category="header" name="utils/fdcan_timing/stm32_utils_fdcan.h"/>
         <file category="source" name="utils/fdcan_timing/stm32_utils_fdcan.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ASSERT" Cversion="2.0.0" condition="HAL Common">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ASSERT" Cversion="2.1.0" condition="HAL Common">
       <description>HAL ASSERT template</description>
       <files>
-        <file category="header" name="templates/common/stm32_assert.h" attr="config" version="0.1.0"/>
+        <file category="header" name="templates/common/stm32_assert.h" attr="config" version="2.1.0"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="template" Cversion="2.0.0" condition="HAL Common">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="template" Cversion="2.1.0" condition="HAL Common">
       <description>HAL templates</description>
       <files>
-        <file category="header" name="templates/common/stm32_ll.h" attr="config" version="0.1.0"/>
-        <file category="header" name="templates/common/stm32c5xx_hal_conf.h" attr="config" version="0.1.0"/>
+        <file category="header" name="templates/common/stm32_ll.h" attr="config" version="2.1.0"/>
+        <file category="header" name="templates/common/stm32c5xx_hal_conf.h" attr="config" version="2.1.0"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ADC" Cversion="2.0.0" condition="HAL ADC">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ADC" Cversion="2.0.1" condition="HAL ADC">
       <description>Analog-to-digital converter (ADC) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_adc.h"/>
         <file category="source" name="hal/stm32c5xx_hal_adc.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="AES" Cversion="2.0.0" condition="HAL CORE DMA">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="AES" Cversion="2.0.1" condition="HAL CORE DMA">
       <description>Advanced Encryption Standard (AES) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_aes.h"/>
         <file category="source" name="hal/stm32c5xx_hal_aes.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="COMP" Cversion="2.0.0" condition="HAL COMP">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="COMP" Cversion="2.1.0" condition="HAL COMP">
       <description>Comparator (COMP) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_comp.h"/>
         <file category="source" name="hal/stm32c5xx_hal_comp.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="CORDIC" Cversion="2.0.0" condition="HAL CORDIC">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="CORDIC" Cversion="2.1.0" condition="HAL CORDIC">
       <description>CORDIC HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_cordic.h"/>
@@ -775,14 +799,14 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_crs.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="CCB" Cversion="2.0.0" condition="HAL CORE">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="CCB" Cversion="2.0.1" condition="HAL CORE">
       <description>CCB HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_ccb.h"/>
         <file category="source" name="hal/stm32c5xx_hal_ccb.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="DAC" Cversion="2.0.0" condition="HAL DAC">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="DAC" Cversion="2.0.1" condition="HAL DAC">
       <description>Digital-to-analog converter (DAC) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_dac.h"/>
@@ -803,7 +827,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_dlyb_core.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="DMA" Cversion="2.0.0" condition="HAL DMA">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="DMA" Cversion="2.1.0" condition="HAL DMA">
       <description>DMA controller (DMA) HAL driver</description>
       <environments>
         <environment name="STM32Cube">
@@ -815,14 +839,14 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_dma.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ETH" Cversion="2.0.0" condition="HAL CORE">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ETH" Cversion="2.1.0" condition="HAL CORE">
       <description>ETH HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_eth.h"/>
         <file category="source" name="hal/stm32c5xx_hal_eth.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="EXTI" Cversion="2.0.0" condition="HAL EXTI">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="EXTI" Cversion="2.1.0" condition="HAL EXTI">
       <description>External interrupts and events (EXTI) controller</description>
       <environments>
         <environment name="STM32Cube">
@@ -834,28 +858,28 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_exti.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FDCAN" Cversion="2.0.0" condition="HAL CORE">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FDCAN" Cversion="2.1.0" condition="HAL CORE">
       <description>FDCAN HAL Driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_fdcan.h"/>
         <file category="source" name="hal/stm32c5xx_hal_fdcan.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH" Cversion="2.0.0" condition="HAL FLASH">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH" Cversion="2.0.1" condition="HAL FLASH">
       <description>Embedded FLASH memory HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_flash.h"/>
         <file category="source" name="hal/stm32c5xx_hal_flash.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH_ITF" Cversion="2.0.0" condition="HAL FLASH_ITF">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="FLASH_ITF" Cversion="2.1.0" condition="HAL FLASH_ITF">
       <description>Embedded FLASH Option Bytes HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_flash_itf.h"/>
         <file category="source" name="hal/stm32c5xx_hal_flash_itf.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="GPIO" Cversion="2.0.0" condition="HAL GPIO">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="GPIO" Cversion="2.1.0" condition="HAL GPIO">
       <description>General-purpose I/O (GPIO) HAL driver</description>
       <environments>
         <environment name="STM32Cube">
@@ -867,28 +891,28 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_gpio.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="HASH" Cversion="2.0.0" condition="HAL CORE DMA">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="HASH" Cversion="2.0.1" condition="HAL CORE DMA">
       <description>HASH HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_hash.h"/>
         <file category="source" name="hal/stm32c5xx_hal_hash.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="HCD" Cversion="2.0.0" condition="HAL CORE USB">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="HCD" Cversion="2.1.0" condition="HAL CORE USB">
       <description>HCD HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_hcd.h"/>
         <file category="source" name="hal/stm32c5xx_hal_hcd.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="I2C" Cversion="2.0.0" condition="HAL I2C">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="I2C" Cversion="2.0.1" condition="HAL I2C">
       <description>Inter-integrated circuit (I2C) interface HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_i2c.h"/>
         <file category="source" name="hal/stm32c5xx_hal_i2c.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="I3C" Cversion="2.0.0" condition="HAL I3C">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="I3C" Cversion="2.0.1" condition="HAL I3C">
       <description>Improved inter-integrated circuit (I3C) interface HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_i3c.h"/>
@@ -902,7 +926,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_i2s.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ICACHE" Cversion="2.0.0" condition="HAL ICACHE">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="ICACHE" Cversion="2.1.0" condition="HAL ICACHE">
       <description>ICACHE HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_icache.h"/>
@@ -916,35 +940,35 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_iwdg.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="LPTIM" Cversion="2.0.0" condition="HAL LPTIM">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="LPTIM" Cversion="2.1.0" condition="HAL LPTIM">
       <description>Low-power timer (LPTIM) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_lptim.h"/>
         <file category="source" name="hal/stm32c5xx_hal_lptim.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="OPAMP" Cversion="2.0.0" condition="HAL OPAMP">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="OPAMP" Cversion="2.1.0" condition="HAL OPAMP">
       <description>OPAMP HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_opamp.h"/>
         <file category="source" name="hal/stm32c5xx_hal_opamp.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PCD" Cversion="2.0.0" condition="HAL CORE USB">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PCD" Cversion="2.1.0" condition="HAL CORE USB">
       <description>USB Peripheral controller (PCD) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_pcd.h"/>
         <file category="source" name="hal/stm32c5xx_hal_pcd.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PKA" Cversion="2.0.0" condition="HAL PKA">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PKA" Cversion="2.0.1" condition="HAL PKA">
       <description>PKA HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_pka.h"/>
         <file category="source" name="hal/stm32c5xx_hal_pka.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PWR" Cversion="2.0.0" condition="HAL PWR">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="PWR" Cversion="2.0.1" condition="HAL PWR">
       <description>Power controller (PWR) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_pwr.h"/>
@@ -979,7 +1003,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_rng.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="RTC" Cversion="2.0.0" condition="HAL RTC">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="RTC" Cversion="2.0.1" condition="HAL RTC">
       <description>Real-time clock (RTC) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_rtc.h"/>
@@ -1000,7 +1024,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_smbus.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="SPI" Cversion="2.0.0" condition="HAL SPI">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="SPI" Cversion="2.0.1" condition="HAL SPI">
       <description>Serial peripheral interface (SPI) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_spi.h"/>
@@ -1014,21 +1038,21 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_sbs.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="TAMP" Cversion="2.0.0" condition="HAL TAMP">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="TAMP" Cversion="2.0.1" condition="HAL TAMP">
       <description>Tampers (TAMP) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_tamp.h"/>
         <file category="source" name="hal/stm32c5xx_hal_tamp.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="TIM" Cversion="2.0.0" condition="HAL TIM">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="TIM" Cversion="2.0.1" condition="HAL TIM">
       <description>Timers (TIM) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_tim.h"/>
         <file category="source" name="hal/stm32c5xx_hal_tim.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="UART" Cversion="2.0.0" condition="HAL UART">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="UART" Cversion="2.0.1" condition="HAL UART">
       <description>Universal asynchronous receiver transmitter (UART) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_uart.h"/>
@@ -1042,27 +1066,27 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="source" name="hal/stm32c5xx_hal_usart.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL DRIVERS CORE" Csub="USB CORE DEF" Cversion="2.0.0" condition="HAL CORE">
+    <component Cclass="Device" Cgroup="STM32 HAL DRIVERS CORE" Csub="USB CORE DEF" Cversion="2.1.0" condition="HAL CORE">
       <description>USB Core Def (USB CORE DEF) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_usb_core_def.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL DRIVERS CORE" Csub="USB DRD" Cversion="2.0.0" condition="HAL CORE">
+    <component Cclass="Device" Cgroup="STM32 HAL DRIVERS CORE" Csub="USB DRD" Cversion="2.1.0" condition="HAL CORE">
       <description>USB DRD Core (USB DRD) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_usb_drd_core.h"/>
         <file category="source" name="hal/stm32c5xx_usb_drd_core.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="WWDG" Cversion="2.0.0" condition="HAL WWDG">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="WWDG" Cversion="2.0.1" condition="HAL WWDG">
       <description>Window watchdog (WWDG) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_wwdg.h"/>
         <file category="source" name="hal/stm32c5xx_hal_wwdg.c"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 HAL" Csub="XSPI" Cversion="2.0.0" condition="HAL CORE XSPI">
+    <component Cclass="Device" Cgroup="STM32 HAL" Csub="XSPI" Cversion="2.0.1" condition="HAL CORE XSPI">
       <description>Octo-SPI/Hexa-SPI (XSPI) HAL driver</description>
       <files>
         <file category="header" name="hal/stm32c5xx_hal_xspi.h"/>
@@ -1079,7 +1103,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/HAL_Driver_codegen_template.gpdsc.hbs"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="System" Cversion="2.0.0" condition="HAL System Init">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="System" Cversion="2.1.0" condition="HAL System Init">
       <description>Code Generation for common System files</description>
       <environments>
         <environment name="STM32Cube">
@@ -1104,7 +1128,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook_system.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORE" Cversion="2.0.0" condition="HAL Generated code">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORE" Cversion="2.1.0" condition="HAL Generated code">
       <description>Code Generation for CORE files</description>
       <environments>
         <environment name="STM32Cube">
@@ -1134,12 +1158,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook_system.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="GPIO" Cversion="2.0.0" condition="HAL GPIO Init" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="GPIO" Cversion="2.1.0" condition="HAL GPIO Init" maxInstances="10">
       <description>Code Generation for GPIO files</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyGPIO</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.gpio</supported-resource-type>
             </supported-resource-types>
@@ -1170,12 +1193,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RCC" Cversion="2.0.0" condition="HAL CORE Init GPIO and RCC">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RCC" Cversion="2.1.0" condition="HAL CORE Init GPIO and RCC">
       <description>Code Generation for RCC files</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyRCC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.rcc</supported-resource-type>
             </supported-resource-types>
@@ -1211,12 +1233,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX DEBUG" Cversion="2.0.0" condition="HAL CORE Init GPIO and CORTEX" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX DEBUG" Cversion="2.1.0" condition="HAL CORE Init GPIO and CORTEX" maxInstances="10">
       <description>Init Code Generation for CORTEX Debug driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_DEBUG</default-instance-name-prefix>
             <supported-configuration-types>
               <supported-configuration-type>cortex_debug</supported-configuration-type>
             </supported-configuration-types>
@@ -1228,7 +1249,6 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/CORTEX/mx_cortex_debug_template.c.hbs"/>
         <file category="genAsset" name=".config/template/CORTEX/mx_cortex_debug_template.h.hbs"/>
         <file category="genAsset" name=".config/template/helpers/common_helpers.js"/>
-        <file category="genAsset" name=".config/template/helpers/debug_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/exti_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/exti_ll_optim_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/gpio_helpers.js"/>
@@ -1245,12 +1265,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX MPU" Cversion="2.0.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX MPU" Cversion="2.1.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
       <description>Init Code Generation for CORTEX HAL MPU driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_MPU</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.cortex</supported-resource-type>
             </supported-resource-types>
@@ -1272,12 +1291,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX NVIC" Cversion="2.0.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX NVIC" Cversion="2.1.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
       <description>Init Code Generation for CORTEX HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_NVIC</default-instance-name-prefix>
             <supported-configuration-types>
               <supported-configuration-type>cortex_nvic</supported-configuration-type>
             </supported-configuration-types>
@@ -1296,28 +1314,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX IDAU SAU" Cversion="2.0.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX SCB" Cversion="2.1.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
       <description>Init Code Generation for CORTEX HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_IDAU_SAU</default-instance-name-prefix>
-            <supported-configuration-types>
-              <supported-configuration-type>cortex_idau_sau</supported-configuration-type>
-            </supported-configuration-types>
-          </stm32:component>
-        </environment>
-      </environments>
-      <files>
-        <file category="genAsset" name=".config/stm32c5xx_cortex_idau_sau_parameters.json"/>
-      </files>
-    </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX SCB" Cversion="2.0.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
-      <description>Init Code Generation for CORTEX HAL driver</description>
-      <environments>
-        <environment name="STM32Cube">
-          <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_SCB</default-instance-name-prefix>
             <supported-configuration-types>
               <supported-configuration-type>cortex_scb</supported-configuration-type>
             </supported-configuration-types>
@@ -1337,12 +1338,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX SYSTICK" Cversion="2.0.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORTEX SYSTICK" Cversion="2.1.0" condition="HAL CORE Init and CORTEX" maxInstances="10">
       <description>Init Code Generation for CORTEX HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORTEX_SYSTICK</default-instance-name-prefix>
             <supported-configuration-types>
               <supported-configuration-type>cortex_systick</supported-configuration-type>
             </supported-configuration-types>
@@ -1364,12 +1364,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CRC" Cversion="2.0.0" condition="HAL CORE Init and CRC" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CRC" Cversion="2.1.0" condition="HAL CORE Init and CRC" maxInstances="10">
       <description>Init Code Generation for CRC HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCRC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.crc</supported-resource-type>
             </supported-resource-types>
@@ -1391,12 +1390,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/partials/LICENSE_partial.hbs"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CCB" Cversion="2.0.0" condition="HAL CORE Init and CCB" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CCB" Cversion="2.1.0" condition="HAL CORE Init and CCB" maxInstances="10">
       <description>Init Code Generation for CCB HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCCB</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.ccb</supported-resource-type>
             </supported-resource-types>
@@ -1420,18 +1418,18 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="DMA" Cversion="2.0.0" condition="HAL CORE DMA Init" maxInstances="20">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="DMA" Cversion="2.1.0" condition="HAL CORE DMA Init" maxInstances="20">
       <description>Init Code Generation for DMA HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyDMA</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.dma</supported-resource-type>
               <supported-resource-type>dma.channel</supported-resource-type>
             </supported-resource-types>
             <supported-configuration-types>
-              <supported-configuration-type>dma.channel</supported-configuration-type>
+              <supported-configuration-type>lpdma</supported-configuration-type>
+              <supported-configuration-type>gpdma</supported-configuration-type>
             </supported-configuration-types>
           </stm32:component>
         </environment>
@@ -1454,12 +1452,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ICACHE" Cversion="2.0.0" condition="HAL CORE Init and ICACHE" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ICACHE" Cversion="2.1.0" condition="HAL CORE Init and ICACHE" maxInstances="10">
       <description>Init Code Generation for ICACHE HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyICACHE</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.icache</supported-resource-type>
             </supported-resource-types>
@@ -1483,12 +1480,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="TIM" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and TIM" maxInstances="20">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="TIM" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and TIM" maxInstances="20">
       <description>Init Code Generation for TIM HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyTIM</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.tim</supported-resource-type>
             </supported-resource-types>
@@ -1526,12 +1522,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="HCD" Cversion="2.0.0" condition="HAL CORE GPIO Init and HCD" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="HCD" Cversion="2.1.0" condition="HAL CORE GPIO Init and HCD" maxInstances="10">
       <description>Init Code Generation for HCD HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyHCD</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.usb</supported-resource-type>
               <supported-resource-type>peripheral.usb_otg_fs</supported-resource-type>
@@ -1554,6 +1549,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/partials/GPIO_LL_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/SYSTEM_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/CORTEX_partial.hbs"/>
+        <file category="genAsset" name=".config/template/partials/EXTI_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/LICENSE_partial.hbs"/>
         <file category="genAsset" name=".config/template/helpers/gpio_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/gpio_ll_optim_helpers.js"/>
@@ -1561,15 +1557,16 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/helpers/nvic_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/common_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/usb_helpers.js"/>
+        <file category="genAsset" name=".config/template/helpers/exti_helpers.js"/>
+        <file category="genAsset" name=".config/template/helpers/exti_ll_optim_helpers.js"/>
         <file category="genAsset" name=".config/template/hooks/usb_mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I2C" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and I2C" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I2C" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and I2C" maxInstances="10">
       <description>Init Code Generation for I2C HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyI2C</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.i2c</supported-resource-type>
             </supported-resource-types>
@@ -1611,12 +1608,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I3C" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and I3C" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I3C" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and I3C" maxInstances="10">
       <description>Init Code Generation for I3C HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyI3C</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.i3c</supported-resource-type>
             </supported-resource-types>
@@ -1656,12 +1652,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I2S" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and I2S" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="I2S" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and I2S" maxInstances="10">
       <description>Init Code Generation for I2S HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyI2S</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.spi</supported-resource-type>
             </supported-resource-types>
@@ -1701,12 +1696,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SPI" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and SPI" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SPI" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and SPI" maxInstances="10">
       <description>Init Code Generation for SPI HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MySPI</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.spi</supported-resource-type>
             </supported-resource-types>
@@ -1746,12 +1740,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="UART" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and UART" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="UART" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and UART" maxInstances="10">
       <description>Init Code Generation for UART HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyUART</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.uart</supported-resource-type>
               <supported-resource-type>peripheral.usart</supported-resource-type>
@@ -1803,12 +1796,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="IRDA" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and UART" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="IRDA" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and UART" maxInstances="10">
       <description>Init Code Generation for IRDA HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyIRDA</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.uart</supported-resource-type>
               <supported-resource-type>peripheral.usart</supported-resource-type>
@@ -1851,12 +1843,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="USART" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and USART" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="USART" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and USART" maxInstances="10">
       <description>Init Code Generation for USART HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyUSART</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.usart</supported-resource-type>
             </supported-resource-types>
@@ -1898,12 +1889,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RNG" Cversion="2.0.0" condition="HAL CORE Init and RNG" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RNG" Cversion="2.1.0" condition="HAL CORE Init and RNG" maxInstances="10">
       <description>Code Generation for RNG files</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyRNG</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.rng</supported-resource-type>
               <supported-resource-type>peripheralBlock.rng</supported-resource-type>
@@ -1929,12 +1919,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="FDCAN" Cversion="2.0.0" condition="HAL CORE GPIO Init and FDCAN" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="FDCAN" Cversion="2.1.0" condition="HAL CORE GPIO Init and FDCAN" maxInstances="10">
       <description>Init Code Generation for FDCAN HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyFDCAN</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.fdcan</supported-resource-type>
             </supported-resource-types>
@@ -1968,12 +1957,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="AES" Cversion="2.0.0" condition="HAL CORE DMA Init and AES" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="AES" Cversion="2.1.0" condition="HAL CORE DMA Init and AES" maxInstances="10">
       <description>Code Generation for AES files</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyAES</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.aes</supported-resource-type>
               <supported-resource-type>peripheral.saes</supported-resource-type>
@@ -2005,12 +1993,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ADC" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and ADC" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ADC" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and ADC" maxInstances="10">
       <description>Init Code Generation for ADC HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyADC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.adc</supported-resource-type>
               <supported-resource-type>peripheral.adc</supported-resource-type>
@@ -2053,12 +2040,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="COMP" Cversion="2.0.0" condition="HAL CORE GPIO Init and COMP" maxInstances="12">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="COMP" Cversion="2.1.0" condition="HAL CORE GPIO Init and COMP" maxInstances="12">
       <description>Init Code Generation for COMP HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCOMP</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.comp</supported-resource-type>
               <supported-resource-type>peripheral.comp</supported-resource-type>
@@ -2094,12 +2080,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORDIC" Cversion="2.0.0" condition="HAL CORE DMA Init and CORDIC" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CORDIC" Cversion="2.1.0" condition="HAL CORE DMA Init and CORDIC" maxInstances="10">
       <description>Init Code Generation for CORDIC HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCORDIC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.cordic</supported-resource-type>
             </supported-resource-types>
@@ -2130,12 +2115,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CRS" Cversion="2.0.0" condition="HAL CORE Init GPIO and CRS" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="CRS" Cversion="2.1.0" condition="HAL CORE Init GPIO and CRS" maxInstances="10">
       <description>Init Code Generation for CRS HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyCRS</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.crs</supported-resource-type>
             </supported-resource-types>
@@ -2167,12 +2151,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="DAC" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and DAC" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="DAC" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and DAC" maxInstances="10">
       <description>Init Code Generation for DAC HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyDAC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.dac</supported-resource-type>
             </supported-resource-types>
@@ -2211,12 +2194,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="HASH" Cversion="2.0.0" condition="HAL CORE DMA Init and HASH" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="HASH" Cversion="2.1.0" condition="HAL CORE DMA Init and HASH" maxInstances="10">
       <description>Init Code Generation for HASH HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyHASH</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.hash</supported-resource-type>
               <supported-resource-type>peripheralBlock.hash</supported-resource-type>
@@ -2246,12 +2228,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="LPTIM" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and LPTIM" maxInstances="20">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="LPTIM" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and LPTIM" maxInstances="20">
       <description>Init Code Generation for LPTIM HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyLPTIM</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.lptim</supported-resource-type>
             </supported-resource-types>
@@ -2288,12 +2269,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="OPAMP" Cversion="2.0.0" condition="HAL CORE GPIO Init and OPAMP" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="OPAMP" Cversion="2.1.0" condition="HAL CORE GPIO Init and OPAMP" maxInstances="10">
       <description>Init Code Generation for OPAMP HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyOPAMP</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.opamp</supported-resource-type>
             </supported-resource-types>
@@ -2327,12 +2307,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="XSPI" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and XSPI" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="XSPI" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and XSPI" maxInstances="10">
       <description>Init Code Generation for XSPI HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyXSPI</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.ospi</supported-resource-type>
             </supported-resource-types>
@@ -2368,12 +2347,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PKA" Cversion="2.0.0" condition="HAL CORE Init and PKA" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PKA" Cversion="2.1.0" condition="HAL CORE Init and PKA" maxInstances="10">
       <description>Init Code Generation for PKA HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyPKA</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.pka</supported-resource-type>
               <supported-resource-type>peripheralBlock.pka</supported-resource-type>
@@ -2399,12 +2377,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RAMCFG" Cversion="2.0.0" condition="HAL CORE Init and RAMCFG" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RAMCFG" Cversion="2.1.0" condition="HAL CORE Init and RAMCFG" maxInstances="10">
       <description>Init Code Generation for RAMCFG HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyRAMCFG</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.ram</supported-resource-type>
             </supported-resource-types>
@@ -2429,12 +2406,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/ramcfg_mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SBS" Cversion="2.0.0" condition="HAL CORE Init and SBS" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SBS" Cversion="2.1.0" condition="HAL CORE Init and SBS" maxInstances="10">
       <description>Init Code Generation for SBS HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MySBS</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.sbs</supported-resource-type>
             </supported-resource-types>
@@ -2461,12 +2437,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PCD" Cversion="2.0.0" condition="HAL CORE GPIO Init and PCD" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PCD" Cversion="2.1.0" condition="HAL CORE GPIO Init and PCD" maxInstances="10">
       <description>Init Code Generation for PCD HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyPCD</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.usb</supported-resource-type>
               <supported-resource-type>peripheral.usb_otg_fs</supported-resource-type>
@@ -2489,6 +2464,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/partials/GPIO_LL_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/SYSTEM_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/CORTEX_partial.hbs"/>
+        <file category="genAsset" name=".config/template/partials/EXTI_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/LICENSE_partial.hbs"/>
         <file category="genAsset" name=".config/template/helpers/gpio_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/gpio_ll_optim_helpers.js"/>
@@ -2496,15 +2472,16 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/helpers/nvic_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/common_helpers.js"/>
         <file category="genAsset" name=".config/template/helpers/usb_helpers.js"/>
+        <file category="genAsset" name=".config/template/helpers/exti_helpers.js"/>
+        <file category="genAsset" name=".config/template/helpers/exti_ll_optim_helpers.js"/>
         <file category="genAsset" name=".config/template/hooks/usb_mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="WWDG" Cversion="2.0.0" condition="HAL CORE Init and WWDG" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="WWDG" Cversion="2.1.0" condition="HAL CORE Init and WWDG" maxInstances="10">
       <description>Init Code Generation for WWDG HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyWWDG</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.wwdg</supported-resource-type>
             </supported-resource-types>
@@ -2529,12 +2506,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RTC" Cversion="2.0.0" condition="HAL CORE GPIO Init and RTC" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="RTC" Cversion="2.1.0" condition="HAL CORE GPIO Init and RTC" maxInstances="10">
       <description>Init Code Generation for RTC HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyRTC</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.rtc</supported-resource-type>
             </supported-resource-types>
@@ -2570,12 +2546,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="TAMP" Cversion="2.0.0" condition="HAL CORE GPIO Init and TAMP" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="TAMP" Cversion="2.1.0" condition="HAL CORE GPIO Init and TAMP" maxInstances="10">
       <description>Init Code Generation for TAMP HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyTAMP</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheralBlock.tamp</supported-resource-type>
             </supported-resource-types>
@@ -2612,12 +2587,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SMARTCARD" Cversion="2.0.0" condition="HAL CORE GPIO DMA Init and SMARTCARD" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SMARTCARD" Cversion="2.1.0" condition="HAL CORE GPIO DMA Init and SMARTCARD" maxInstances="10">
       <description>Init Code Generation for SMARTCARD HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MySMARTCARD</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.usart</supported-resource-type>
             </supported-resource-types>
@@ -2659,12 +2633,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SMBUS" Cversion="2.0.0" condition="HAL CORE GPIO Init and SMBUS" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="SMBUS" Cversion="2.1.0" condition="HAL CORE GPIO Init and SMBUS" maxInstances="10">
       <description>Init Code Generation for SMBUS HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MySMBUS</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.i2c</supported-resource-type>
             </supported-resource-types>
@@ -2704,12 +2677,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PWR" Cversion="2.0.0" condition="HAL CORE GPIO Init and PWR" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="PWR" Cversion="2.1.0" condition="HAL CORE GPIO Init and PWR" maxInstances="10">
       <description>Init Code Generation for PWR HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyPWR</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.pwr</supported-resource-type>
             </supported-resource-types>
@@ -2743,12 +2715,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ETH" Cversion="2.0.0" condition="HAL CORE GPIO Init and ETH" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="ETH" Cversion="2.1.0" condition="HAL CORE GPIO Init and ETH" maxInstances="10">
       <description>Init Code Generation for ETH HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyETH</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.eth</supported-resource-type>
             </supported-resource-types>
@@ -2780,12 +2751,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="FLASH" Cversion="2.0.0" condition="HAL CORE Init and FLASH" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="FLASH" Cversion="2.1.0" condition="HAL CORE Init and FLASH" maxInstances="10">
       <description>Init Code Generation for FLASH HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyFLASH</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.nvm</supported-resource-type>
             </supported-resource-types>
@@ -2810,12 +2780,11 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/hooks/mapping_hook.js"/>
       </files>
     </component>
-    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="IWDG" Cversion="2.0.0" condition="HAL CORE Init and IWDG" maxInstances="10">
+    <component generator="stm32c5xx_hal_mx2codegen" Cclass="Device" Cgroup="STM32CubeMX2 Config" Csub="IWDG" Cversion="2.1.0" condition="HAL CORE Init and IWDG" maxInstances="10">
       <description>Init Code Generation for IWDG HAL driver</description>
       <environments>
         <environment name="STM32Cube">
           <stm32:component>
-            <default-instance-name-prefix>MyIWDG</default-instance-name-prefix>
             <supported-resource-types>
               <supported-resource-type>peripheral.iwdg</supported-resource-type>
             </supported-resource-types>
@@ -2830,6 +2799,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="genAsset" name=".config/template/IWDG/mx_iwdg_template.c.hbs"/>
         <file category="genAsset" name=".config/template/IWDG/mx_iwdg_template.h.hbs"/>
         <file category="genAsset" name=".config/template/helpers/iwdg_helpers.js"/>
+        <file category="genAsset" name=".config/template/partials/SYSTEM_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/CORTEX_partial.hbs"/>
         <file category="genAsset" name=".config/template/partials/LICENSE_partial.hbs"/>
         <file category="genAsset" name=".config/template/helpers/nvic_helpers.js"/>
@@ -2845,19 +2815,19 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="include" name="ll/"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="ADC" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="ADC" Cversion="2.1.0" condition="LL">
       <description>Analog-to-digital converter (ADC) LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_adc.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="BUS" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="BUS" Cversion="2.0.1" condition="LL">
       <description>LL BUS driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_bus.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="COMP" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="COMP" Cversion="2.1.0" condition="LL">
       <description>COMP LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_comp.h"/>
@@ -2881,7 +2851,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_crs.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="DAC" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="DAC" Cversion="2.0.1" condition="LL">
       <description>Digital-to-analog converter (DAC) LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_dac.h"/>
@@ -2893,7 +2863,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_dbgmcu.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="DMA" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="DMA" Cversion="2.1.0" condition="LL">
       <description>DMA controller (DMA) LL driver</description>
       <environments>
         <environment name="STM32Cube">
@@ -2904,13 +2874,13 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_dma.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="FLASH" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="FLASH" Cversion="2.1.0" condition="LL">
       <description>FLASH LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_flash.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="EXTI" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="EXTI" Cversion="2.1.0" condition="LL">
       <description>Extended interrupts and events controller (EXTI) LL driver</description>
       <environments>
         <environment name="STM32Cube">
@@ -2921,7 +2891,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_exti.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="GPIO" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="GPIO" Cversion="2.1.0" condition="LL">
       <description>General-purpose I/O (GPIO) LL driver</description>
       <environments>
         <environment name="STM32Cube">
@@ -2968,7 +2938,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_lpuart.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="OPAMP" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="OPAMP" Cversion="2.0.1" condition="LL">
       <description>(OPAMP) LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_opamp.h"/>
@@ -2986,7 +2956,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_pwr.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="RAMCFG" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="RAMCFG" Cversion="2.0.1" condition="LL">
       <description>RAM configuration controller (RAMCFG) LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_ramcfg.h"/>
@@ -3034,7 +3004,7 @@ First Official release of STM32C5xx HAL Drivers supporting:
         <file category="header" name="ll/stm32c5xx_ll_system.h"/>
       </files>
     </component>
-    <component Cclass="Device" Cgroup="STM32 LL" Csub="TIM" Cversion="2.0.0" condition="LL">
+    <component Cclass="Device" Cgroup="STM32 LL" Csub="TIM" Cversion="2.1.0" condition="LL">
       <description>Timers (TIM) LL driver</description>
       <files>
         <file category="header" name="ll/stm32c5xx_ll_tim.h"/>
@@ -3078,8 +3048,8 @@ First Official release of STM32C5xx HAL Drivers supporting:
     <component Cclass="Device" Cgroup="STM32 HAL" Csub="HAL OS" Cvariant="TEMPLATE OS" Cversion="2.0.0" condition="TEMPLATE OS">
       <description>HAL OS port with CMSIS OS</description>
       <files>
-        <file category="header" name="templates/os_port/stm32_hal_os.h" attr="config" version="0.1.0"/>
-        <file category="source" name="templates/os_port/stm32_hal_os.c" attr="config" version="0.1.0"/>
+        <file category="header" name="templates/os_port/stm32_hal_os.h" attr="config" version="2.0.0"/>
+        <file category="source" name="templates/os_port/stm32_hal_os.c" attr="config" version="2.0.0"/>
       </files>
     </component>
   </components>

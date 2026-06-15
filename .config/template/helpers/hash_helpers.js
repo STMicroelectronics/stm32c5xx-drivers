@@ -17,10 +17,10 @@
  */
 function helper_hash_string_to_hex(inputString) {
     try {
-        console.log(`[INFO] helper_hash_string_to_hex: Input String=${inputString}`);
+        console.info(`[INFO] helper_hash_string_to_hex: Input String=${inputString}`);
 
         if (typeof inputString !== 'string') {
-            console.log('[ERROR] Input is not a valid string');
+            console.error('[ERROR] Input is not a valid string');
             return '';
         }
 
@@ -31,7 +31,7 @@ function helper_hash_string_to_hex(inputString) {
 
         // Check if the input is a valid hexadecimal string
         if (!/^[0-9a-fA-F]+$/.test(inputString)) {
-            console.log('[ERROR] Input is not a valid hexadecimal string');
+            console.error('[ERROR] Input is not a valid hexadecimal string');
             return '';
         }
 
@@ -44,7 +44,7 @@ function helper_hash_string_to_hex(inputString) {
         return bufferString;
 
     } catch (e) {
-        console.log(`[ERROR] helper_hash_string_to_hex: ${e}`);
+        console.error(`[ERROR] helper_hash_string_to_hex: ${e}`);
         return '';
     }
 }
@@ -56,7 +56,7 @@ function helper_hash_string_to_hex(inputString) {
  */
 function helper_hash_calculatekeysize(inputString) {
     try {
-        console.log(`[INFO] helper_hash_calculatekeysize: Input String=${inputString}`);
+        console.info(`[INFO] helper_hash_calculatekeysize: Input String=${inputString}`);
 
         if (typeof inputString !== 'string') {
             throw new Error("Input must be a string.");
@@ -81,7 +81,7 @@ function helper_hash_calculatekeysize(inputString) {
         return keySize;
 
     } catch (e) {
-        console.log(`[ERROR] helper_hash_calculatekeysize: ${e}`);
+        console.error(`[ERROR] helper_hash_calculatekeysize: ${e}`);
         throw e;
     }
 }
@@ -143,7 +143,7 @@ function helper_hash_get_irq_handler(nvic_api, exti_api, resource, config) {
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_hash_get_irq_handler: ${e}`);
+    console.error(`[ERROR] helper_hash_get_irq_handler: ${e}`);
   }
   return result;
 }

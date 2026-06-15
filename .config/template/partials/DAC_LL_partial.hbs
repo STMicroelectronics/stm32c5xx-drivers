@@ -99,7 +99,7 @@
   {{#with sawtooth_config}}
   /* Sawtooth wave generation configuration */
   {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothStepTriggerSource' (concat 'LL_DAC_INC_TRIGGER_' (helper_dac_rename_trigger step_trigger.source))}}
-  {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothResetTriggerSource' (concat 'LL_DAC_TRIGGER_' (helper_dac_rename_trigger reset_trigger.source))}}
+  {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothResetTriggerSource' (concat 'LL_DAC_RST_TRIGGER_' (helper_dac_rename_trigger reset_trigger.source))}}
   {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothDirection' (concat 'LL_DAC_SAWTOOTH_DIRECTION_' direction)}}
   {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothStepData' step}}
   {{helper_common_gen_ll_code_subinst 'LL_DAC_SetWaveSawtoothResetData' reset}}

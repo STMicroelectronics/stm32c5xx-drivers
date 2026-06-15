@@ -140,7 +140,7 @@
                   "default": false,
                   "actions": [
                     {
-                      "type": "info",
+                      "type": "warning",
                       "condition": "$get('peripheral.isBound', 'I2C1')",
                       "message": "Check that PB6 not used by I2C1."
                     }
@@ -153,7 +153,7 @@
                   "default": false,
                   "actions": [
                     {
-                      "type": "info",
+                      "type": "warning",
                       "condition": "$get('peripheral.isBound', 'I2C1')",
                       "message": "Check that PB7 not used by I2C1."
                     }
@@ -168,7 +168,7 @@
                       "condition": "$resource.features.fmp_pb8"
                     },
                     {
-                      "type": "info",
+                      "type": "warning",
                       "condition": "$get('peripheral.isBound', 'I2C1')",
                       "message": "Check that PB8 not used by I2C1."
                     }
@@ -183,7 +183,7 @@
                   "default": false,
                   "actions": [
                     {
-                      "type": "info",
+                      "type": "warning",
                       "condition": "$get('peripheral.isBound', 'I2C1')",
                       "message": "Check that PB9 not used by I2C1."
                     }
@@ -209,7 +209,7 @@
                   "default": false,
                   "actions": [
                     {
-                      "type": "info",
+                      "type": "warning",
                       "message": "Check that SMBUS mode is active for I2C1."
                     }
                   ]
@@ -223,7 +223,7 @@
                       "condition": "$resource.features.smb_i2c3"
                     },
                     {
-                      "type": "info",
+                      "type": "warning",
                       "message": "Check that SMBUS mode is active for I2C3."
                     }
                   ],
@@ -239,7 +239,7 @@
                       "condition": "$resource.features.smb_i2c4 && $get('peripheral.isPhysicallyAvailableInCurrentDevice', 'I2C4')"
                     },
                     {
-                      "type": "info",
+                      "type": "warning",
                       "message": "Check that SMBUS mode is active for I2C4."
                     }
                   ],
@@ -265,6 +265,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.flash_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the FLASH ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to the FLASH ECC double error flag.",
@@ -274,7 +279,14 @@
                   "type": "boolean",
                   "title": "PVD interrupt",
                   "description": "Enable timer break inputs connection to PVD interrupt.",
-                  "default": false
+                  "default": false,
+                  "actions": [
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the PVD interrupt feature is enabled."
+                    }
+                  ]
                 },
                 "sram_ecc_double_error_flag": {
                   "type": "boolean",
@@ -283,6 +295,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.sram_ecc_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the SRAM ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to SRAM ECC double error flag.",
@@ -295,6 +312,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.sram1_ecc_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the SRAM1 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to SRAM1 ECC double error flag.",
@@ -307,6 +329,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.sram2_ecc_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the SRAM2 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to SRAM2 ECC double error flag.",
@@ -319,6 +346,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.sram3_ecc_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the SRAM3 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to SRAM3 ECC double error flag.",
@@ -331,6 +363,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.sram4_ecc_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the SRAM4 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to SRAM4 ECC double error flag.",
@@ -343,6 +380,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.dcache_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the DCACHE ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to DCACHE ECC double error flag.",
@@ -355,6 +397,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.dtcm_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the DTCM ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to DTCM ECC double error flag.",
@@ -367,6 +414,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.itcm_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the ITCM ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to ITCM ECC double error flag.",
@@ -379,6 +431,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.bkpram_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the BKPRAM ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to BKPRAM ECC double error flag.",
@@ -391,6 +448,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.nvm_ecc_triple_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the NVM ECC triple error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to NVM ECC triple error flag.",
@@ -403,6 +465,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.axiram6_fix_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the AXIRAM6 FIX ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to AXIRAM6 FIX ECC double error flag.",
@@ -415,6 +482,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.axiram6_flex_ecc_double"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the AXIRAM6 FLEX ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to AXIRAM6 FLEX ECC double error flag.",
@@ -427,6 +499,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.axiram1_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the AXIRAM1 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to AXIRAM1 ECC double error flag.",
@@ -439,6 +516,11 @@
                     {
                       "type": "include",
                       "condition": "$resource.features.axiram7_ecc_double_error"
+                    },
+                    {
+                      "type": "info",
+                      "condition": "true",
+                      "message": "Check that the AXIRAM7 ECC double error feature is enabled."
                     }
                   ],
                   "description": "Enable timer break inputs connection to AXIRAM7 ECC double error flag.",
@@ -523,7 +605,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "$get('peripheral.isBound', 'XSPI1')"
+                      "condition": "$get('peripheral.isBound', 'XSPI1')",
+                      "message": "This option is available only when XSPI1 is enabled."
                     }
                   ],
                   "properties": {
@@ -601,7 +684,8 @@
                     },
                     {
                       "type": "disable",
-                      "condition": "$get('peripheral.isBound', 'XSPI2')"
+                      "condition": "$get('peripheral.isBound', 'XSPI2')",
+                      "message": "This option is available only when XSPI2 is enabled."
                     }
                   ],
                   "properties": {
@@ -765,7 +849,8 @@
                 },
                 {
                   "type": "disable",
-                  "condition": "$get('peripheral.isBound', 'ETH1')"
+                  "condition": "$get('peripheral.isBound', 'ETH1')",
+                  "message": "This option is available only when ETH1 is enabled."
                 }
               ],
               "oneOf": [
@@ -795,6 +880,481 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Security and privileged access levels attributes management.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "title": "Security",
+              "type": "object",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('swproject.getCurrentEngine').secure === 'Secure-only'",
+                  "message": "In Secure-only engine, all items are Secure."
+                }
+              ],
+              "properties": {
+                "set_all_items_attr": {
+                  "title": "Set all items security attribute",
+                  "type": "boolean",
+                  "default": true
+                },
+                "all_items_attr": {
+                  "title": "All items security attribute",
+                  "type": "string",
+                  "oneOf": [
+                    {
+                      "title": "Secure",
+                      "const": "SEC"
+                    },
+                    {
+                      "title": "Non-secure",
+                      "const": "NSEC"
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "disable",
+                      "condition": "!$security_privilege.security.set_all_items_attr",
+                      "message": "When \"Set all items security attribute\" is disabled, the security attribute of each item can be configured independently."
+                    },
+                    {
+                      "type": "set",
+                      "computed": {
+                        "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'SEC' : 'NSEC'"
+                      }
+                    }
+                  ]
+                },
+                "access_levels": {
+                  "title": "Access levels",
+                  "type": "object",
+                  "properties": {
+                    "clock": {
+                      "title": "Clock",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Secure",
+                          "const": "SEC"
+                        },
+                        {
+                          "title": "Non-secure",
+                          "const": "NSEC"
+                        }
+                      ],
+                      "default": "SEC",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.security.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.security.all_items_attr"
+                          }
+                        }
+                      ]
+                    },
+                    "classb": {
+                      "title": "Class B",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Secure",
+                          "const": "SEC"
+                        },
+                        {
+                          "title": "Non-secure",
+                          "const": "NSEC"
+                        }
+                      ],
+                      "default": "SEC",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.security.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.security.all_items_attr"
+                          }
+                        }
+                      ]
+                    },
+                    "fpu": {
+                      "title": "FPU",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Secure",
+                          "const": "SEC"
+                        },
+                        {
+                          "title": "Non-secure",
+                          "const": "NSEC"
+                        }
+                      ],
+                      "default": "SEC",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.security.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.security.all_items_attr"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "privilege": {
+              "title": "Privilege",
+              "type": "object",
+              "properties": {
+                "set_all_items_attr": {
+                  "title": "Set all items privilege attribute",
+                  "type": "boolean",
+                  "default": true
+                },
+                "all_items_attr": {
+                  "title": "All items privilege attribute",
+                  "type": "string",
+                  "oneOf": [
+                    {
+                      "title": "Privileged",
+                      "const": "PRIV"
+                    },
+                    {
+                      "title": "Unprivileged",
+                      "const": "NPRIV"
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "disable",
+                      "condition": "!$security_privilege.privilege.set_all_items_attr",
+                      "message": "When \"Set all items privilege attribute\" is disabled, the privilege attribute of each item can be configured independently."
+                    },
+                    {
+                      "type": "set",
+                      "computed": {
+                        "default": "(($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')) ? 'PRIV' : 'NPRIV'"
+                      }
+                    }
+                  ]
+                },
+                "access_levels": {
+                  "title": "Access levels",
+                  "type": "object",
+                  "properties": {
+                    "clock": {
+                      "title": "Clock",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Privileged",
+                          "const": "PRIV"
+                        },
+                        {
+                          "title": "Unprivileged",
+                          "const": "NPRIV"
+                        }
+                      ],
+                      "default": "PRIV",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.privilege.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.privilege.all_items_attr"
+                          }
+                        }
+                      ]
+                    },
+                    "classb": {
+                      "title": "Class B",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Privileged",
+                          "const": "PRIV"
+                        },
+                        {
+                          "title": "Unprivileged",
+                          "const": "NPRIV"
+                        }
+                      ],
+                      "default": "PRIV",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.privilege.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.privilege.all_items_attr"
+                          }
+                        }
+                      ]
+                    },
+                    "pm": {
+                      "title": "Product mode",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Privileged",
+                          "const": "PRIV"
+                        },
+                        {
+                          "title": "Unprivileged",
+                          "const": "NPRIV"
+                        }
+                      ],
+                      "default": "PRIV",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.privilege.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.privilege.all_items_attr"
+                          }
+                        }
+                      ]
+                    },
+                    "bridge": {
+                      "title": "Bridge",
+                      "type": "string",
+                      "oneOf": [
+                        {
+                          "title": "Privileged",
+                          "const": "PRIV"
+                        },
+                        {
+                          "title": "Unprivileged",
+                          "const": "NPRIV"
+                        }
+                      ],
+                      "default": "PRIV",
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.privilege.set_all_items_attr)",
+                          "computed": {
+                            "const": "$security_privilege.privilege.all_items_attr"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "lock": {
+              "title": "Lock attributes",
+              "type": "object",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "properties": {
+                "set_all_items_attr": {
+                  "title": "Set all items lock attribute",
+                  "type": "boolean",
+                  "default": true
+                },
+                "all_items_attr": {
+                  "title": "All items lock attribute",
+                  "type": "string",
+                  "default": "UNLOCKED",
+                  "oneOf": [
+                    {
+                      "title": "Locked",
+                      "const": "LOCKED"
+                    },
+                    {
+                      "title": "Unlocked",
+                      "const": "UNLOCKED"
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "disable",
+                      "condition": "!$security_privilege.lock.set_all_items_attr",
+                      "message": "When \"Set all items lock attribute\" is disabled, the lock attribute of each item can be configured independently."
+                    }
+                  ]
+                },
+                "lock_items": {
+                  "title": "Items",
+                  "type": "object",
+                  "properties": {
+                    "clock": {
+                      "title": "Clock",
+                      "type": "boolean",
+                      "default": false,
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'LOCKED')",
+                          "attributes": {
+                            "const": true
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'UNLOCKED')",
+                          "attributes": {
+                            "const": false
+                          }
+                        }
+                      ]
+                    },
+                    "classb": {
+                      "title": "Class B",
+                      "type": "boolean",
+                      "default": false,
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'LOCKED')",
+                          "attributes": {
+                            "const": true
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'UNLOCKED')",
+                          "attributes": {
+                            "const": false
+                          }
+                        }
+                      ]
+                    },
+                    "pm": {
+                      "title": "Product mode",
+                      "type": "boolean",
+                      "default": false,
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'LOCKED')",
+                          "attributes": {
+                            "const": true
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'UNLOCKED')",
+                          "attributes": {
+                            "const": false
+                          }
+                        }
+                      ]
+                    },
+                    "bridge": {
+                      "title": "Bridge",
+                      "type": "boolean",
+                      "default": false,
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'LOCKED')",
+                          "attributes": {
+                            "const": true
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'UNLOCKED')",
+                          "attributes": {
+                            "const": false
+                          }
+                        }
+                      ]
+                    },
+                    "fpu": {
+                      "title": "FPU",
+                      "type": "boolean",
+                      "default": false,
+                      "actions": [
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'LOCKED')",
+                          "attributes": {
+                            "const": true
+                          }
+                        },
+                        {
+                          "type": "set",
+                          "condition": "($security_privilege.lock.set_all_items_attr) && ($security_privilege.lock.all_items_attr === 'UNLOCKED')",
+                          "attributes": {
+                            "const": false
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "type": "boolean",
+              "default": false,
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('swproject.getCurrentEngine').secure === 'Secure-only'",
+                  "message": "In Secure-only engine, all items are Secure."
+                }
+              ]
+            },
+            "clock": {
+              "type": "boolean",
+              "default": false,
+              "title": "Clock management in the generated code",
+              "oneOf": [
+                {
+                  "title": "Keep active after initialization",
+                  "const": false
+                },
+                {
+                  "title": "Deactivated at the end of sequence",
+                  "const": true
+                }
+              ]
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -811,7 +1371,7 @@
               "properties": {
                 "bridge_error_interruption": {
                   "type": "boolean",
-                  "title": "Bridge error interruption",
+                  "title": "Bridge error interrupt",
                   "default": false
                 },
                 "irq_handler_generation": {

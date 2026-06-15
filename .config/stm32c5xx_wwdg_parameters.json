@@ -85,6 +85,136 @@
             }
           }
         },
+        "security_privilege": {
+          "title": "Security and privilege",
+          "description": "Manage security and privileged access levels attributes.",
+          "type": "object",
+          "actions": [
+            {
+              "type": "exclude",
+              "condition": "($get('swproject.getCurrentEngine') === null) || ($get('swproject.getCurrentEngine').secure === 'TZ-disabled')"
+            },
+            {
+              "type": "set",
+              "condition": "$get('swproject.getCurrentEngine').secure === 'Non-secure'",
+              "attributes": {
+                "title": "Privileged",
+                "description": "Manage privileged access levels attributes."
+              }
+            }
+          ],
+          "properties": {
+            "security": {
+              "type": "string",
+              "title": "Security attribute",
+              "description": "Set the security attribute of the securable peripheral.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "SEC"
+                  },
+                  "condition": "$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "set",
+                  "attributes": {
+                    "const": "NSEC"
+                  },
+                  "condition": "!$get('peripheral.isBound', $resource.id)"
+                },
+                {
+                  "type": "disable",
+                  "condition": "$get('peripheral.isBound', $resource.id)",
+                  "message": "The security attribute of the peripheral is automatically set to secure when the peripheral is bound to a secure resource and to non-secure when it is not. Manual configuration is not allowed."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-sec-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Secure",
+                  "const": "SEC"
+                },
+                {
+                  "title": "Non-secure",
+                  "const": "NSEC"
+                }
+              ],
+              "default": "NSEC"
+            },
+            "privilege": {
+              "type": "string",
+              "title": "Privileged attribute",
+              "description": "Manage the privileged attribute of a securable RISC peripheral.",
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-priv-attr",
+                "custom": "$resource.id"
+              },
+              "oneOf": [
+                {
+                  "title": "Privileged",
+                  "const": "PRIV"
+                },
+                {
+                  "title": "Unprivileged",
+                  "const": "NPRIV"
+                }
+              ],
+              "default": "PRIV"
+            },
+            "lock": {
+              "type": "boolean",
+              "title": "Lock",
+              "description": "Optional. Lock security and privilege attributes to prevent changes.",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-risc-peripheral-lock-attr",
+                "custom": "$resource.id"
+              },
+              "default": false
+            },
+            "illegal_access": {
+              "title": "Illegal access interrupt",
+              "actions": [
+                {
+                  "type": "include",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure') || ($get('swproject.getCurrentEngine').secure === 'Secure-only')"
+                },
+                {
+                  "type": "disable",
+                  "condition": "($get('swproject.getCurrentEngine').secure === 'Secure-only')",
+                  "message": "Secure-only mode: Illegal access interrupt is forced to disabled."
+                }
+              ],
+              "synchronize": true,
+              "synchronizeOn": {
+                "component": "ST-HAL",
+                "path": "rif-iac-peripheral",
+                "custom": "$resource.id"
+              },
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "system": {
           "type": "object",
           "title": "System",
@@ -95,7 +225,7 @@
               "properties": {
                 "enable_interruption": {
                   "type": "boolean",
-                  "title": "Interruption",
+                  "title": "Interrupt",
                   "default": false
                 },
                 "irq_handler_generation": {
@@ -158,11 +288,8 @@
                   "unit": "Hz",
                   "type": "integer",
                   "default": 1000,
+                  "readOnly": true,
                   "actions": [
-                    {
-                      "type": "disable",
-                      "condition": "true"
-                    },
                     {
                       "type": "set",
                       "condition": "true",
@@ -204,6 +331,7 @@
                   "type": "integer",
                   "title": "Inputs lower limit",
                   "description": "Minimum possible value that can be entered for max time and min time.",
+                  "readOnly": true,
                   "actions": [
                     {
                       "type": "set",
@@ -211,10 +339,6 @@
                       "computed": {
                         "const": "$common.helper_wwdg_get_min_allowed_time($get('envVar.value', 'WWDG_FREQ'), $runtime.wwdg_calculator.unit)"
                       }
-                    },
-                    {
-                      "type": "disable",
-                      "condition": "true"
                     }
                   ],
                   "default": 0
@@ -223,6 +347,7 @@
                   "type": "integer",
                   "title": "Inputs upper limit",
                   "description": "Maximum possible value that can be entered for max time and min time.",
+                  "readOnly": true,
                   "actions": [
                     {
                       "type": "set",
@@ -230,10 +355,6 @@
                       "computed": {
                         "const": "$common.helper_wwdg_get_max_allowed_time($get('envVar.value', 'WWDG_FREQ'), $runtime.wwdg_calculator.unit)"
                       }
-                    },
-                    {
-                      "type": "disable",
-                      "condition": "true"
                     }
                   ],
                   "default": 4294967295
@@ -295,6 +416,7 @@
                       "type": "number",
                       "title": "Actual",
                       "description": "Actual Maximum time before reset.",
+                      "readOnly": true,
                       "actions": [
                         {
                           "type": "include",
@@ -306,10 +428,6 @@
                           "computed": {
                             "const": "$common.helper_wwdg_adjust_time($get('envVar.value', 'WWDG_STEP'), $runtime.wwdg_calculator.max_time.user_max_time, $runtime.wwdg_calculator.unit)"
                           }
-                        },
-                        {
-                          "type": "disable",
-                          "condition": "true"
                         }
                       ]
                     }
@@ -345,6 +463,7 @@
                       "type": "number",
                       "title": "Actual",
                       "description": "Actual minimum time before refresh is allowed.",
+                      "readOnly": true,
                       "actions": [
                         {
                           "type": "include",
@@ -356,10 +475,6 @@
                           "computed": {
                             "const": "$common.helper_wwdg_adjust_time($get('envVar.value', 'WWDG_STEP'), $runtime.wwdg_calculator.min_time.user_min_time, $runtime.wwdg_calculator.unit)"
                           }
-                        },
-                        {
-                          "type": "disable",
-                          "condition": "true"
                         }
                       ],
                       "variables": [

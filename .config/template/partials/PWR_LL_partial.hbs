@@ -32,27 +32,12 @@
 ~}}
 {{#if (eq fct 'generate_main_supply_config')}}
 {{!
- Generate the PWR LL code to configure the main supply
+ No main supply configuration on this series
 ~}}
-{{~log "PWR_LL_partial generate_main_supply_config: supply="@root.context.additional.main_supply_configuration.mcu_main_supply~}}
-  {{#if @root.context.additional.main_supply_configuration.mcu_main_supply}}
-  /* Configure the Power Supply source */
-  {{/if}}
 {{else if (eq fct 'generate_vos_config')~}}
 {{!
- Generate the PWR LL code to configure the voltage scaling
+ No voltage scaling configuration on this series
 ~}}
-  {{#with @root.context}}
-    {{#with additional}}
-      {{#with main_supply_configuration}}
-        {{~log "PWR_LL_partial generate_vos_config: context="@root.context.additional.main_supply_configuration.voltage_scaling~}}
-        {{#if voltage_scaling}}
-  /* Configure the Voltage scaling level */
-  {{helper_common_gen_ll_code 'LL_PWR_SetRegulatorVoltageScaling' (concat 'LL_PWR_REGU_' voltage_scaling)}}
-        {{/if}}
-      {{/with}}
-    {{/with}}
-  {{/with}}
 {{else if (eq fct 'generate_write_protection_disable')}}
 {{!
  Generate the PWR LL code to disable the RTC/Backup Domain Write protection
@@ -66,7 +51,7 @@
   /* In order to simplify the code generation and management for the user, the write protection is not enabled by
      default. In real case application, we advise to enable it once all the necessary configurations are done. */
   /* Enable RTC Domain Write Protection */
-  //LL_PWR_EnableRTCDomainWriteProtection();
+  /* LL_PWR_EnableRTCDomainWriteProtection(); */
 {{else if (eq fct 'exported_functions_init')}}
 {{!
     Generation of initialization function used in LL
@@ -100,13 +85,16 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
   /****************************************************************************/
         {{#with pvd_configuration}}
           {{#if level_selection}}
+            {{~assign 'voltage_reference' (helper_pwr_get_pvdin_or_vdd_level level_selection (@root.peripheralsResourceManagerAPI.getHardwareIpDescription "PWR"))~}}
+            {{!~ Line break because of the helper above}}
   /* Configure PVD Level */
-  {{helper_common_gen_ll_code 'LL_PWR_SetPVDLevel' (concat 'LL_PWR_PVDLEVEL_' level_selection)}}
+  {{helper_common_gen_ll_code 'LL_PWR_SetPVDLevel' (concat 'LL_PWR_PVD_' @root.voltage_reference)}}
+
           {{/if}}
   /* Enable PVD */
   LL_PWR_EnablePVD();
-          {{#if (eq enable_exti true)}}
 
+          {{#if (eq enable_exti true)}}
   /* Configure PVD EXTI Line */
             {{#> EXTI fct='exti_get_init' layer=@root.current_layer needs=@root.pvd_exti_needs}}
             {{/EXTI}}
@@ -114,19 +102,20 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
         {{/with}}
       {{/if}}
       {{#if avd_configuration.enable}}
-
   /****************************************************************************/
   /* Configuration of AVD (Analog Voltage Detector)                           */
   /****************************************************************************/
         {{#with avd_configuration}}
           {{#if level_selection}}
   /* Configure AVD Level */
-  {{helper_common_gen_ll_code 'LL_PWR_SetAVDLevel' (concat 'LL_PWR_AVDLEVEL_' level_selection)}}
+  {{helper_common_gen_ll_code 'LL_PWR_SetAVDLevel' (concat 'LL_PWR_AVD_VDDA_LEVEL_' level_selection)}}
+
+
           {{/if}}
   /* Enable AVD */
   LL_PWR_EnableAVD();
-          {{#if (eq enable_exti true)}}
 
+          {{#if (eq enable_exti true)}}
   /* Configure AVD EXTI Line */
             {{#> EXTI fct='exti_get_init' layer=@root.current_layer needs=@root.avd_exti_needs}}
             {{/EXTI}}
@@ -139,7 +128,6 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
         {{/EXTI}}
       {{/if}}
       {{#if temperature_vbat_monitoring.enable}}
-
   /****************************************************************************/
   /* Configuration of VBAT/Temp monitor                                       */
   /****************************************************************************/
@@ -153,7 +141,6 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
         {{/PWR_LL}}
       {{/if}}
       {{#if temperature_vdd_monitoring.enable}}
-
   /****************************************************************************/
   /* Configuration of VDD/Temp monitor                                        */
   /****************************************************************************/
@@ -188,6 +175,7 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
                 {{/if}}
   uint32_t pages = {{pageDefinesStr}};
   LL_PWR_Disable{{sram}}PagesStopRetention(pages);
+
               {{/if}}
             {{/if}}
           {{/unless}}
@@ -195,44 +183,44 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
       {{/if}}
     {{/with}}
     {{#if flash_low_power_configuration.enable_flash_low_power_mode}}
-
   /****************************************************************************/
   /* Configuration of FLASH low power mode                                    */
   /****************************************************************************/
   LL_PWR_EnableFlashLowPWRMode();
+
     {{/if}}
     {{#if nvm_low_power_configuration.enable_nvm_low_power_mode}}
-
   /****************************************************************************/
   /* Configuration of NVM low power mode                                      */
   /****************************************************************************/
   LL_PWR_EnableNVMLowPWRMode();
-    {{/if}}
-    {{#if (or (eq battery_configuration.battery_charging_resistor_selection '1_5k') (eq battery_configuration.enable_battery_charging true))}}
 
+    {{/if}}
+    {{#if battery_configuration.enable_battery_charging}}
   /****************************************************************************/
-  /* Configuration of the Battery Charging management                         */
+  /* Configuration of the battery charging management                         */
   /****************************************************************************/
-  /* Configure Battery charging resistor value */
-  {{helper_common_gen_ll_code 'LL_PWR_SetBattChargResistor' (concat 'LL_PWR_BATT_CHARG_RESISTOR_' (uppercase battery_configuration.battery_charging_resistor_selection))}};
-      {{#if battery_configuration.enable_battery_charging}}
-  /* Enable Battery charging */
+  /* Configure battery charging resistor value */
+  {{helper_common_gen_ll_code 'LL_PWR_SetBattChargResistor' (concat 'LL_PWR_BATT_CHARG_RESISTOR_' (uppercase battery_configuration.battery_charging_resistor_selection))}}
+
+  /* Enable battery charging */
   LL_PWR_EnableBatteryCharging();
-      {{/if}}
+
     {{/if}}
     {{#if (or (eq ucpd_configuration.enable_dead_battery_mode true) (eq ucpd_configuration.enable_ucpd_config_retention true))}}
       {{#with ucpd_configuration}}
-
   /****************************************************************************/
   /* Configuration of the UCPD (USB Type-C and Power Delivery) PWR features   */
   /****************************************************************************/
         {{#if enable_dead_battery_mode}}
   /* Enable Dead Battery mode */
   LL_PWR_EnableUCPDDeadBattery();
+
         {{/if}}
         {{#if enable_ucpd_config_retention}}
   /* Enable UCPD configuration retention in Standby Mode */
   LL_PWR_EnableUCPDRetentionStandbyMode();
+
         {{/if}}
       {{/with}}
     {{/if}}
@@ -241,7 +229,6 @@ system_status_t {{@root.pwr_root_fct_name}}_init(void)
       {{~assign 'pull_availability' (helper_pwr_pull_or_source @root.pins_configs)~}}
       {{~helper_pwr_breakpoint (length @root.pins_configs) @root~}}
       {{#if (length @root.pins_configs)}}
-
   /****************************************************************************/
   /* Wakeup Pins Configurations                                               */
   /****************************************************************************/
@@ -393,6 +380,15 @@ system_status_t mx_pwr_enter_low_power(void)
   SCB_DisableDeepSleep();
 
         {{/if}}
+          {{~assign 'entry_mode' ''~}}
+          {{#if (and (eq mode_entry 'HAL_PWR_LOW_PWR_MODE_WFE')(not (or (eq mode 'STANDBY_MODE')(eq mode 'SHUTDOWN_MODE'))))}}
+            {{assign 'entry_mode' 'WFE'}}
+          {{else}}
+            {{assign 'entry_mode' 'WFI'}}
+          {{/if}}
+  /* DSB to ensure there are no outstanding memory transactions prior to executing {{@root.entry_mode}} and going to {{mode}} */
+  __DSB();
+
         {{#if (eq mode_entry 'HAL_PWR_LOW_PWR_MODE_WFI')}}
   /* Wait for interrupt request */
   __WFI();
@@ -436,14 +432,20 @@ system_status_t mx_pwr_exit_low_power(void)
 }
 
       {{/if}}
-      {{#if (and (eq lp_check true)(or (eq mode 'STOP_MODE')(eq mode 'STOP0_MODE')(eq mode 'STOP1_MODE')(eq mode 'STOP2_MODE')(eq mode 'STOP3_MODE')(eq mode 'STANDBY_MODE')))}}
+      {{#if (eq lp_check true)}}
 uint32_t mx_pwr_system_was_low_power(void)
 {
-        {{#if (or (eq mode 'STOP_MODE')(eq mode 'STOP0_MODE')(eq mode 'STOP1_MODE')(eq mode 'STOP2_MODE')(eq mode 'STOP3_MODE'))}}
+        {{#if (not (or (eq mode 'SLEEP_MODE') (eq mode 'SHUTDOWN_MODE')))}}
+  /* Check the flag that indicates if the system was resumed from a low power mode */
+          {{#if (or (eq mode 'STOP_MODE')(eq mode 'STOP0_MODE')(eq mode 'STOP1_MODE')(eq mode 'STOP2_MODE')(eq mode 'STOP3_MODE'))}}
   return (LL_PWR_IsActiveFlag_STOP());
-        {{/if}}
-        {{#if (eq mode 'STANDBY_MODE')}}
+          {{/if}}
+          {{#if (eq mode 'STANDBY_MODE')}}
   return (LL_PWR_IsActiveFlag_SB());
+          {{/if}}
+        {{else}}
+  /* This API returns 0 as the MCU does not have hardware flags to indicate {{mode}} */
+  return 0;
         {{/if}}
 }
 

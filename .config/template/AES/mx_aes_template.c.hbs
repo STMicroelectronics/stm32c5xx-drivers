@@ -15,25 +15,11 @@
   ******************************************************************************
   ~--}}
 {{#helper_common_beautifier}}
-{{assign "strategy" (@root.EnvVarAPI.getVariableValue 'SYSTEM_PROJECT_CODEGEN_STRATEGY')~}}
-{{log "strategy" @root.strategy~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'current_resource' 'AES'~}}
-{{assign 'instances' (@root.SWConfigurationAPI.getInstances 'STMicroelectronics::Device:STM32CubeMX2 Config:AES')~}}
-{{assign 'dma_resource' 'STM32CubeMX2 Config:AES'~}}
-{{else}}
-{{assign "strategy" "HW"~}}
-{{#get_myctx~}}
-{{#with _myctx~}}
-{{log "AES template _myctx:" this~}}
-{{assign 'current_resource' resource~}}
-{{assign 'dma_resource' resource~}}
-{{assign 'instances' instances~}}
-{{/with~}}
-{{/get_myctx~}}
-{{/if}}
-{{log "AES template current_resource:" @root.current_resource~}}
-{{log "AES template instances:" (toJSON @root.instances)~}}
+{{assign "codegen_ctxt" (helper_common_get_codegen_context 'AES' (get '') @root.EnvVarAPI @root.peripheralsResourceManagerAPI @root.SWConfigurationAPI)~}}
+{{log "AES template codegen_ctxt:" @root.codegen_ctxt~}}
+{{assign 'current_resource' @root.codegen_ctxt.current_resource~}}
+{{assign 'instances' @root.codegen_ctxt.instances~}}
+{{assign 'dma_resource' @root.codegen_ctxt.dma_resource~}}
 /**
   ******************************************************************************
   * @file           : mx_{{lowercase @root.current_resource}}.c
@@ -51,15 +37,11 @@
 /* Private functions prototype------------------------------------------------*/
 /* Exported variables by reference--------------------------------------------*/
 {{#each @root.instances~}}
-{{#if (eq @root.strategy "SW")}}
-{{assign 'aes_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
+{{assign 'aes_cxt' config~}}
 {{log "AES template aes_cxt:" (toJSON @root.aes_cxt)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'current_layer' @root.aes_cxt.info.layer~}}
 {{log "AES template current_resource:" @root.current_resource~}}
-{{else}}
-{{assign 'current_layer' info.layer~}}
-{{/if}}
 {{#if (eq @root.current_layer 'HAL')}}
 static hal_aes_handle_t h{{@root.current_resource}};
 {{/if}}
@@ -68,55 +50,49 @@ static hal_aes_handle_t h{{@root.current_resource}};
 {{assign 'hal_handle_exist' 0~}}
 {{assign 'nvic_context' 'undefined'~}}
 {{#each @root.instances}}
-{{#if (eq @root.strategy "HW")}}
-{{assign 'name' name~}}
-{{assign 'current_layer' info.layer~}}
-{{~assign 'aes_cxt' this~}}
-{{else}}
-{{assign 'aes_cxt' (@root.SWConfigurationAPI.getSwInstanceConfiguration this)~}}
-{{assign 'current_resource' (@root.peripheralsResourceManagerAPI.getPeripheralBoundToSoftwareInstance this)~}}
+{{assign 'aes_cxt' config~}}
+{{assign 'current_resource' current_resource~}}
 {{assign 'name' @root.aes_cxt.name~}}
 {{assign 'current_layer' @root.aes_cxt.info.layer~}}
-{{/if}}
 {{#with @root.aes_cxt}}
 {{#if (eq @root.current_layer 'HAL')}}
 {{#with additional}}
 {{#if (and activate_key key_settings (eq key_settings.aes_key 1))}}
 {{#if (eq key_settings.key_size 128)}}
 {{assign 'key_128' (helper_aes_string_to_vector key_settings.key_128)}}
-const uint32_t AESKey[4] ={{@root.key_128}};
+const uint32_t {{@root.current_resource}}Key[4] ={{@root.key_128}};
 {{else}}
 {{assign 'key_256' (helper_aes_string_to_vector key_settings.key_256)}}
-const uint32_t AESKey[8] ={{@root.key_256}};
+const uint32_t {{@root.current_resource}}Key[8] ={{@root.key_256}};
 {{/if}}
 {{/if~}}
 {{/with}}
 {{#with basic}}
 {{#if (eq aes_standard 2)}}
 {{assign 'cbc_iv' (helper_aes_string_to_vector init_vect)}}
-uint32_t AESIV[4] ={{@root.cbc_iv}};
+uint32_t {{@root.current_resource}}IV[4] ={{@root.cbc_iv}};
 {{else if (eq aes_standard 3)}}
 {{assign 'ctr_iv' (helper_aes_string_to_vector init_vect)~}}
-uint32_t AESIV[4] ={{@root.ctr_iv}};
+uint32_t {{@root.current_resource}}IV[4] ={{@root.ctr_iv}};
 {{else if (eq aes_standard 4)}}
 {{assign 'gcm_iv' (helper_aes_string_to_vector init_vect)~}}
-uint32_t InitVector[4] ={{@root.gcm_iv}};
+uint32_t {{@root.current_resource}}InitVector[4] ={{@root.gcm_iv}};
 {{assign 'gcm_header' (helper_aes_string_to_vector header)~}}
 {{assign 'gcm_heder_size' (helper_aes_size_header_msg header)~}}
-uint32_t HeaderMessage[{{@root.gcm_heder_size}}] ={{@root.gcm_header}};
+uint32_t {{@root.current_resource}}HeaderMessage[{{@root.gcm_heder_size}}] ={{@root.gcm_header}};
 {{else if (eq aes_standard 5)}}
 {{assign 'ccm_iv' (helper_aes_string_to_vector init_vect)~}}
-uint32_t BlockB0[4] ={{@root.ccm_iv}};
+uint32_t {{@root.current_resource}}BlockB0[4] ={{@root.ccm_iv}};
 {{assign 'ccm_header' (helper_aes_string_to_vector header)~}}
 {{assign 'ccm_heder_size' (helper_aes_size_header_msg header)~}}
-uint32_t BlockHeader[{{@root.ccm_heder_size}}] ={{@root.ccm_header}};
+uint32_t {{@root.current_resource}}BlockHeader[{{@root.ccm_heder_size}}] ={{@root.ccm_header}};
 {{/if}}
 {{/with}}
 {{/if}}
 {{/with}}
 
 /******************************************************************************/
-/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer (SW instance {{@root.name}}) */
+/* Exported functions for {{@root.current_resource}} in {{@root.current_layer}} layer */
 /******************************************************************************/
 {{#with @root.aes_cxt}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer)~}}
@@ -142,18 +118,18 @@ hal_aes_handle_t *{{@root.fct_name}}_init(void)
 {{#if (eq aes_standard 1)}}
   HAL_AES_ECB_SetConfig(&h{{@root.current_resource}});
 {{else if (eq aes_standard 2)}}
-  if (HAL_AES_CBC_SetConfig(&h{{@root.current_resource}}, AESIV) != HAL_OK)
+  if (HAL_AES_CBC_SetConfig(&h{{@root.current_resource}}, {{@root.current_resource}}IV) != HAL_OK)
   {
     return NULL;
   }
 {{else if (eq aes_standard 3)}}
-  if (HAL_AES_CTR_SetConfig(&h{{@root.current_resource}}, AESIV) != HAL_OK)
+  if (HAL_AES_CTR_SetConfig(&h{{@root.current_resource}}, {{@root.current_resource}}IV) != HAL_OK)
   {
     return NULL;
   }
 {{else if (eq aes_standard 4)}}
-  p_gcm_config.p_init_vect          = InitVector;
-  p_gcm_config.p_header             = HeaderMessage;
+  p_gcm_config.p_init_vect          = {{@root.current_resource}}InitVector;
+  p_gcm_config.p_header             = {{@root.current_resource}}HeaderMessage;
   p_gcm_config.header_size_byte     = {{header_size_byte}};
 
   if (HAL_AES_GCM_GMAC_SetConfig(&h{{@root.current_resource}}, &p_gcm_config) != HAL_OK)
@@ -161,8 +137,8 @@ hal_aes_handle_t *{{@root.fct_name}}_init(void)
     return NULL;
   }
 {{else if (eq aes_standard 5)}}
-  p_ccm_config.p_b0                 = BlockB0;
-  p_ccm_config.p_header             = BlockHeader;
+  p_ccm_config.p_b0                 = {{@root.current_resource}}BlockB0;
+  p_ccm_config.p_header             = {{@root.current_resource}}BlockHeader;
   p_ccm_config.header_size_byte     = {{header_size_byte}};
 
   if (HAL_AES_CCM_SetConfig(&h{{@root.current_resource}}, &p_ccm_config) != HAL_OK)
@@ -177,7 +153,7 @@ hal_aes_handle_t *{{@root.fct_name}}_init(void)
 {{#with key_settings}}
 {{#if (eq aes_key 1)}}
 
-  HAL_AES_SetNormalKey(&h{{@root.current_resource}}, HAL_AES_KEY_SIZE_{{key_size}}BIT, AESKey);
+  HAL_AES_SetNormalKey(&h{{@root.current_resource}}, HAL_AES_KEY_SIZE_{{key_size}}BIT, {{@root.current_resource}}Key);
 {{else if (eq aes_key 2)}}
 
   HAL_AES_SetSharedKey(&h{{@root.current_resource}}, HAL_AES_KEY_SIZE_{{key_size}}BIT);
@@ -269,6 +245,28 @@ hal_aes_handle_t *{{@root.fct_name}}_gethandle(void)
 {{assign 'hal_handle_exist' 1~}}
 {{/if}}
 {{/if}}
+{{#with security_privilege}}
+
+{{~assign 'getCurrentEngine' (@root.SwComposerAPI.getCurrentEngine)~}}
+{{#if (eq @root.getCurrentEngine.secure 'Non-secure')}}
+/******************************************************************************/
+/*                      Privileged attribute management                       */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_privilege(void)
+{{else}}
+/******************************************************************************/
+/*                Security and privileged attributes management               */
+/******************************************************************************/
+system_status_t {{@root.fct_name}}_config_security_privilege(void)
+{{/if}}
+{
+{{> RIF fct='rif_config_security' layer=@root.current_layer resource=@root.current_resource}}
+
+{{> DMA_HAL fct='dma_config_security' resource=@root.current_resource}}
+
+  return SYSTEM_OK;
+}
+{{/with}}
 {{/with}}
 {{/each}}
 

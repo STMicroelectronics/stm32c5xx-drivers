@@ -185,6 +185,7 @@ hal_usart_handle_t *{{@root.fct_name}}_gethandle(void)
 {
   return &h{{@root.current_resource}};
 }
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='implementation'}}
 
 {{else if (eq fct 'exported_functions_gethandle_prototype')}}
 {{assign 'fct_name' (helper_common_get_generated_function_name @root.current_resource @root.current_layer undefined @root.current_function)~}}
@@ -194,6 +195,7 @@ hal_usart_handle_t *{{@root.fct_name}}_gethandle(void)
   */
 hal_usart_handle_t *{{@root.fct_name}}_gethandle(void);
 
+{{> GPIO_HAL fct='gpio_exti_gethandle' resource=@root.current_resource type='prototype'}}
 {{else}}
 #warning "step {{fct}} in partial USART_HAL not managed"
 {{/if}}

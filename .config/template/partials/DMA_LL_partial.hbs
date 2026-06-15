@@ -31,9 +31,6 @@
     {{~assign 'dma_transfer_mode' dma_mode~}}
     {{~assign 'dma_node' (concat (uppercase request.id) '_LLi_reg')~}}
 
-  /**********************************************************************************************************************/
-  /* LL Optimization Context (DMA) */
-  /**********************************************************************************************************************/
   {{! Initialize LL optimization context with DMA channel instance if LUT available }}
   {{> SYSTEM fct='system_check_ll_optim'}}
   {{assign 'lut_table'   (helper_dma_get_lut_table 'DMA3')~}}
@@ -187,9 +184,6 @@
   /* Enable {{@root.dma_parent}} clock */{{! ~}}
 {{> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.dma_parent~}}
 
-/**********************************************************************************************************************/
-/* LL Optimization Context (DMA) */
-/**********************************************************************************************************************/
 {{#with @root.dma_config}}
   {{#with basic}}
     {{~assign 'dma_transfer_mode' dma_mode~}}
@@ -232,15 +226,6 @@
     {{/if}}
   {{/with}}
 
-{{! DMA channel NVIC configuration : }}
-{{#if system.nvic.nvic_config}}
-  /* Enable the interruption for {{@root.dma_channel_instance}} */
-{{assign 'nvic_needs' (helper_common_concatenate_needs system.nvic.nvic_config.needs @root.nvic_needs)~}}
-{{ assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.nvic_config.needs @root.dma_channel_instance false)~}}
-{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.nvic_config.needs}}
-#warning "Partial LL CORTEX is not present"
-{{/CORTEX}}
-{{/if}}
 {{else if (eq @root.dma_transfer_mode 1)}}{{! Linked-list mode / DMA standalone}}
   {{#with basic}}
 
@@ -259,6 +244,15 @@
   {{helper_common_gen_ll_code_subinst 'LL_DMA_SetBlkDataLength''0U'}}
 
   {{/with}}
+{{/if}}
+{{! DMA channel NVIC configuration : }}
+{{#if system.nvic.nvic_config}}
+  /* Enable the interruption for {{@root.dma_channel_instance}} */
+{{assign 'nvic_needs' (helper_common_concatenate_needs system.nvic.nvic_config.needs @root.nvic_needs)~}}
+{{ assign 'nvic_context' (helper_cortex_nvic_concatenate_irq_context @root.nvic_context system.nvic.nvic_config.needs @root.dma_channel_instance false)~}}
+{{#> CORTEX fct='init' layer=@root.current_layer needs=system.nvic.nvic_config.needs}}
+#warning "Partial LL CORTEX is not present"
+{{/CORTEX}}
 {{/if}}
 {{/with}}
 {{else if (eq fct 'get_dma_lli_variables')}}
@@ -346,6 +340,112 @@ uint32_t *mx_{{request.id}}_get_lli_reg(void)
     {{/each}}
     {{~log "DMA_HAL fct='get_dma_lli_reg' a_dma_instances:" @root.a_dma_instances~}}
 
+{{else if (eq fct 'config_security')}}
+{{!
+ Generate the DMA LL code inside the mx_pppi_config_security function
+ > DMA_LL fct='dma_config_security' resource=@root.current_resource
+~}}
+{{~assign 'dma_channel_instance' resource}}
+{{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)}}
+  /* Enable {{@root.dma_parent}} clock */
+{{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.dma_parent}}
+{{/RCC}}
+{{~assign 'dma_channel' (helper_dma_get_ll_channel @root.dma_channel_instance)}}
+
+{{#with @root.dma_config.security_privilege}}
+
+  {{#if (eq security.channel_sec 'SEC')}}
+  /* Configure the DMA channel security access level attribute */
+  LL_DMA_SetSecAttr({{@root.dma_parent}}, {{@root.dma_channel}}, LL_DMA_ATTR_SEC);
+  {{/if}}
+
+  {{#with security.xfer_sec}}
+  {{#with @root.dma_config.basic}}
+  {{#if (eq dma_mode 0)}}
+   {{~assign "security_items" (helper_dma_get_security_items @root.current_layer @root.dma_config.security_privilege.security.xfer_sec)}}
+   {{#unless (eq @root.security_items '')}}
+  /* Configure the DMA channel xfer security access levels attributes */
+  LL_DMA_SetXferSecAttr({{@root.dma_channel_instance}}, {{@root.security_items}}, LL_DMA_ATTR_SEC);
+    {{/unless}}
+  {{/if}}
+  {{/with}}
+  {{/with}}
+
+  {{log "DMA_HAL privilege.channel_priv:" privilege.channel_priv}}
+  {{#if (eq privilege.channel_priv 'PRIV')}}
+  /* Configure the the DMA channel privileged access level attribute */
+  LL_DMA_SetPrivAttr({{@root.dma_parent}}, {{@root.dma_channel}}, LL_DMA_ATTR_PRIV);
+  {{/if}}
+
+  {{#if lock.channel_lock}}
+  /* Lock the security and privileged access levels attributes for DMA channel */
+  LL_DMA_LockAttr({{@root.dma_parent}}, {{@root.dma_channel}});
+  {{/if}}
+
+  {{#if clock}}
+  /* Disable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+  {{/if}}
+
+{{/with}}
+{{else if (eq fct 'dma_config_security')}}
+{{!
+ Generate the DMA LL code inside the mx_pppi_config_security function
+ > DMA_LL fct='dma_config_security' resource=@root.current_resource
+~}}
+{{~assign 'needs' (@root.DmaAPI.getAllocatedResourceNeedsByHwInstance resource)~}}
+{{log "DMA_LL needs:" @root.needs~}}
+{{#each @root.needs}}
+{{log "DMA_LL needs1:" @root.needs~}}
+{{assign 'dma_channel_instance' resourceId~}}
+{{assign 'dma_config' (@root.DmaAPI.getNeedById needId)~}}
+{{assign 'dma_parent' (helper_dma_get_parent @root.dma_channel_instance)}}
+  {{log "DMA_HAL dma_channel_instance:" @root.dma_channel_instance}}
+  {{log "DMA_HAL dma_config:" @root.dma_config}}
+
+  /* Enable {{@root.dma_parent}} clock */
+{{#> RCC fct='generate_peripheral_clock_activation' hw_resource=@root.dma_parent}}
+{{/RCC}}
+{{~assign 'dma_channel' (helper_dma_get_ll_channel @root.dma_channel_instance)}}
+
+{{#with @root.dma_config.configuration.security_privilege}}
+
+  {{#if (eq security.channel_sec 'SEC')}}
+  /* Configure the DMA channel security access level attribute */
+  LL_DMA_SetSecAttr({{@root.dma_parent}}, {{@root.dma_channel}}, LL_DMA_ATTR_SEC);
+  {{/if}}
+
+  {{#with security.xfer_sec}}
+  {{#with @root.dma_config.configuration.basic}}
+  {{#if (eq dma_mode 0)}}
+   {{~assign "security_items" (helper_dma_get_security_items @root.current_layer @root.dma_config.configuration.security_privilege.security.xfer_sec)}}
+   {{#unless (eq @root.security_items '')}}
+  /* Configure the DMA channel xfer security access levels attributes */
+  LL_DMA_SetXferSecAttr({{@root.dma_channel_instance}}, {{@root.security_items}}, LL_DMA_ATTR_SEC);
+    {{/unless}}
+  {{/if}}
+  {{/with}}
+  {{/with}}
+
+  {{#if (eq privilege.channel_priv 'PRIV')}}
+  /* Configure the the DMA channel privileged access level attribute */
+  LL_DMA_SetPrivAttr({{@root.dma_parent}}, {{@root.dma_channel}}, LL_DMA_ATTR_PRIV);
+  {{/if}}
+
+  {{#if lock.channel_lock}}
+  /* Lock the security and privileged access levels attributes for DMA channel */
+  LL_DMA_LockAttr({{@root.dma_parent}}, {{@root.dma_channel}});
+  {{/if}}
+
+  {{#if clock}}
+  /* Disable {{@root.dma_parent}} clock */
+  {{#> RCC fct='generate_peripheral_clock_deactivation' hw_resource=@root.dma_parent}}
+  {{/RCC}}
+  {{/if}}
+
+{{/with}}
+{{/each}}
 {{else}}
 #warning "Function {{fct}} not present in partial DMA_LL_partial.hbs"
 {{/if}}

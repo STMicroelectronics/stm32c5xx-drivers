@@ -23,9 +23,7 @@
 function helper_uart_get_min_baud_rate(input_clock, prescaler, oversampling, baudgen_type) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_uart_get_min_baud_rate: input_clock=${input_clock}, prescaler=${prescaler}, oversampling=${oversampling}, baudgen_type=${baudgen_type}`
-    );
+    console.info(`helper_uart_get_min_baud_rate: input_clock=${input_clock}, prescaler=${prescaler}, oversampling=${oversampling}, baudgen_type=${baudgen_type}`);
     if (baudgen_type === 0) {
       /* UART/USART */
       result = Math.ceil(((input_clock * (16 / oversampling)) / (prescaler * 0xFFFF)));
@@ -33,10 +31,10 @@ function helper_uart_get_min_baud_rate(input_clock, prescaler, oversampling, bau
       /* LPUART */
       result = Math.ceil(((input_clock * 256) / (prescaler * 0xFFFFF)));
     }
-    console.log(`[INFO] helper_uart_get_min_baud_rate: Min Baud rate: ${result}`);
+    console.info(`helper_uart_get_min_baud_rate: Min Baud rate: ${result}`);
     return result;
   } catch (e) {
-    console.log(`[ERROR] helper_uart_get_min_baud_rate: ${e}`);
+    console.error(`helper_uart_get_min_baud_rate: ${e}`);
   }
 }
 
@@ -51,9 +49,7 @@ function helper_uart_get_min_baud_rate(input_clock, prescaler, oversampling, bau
 function helper_uart_get_max_baud_rate(input_clock, prescaler, oversampling, baudgen_type) {
   let result = 0;
   try {
-    console.log(
-      `[INFO] helper_uart_get_max_baud_rate: input_clock=${input_clock}, prescaler=${prescaler}, oversampling=${oversampling}, baudgen_type=${baudgen_type}`
-    );
+    console.info(`helper_uart_get_max_baud_rate: input_clock=${input_clock}, prescaler=${prescaler}, oversampling=${oversampling}, baudgen_type=${baudgen_type}`);
     if (baudgen_type === 0) {
       /* UART/USART */
       /* USARDIV must be greater or equal to 16 (oversampling 8 or 16) */
@@ -63,10 +59,10 @@ function helper_uart_get_max_baud_rate(input_clock, prescaler, oversampling, bau
       /* USARDIV must be greater or equal to 0x300 */
       result = Math.floor(((input_clock * 256) / (prescaler * 0x300)));
     }
-    console.log(`[INFO] helper_uart_get_max_baud_rate: Max Baud rate: ${result}`);
+    console.info(`helper_uart_get_max_baud_rate: Max Baud rate: ${result}`);
     return result;
   } catch (e) {
-    console.log(`[ERROR] helper_uart_get_max_baud_rate: ${e}`);
+    console.error(`helper_uart_get_max_baud_rate: ${e}`);
   }
 }
 
@@ -81,8 +77,7 @@ function helper_uart_get_max_baud_rate(input_clock, prescaler, oversampling, bau
 function helper_uart_get_irq_handler(nvic_api, exti_api, resource, config) {
   let result = [];
   try {
-    console.log(
-      `[INFO] helper_uart_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
+    console.info(`helper_uart_get_irq_handler: resource=${resource}, config=${JSON.stringify(config)}`
     );
 
     /** Check the peripheral interruptions have been generated or not */
@@ -120,7 +115,7 @@ function helper_uart_get_irq_handler(nvic_api, exti_api, resource, config) {
       }
     }
   } catch (e) {
-    console.log(`[ERROR] helper_uart_get_irq_handler: ${e}`);
+    console.error(`helper_uart_get_irq_handler: ${e}`);
   }
   return result;
 }
