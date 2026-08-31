@@ -2312,7 +2312,7 @@ __STATIC_INLINE uint32_t LL_DAC_RetrieveOutputData(const DAC_TypeDef *dacx, uint
   __IO uint32_t const *preg = DAC_PTR_REG_OFFSET(dacx->DOR1, (dac_channel >> DAC_REG_DORX_REGOFFSET_BITOFFSET_POS)
                                                  & DAC_REG_DORX_REGOFFSET_MASK_POSBIT0);
 
-  return (uint16_t) STM32_READ_BIT(*preg, DAC_DOR1_DACC1DOR);
+  return (uint32_t) STM32_READ_BIT(*preg, DAC_DOR1_DACC1DOR);
 }
 
 /**
