@@ -3989,8 +3989,7 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *p_adc, uint32_t r
   /* other bits reserved for other purpose.                                   */
   const uint32_t channel_ll = LL_ADC_REMAP_CHANNEL_INTERNAL_SET(p_adc, channel);
   STM32_MODIFY_REG(p_adc->JSQR,
-                   (LL_ADC_CH_NUMBER_MASK >> LL_ADC_AWD_CH_NB_BITOFFSET_POS)
-                   << (rank & LL_ADC_INJ_RANK_ID_JSQR_MASK),
+                   (LL_ADC_CH_NUMBER_MASK) << (rank & LL_ADC_INJ_RANK_ID_JSQR_MASK),
                    (channel_ll & LL_ADC_CH_NUMBER_MASK) << (rank & LL_ADC_INJ_RANK_ID_JSQR_MASK));
 }
 
