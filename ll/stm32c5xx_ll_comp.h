@@ -1253,22 +1253,26 @@ __STATIC_INLINE uint32_t LL_COMP_IsLocked(const COMP_TypeDef *p_comp)
   */
 __STATIC_INLINE uint32_t LL_COMP_ReadOutputLevel(const COMP_TypeDef *p_comp)
 {
+  uint32_t output_level;
+
 #if defined(COMP_CSR_VALUE)
-  return (uint32_t)(STM32_READ_BIT(p_comp->CSR, COMP_CSR_VALUE) >> COMP_CSR_VALUE_Pos);
+  output_level = (uint32_t)(STM32_READ_BIT(p_comp->CSR, COMP_CSR_VALUE) >> COMP_CSR_VALUE_Pos);
 #else
 #if defined(COMP2)
   if (p_comp == COMP1)
   {
-    return (uint32_t)(STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C1VAL));
+    output_level = (uint32_t)(STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C1VAL));
   }
   else
   {
-    return (uint32_t)((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C2VAL)) >> COMP_SR_C2VAL_Pos);
+    output_level = (uint32_t)((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C2VAL)) >> COMP_SR_C2VAL_Pos);
   }
 #else
-  return (uint32_t)(STM32_READ_BIT(p_comp->SR, COMP_SR_C1VAL));
+  output_level = (uint32_t)(STM32_READ_BIT(p_comp->SR, COMP_SR_C1VAL));
 #endif
 #endif /* COMP_CSR_VALUE */
+
+  return output_level;
 }
 
 /**
@@ -1292,18 +1296,22 @@ __STATIC_INLINE uint32_t LL_COMP_ReadOutputLevel(const COMP_TypeDef *p_comp)
   */
 __STATIC_INLINE uint32_t LL_COMP_IsActiveFlag_OutputTrig(const COMP_TypeDef *p_comp)
 {
+  uint32_t flag_state;
+
 #if defined(COMP2)
   if (p_comp == COMP1)
   {
-    return ((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C1IF) == (COMP_SR_C1IF)) ? 1UL : 0UL);
+    flag_state = ((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C1IF) == (COMP_SR_C1IF)) ? 1UL : 0UL);
   }
   else
   {
-    return ((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C2IF) == (COMP_SR_C2IF)) ? 1UL : 0UL);
+    flag_state = ((STM32_READ_BIT(COMP12_COMMON->SR, COMP_SR_C2IF) == (COMP_SR_C2IF)) ? 1UL : 0UL);
   }
 #else
-  return ((STM32_READ_BIT(p_comp->SR, COMP_SR_C1IF) == (COMP_SR_C1IF)) ? 1UL : 0UL);
+  flag_state = ((STM32_READ_BIT(p_comp->SR, COMP_SR_C1IF) == (COMP_SR_C1IF)) ? 1UL : 0UL);
 #endif /* COMP2 */
+
+  return flag_state;
 }
 
 /**
