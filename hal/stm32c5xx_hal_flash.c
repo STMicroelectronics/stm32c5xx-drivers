@@ -4059,7 +4059,7 @@ static uint32_t FLASH_IsFlashUSERAddr(uint32_t flash_addr, uint8_t check_program
 static uint32_t FLASH_IsFlashEDATAAddr(uint32_t flash_addr, uint8_t check_program_alignment)
 {
   return (((flash_addr >= FLASH_EDATA_BASE) && (flash_addr < (FLASH_EDATA_BASE + FLASH_EDATA_SIZE)) \
-           && (check_program_alignment == 0U)) || ((flash_addr & 1U) == 0U)) ? 1U : 0U;
+           && ((check_program_alignment == 0U) || ((flash_addr & 1U) == 0U))) ? 1U : 0U);
 }
 #endif /* USE_HAL_FLASH_OB_EDATA && (USE_ASSERT_DBG_PARAM || (USE_HAL_CHECK_PARAM)) */
 #endif /* USE_HAL_FLASH_PROGRAM_BY_ADDR || USE_HAL_FLASH_ERASE_BY_ADDR */
