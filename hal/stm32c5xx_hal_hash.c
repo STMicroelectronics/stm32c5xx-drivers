@@ -862,7 +862,8 @@ hal_status_t HAL_HASH_Update(hal_hash_handle_t *hhash, const void *p_add_input_b
     hhash->phase = HASH_PHASE_PROCESS;
   }
 
-  if (hhash->remain_bytes_number != 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -956,7 +957,8 @@ hal_status_t HAL_HASH_Update_IT(hal_hash_handle_t *hhash, const void *p_add_inpu
   hhash->input_data_count_byte = 0U;
   hhash->input_size_byte = input_size_byte;
 
-  if (hhash->remain_bytes_number != 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -1004,6 +1006,10 @@ hal_status_t HAL_HASH_Update_IT(hal_hash_handle_t *hhash, const void *p_add_inpu
   * @param  hhash              Pointer to a hal_hash_handle_t structure.
   * @param  p_add_input_buffer Pointer to the input buffer (buffer to be hashed).
   * @param  input_size_byte    length of the input buffer in bytes.
+  * @warning Unlike polling and interrupt modes, DMA mode does not support successive updates
+  *          with input buffers smaller than 4 bytes. Trailing bytes are retained for the next
+  *          update, but consecutive sub-word updates will overwrite previously retained bytes.
+  *          For byte-by-byte updates, use HAL_HASH_Update() or HAL_HASH_Update_IT().
   * @retval HAL_INVALID_PARAM  Invalid parameter.
   * @retval HAL_ERROR          An error has occurred.
   * @retval HAL_BUSY           Process is already ongoing.
@@ -1058,7 +1064,8 @@ hal_status_t HAL_HASH_Update_DMA(hal_hash_handle_t *hhash, const void *p_add_inp
   }
 
   /* Process the remaining bytes of the previous buffer */
-  if (hhash->remain_bytes_number != 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -1685,7 +1692,8 @@ hal_status_t HAL_HASH_HMAC_Update(hal_hash_handle_t *hhash, const void *p_add_in
   /* Change the number of valid bits in last word of the message */
   STM32_MODIFY_REG(HASH_GET_INSTANCE(hhash)->STR, HASH_STR_NBLW, 0U);
 
-  if (hhash->remain_bytes_number != 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -1776,7 +1784,8 @@ hal_status_t HAL_HASH_HMAC_Update_IT(hal_hash_handle_t *hhash, const void *p_add
   /* Configure the number of valid bits in last word of the message */
   STM32_MODIFY_REG(HASH_GET_INSTANCE(hhash)->STR, HASH_STR_NBLW, 8U * ((hhash->input_size_byte) % HASH_WORD_SIZE_BYTE));
 
-  if (hhash->remain_bytes_number != 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -1827,6 +1836,10 @@ hal_status_t HAL_HASH_HMAC_Update_IT(hal_hash_handle_t *hhash, const void *p_add
   *        feed several input buffers back-to-back to the peripheral that will yield a single HASH signature once all
   *        buffers have been entered. Wrap-up of input buffers feeding and retrieval of digest is done by a call to
   *        HAL_HASH_HMAC_Finish().
+  * @warning Unlike polling and interrupt modes, DMA mode does not support successive updates
+  *          with input buffers smaller than 4 bytes. Trailing bytes are retained for the next
+  *          update, but consecutive sub-word updates will overwrite previously retained bytes.
+  *          For byte-by-byte updates, use HAL_HASH_HMAC_Update() or HAL_HASH_HMAC_Update_IT().
   * @retval HAL_INVALID_PARAM Invalid parameter.
   * @retval HAL_ERROR         An error has occurred.
   * @retval HAL_BUSY          Process is already ongoing.
@@ -1877,7 +1890,8 @@ hal_status_t HAL_HASH_HMAC_Update_DMA(hal_hash_handle_t *hhash, const void *p_ad
   STM32_SET_BIT(hash_instance->CR, HASH_CR_MDMAT);
 
   /* Process the remaining bytes of the previous buffer */
-  if (hhash->remain_bytes_number > 0U)
+  if ((hhash->remain_bytes_number != 0U)
+      && ((hhash->input_size_byte + hhash->remain_bytes_number) >= HASH_WORD_SIZE_BYTE))
   {
     HASH_AppendLastIncompleteWord(hhash);
   }
@@ -3618,12 +3632,18 @@ static hal_status_t HASH_WaitOnFlag(hal_hash_handle_t *hhash, uint32_t flag, uin
   */
 static void HASH_SaveRemainingBytes(hal_hash_handle_t *hhash, uint32_t remain_bytes_nbr)
 {
+  uint8_t old_remain_bytes_number;
+
+  old_remain_bytes_number = (hhash->remain_bytes_number != 0) ? hhash->remain_bytes_number : 0U;
+
   hhash->remain_bytes_number = (uint8_t)(remain_bytes_nbr % HASH_WORD_SIZE_BYTE);
   /* Save remaining bytes */
   for (uint32_t i = 0U; i < hhash->remain_bytes_number; i++)
   {
-    hhash->remain_bytes[i] = *(const uint8_t *)(hhash->p_input_buff + i);
+    hhash->remain_bytes[i + old_remain_bytes_number] = *(const uint8_t *)(hhash->p_input_buff + i);
   }
+
+  hhash->remain_bytes_number = hhash->remain_bytes_number + old_remain_bytes_number;
 }
 
 /**
@@ -3703,6 +3723,7 @@ static hal_status_t HASH_HMAC_ComputeProcessData_IT(hal_hash_handle_t *hhash)
 static hal_status_t HASH_HMAC_UpdateProcessData_IT(hal_hash_handle_t *hhash)
 {
   uint32_t remaining_words_nbr;
+  uint8_t remain_bytes_number;
 
   if ((hhash->input_size_byte - hhash->input_data_count_byte) >= hhash->block_size_byte)
   {
@@ -3713,20 +3734,19 @@ static hal_status_t HASH_HMAC_UpdateProcessData_IT(hal_hash_handle_t *hhash)
   }
   else /* Still remaining words: Last block less than to block size length */
   {
-    hhash->remain_bytes_number = (uint8_t)(hhash->input_size_byte - hhash->input_data_count_byte);
-    if (hhash->remain_bytes_number != 0U)
+    remaining_words_nbr = (uint8_t)((hhash->input_size_byte - hhash->input_data_count_byte)) / HASH_WORD_SIZE_BYTE;
+    if (remaining_words_nbr != 0U)
     {
-      remaining_words_nbr = (uint32_t)hhash->remain_bytes_number / HASH_WORD_SIZE_BYTE;
-
-      if (remaining_words_nbr != 0U)
+      if (HASH_WriteIncompleteBlock(hhash, remaining_words_nbr) != HAL_OK)
       {
-        if (HASH_WriteIncompleteBlock(hhash, remaining_words_nbr) != HAL_OK)
-        {
-          return HAL_ERROR;
-        }
+        return HAL_ERROR;
       }
+    }
 
-      HASH_SaveRemainingBytes(hhash, hhash->remain_bytes_number);
+    remain_bytes_number = (uint8_t)((hhash->input_size_byte - hhash->input_data_count_byte) % HASH_WORD_SIZE_BYTE);
+    if (remain_bytes_number != 0)
+    {
+      HASH_SaveRemainingBytes(hhash, remain_bytes_number);
     }
 
     HAL_HASH_DisableIT(hhash, HAL_HASH_IT_DIN | HAL_HASH_IT_DC);
