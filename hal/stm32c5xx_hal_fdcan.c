@@ -3158,7 +3158,7 @@ hal_status_t HAL_FDCAN_GetReceivedMessage(const hal_fdcan_handle_t *hfdcan, hal_
     rx_address = (uint32_t *)(hfdcan->msg_ram.rx_fifo0_start_addr + (get_index * FDCAN_RAM_RF0_SIZE));
   }
   /* Rx element is assigned to the Rx FIFO 1 while it is not empty */
-  else if (STM32_READ_BIT(p_fdcanx->RXF1S, FDCAN_RXF1S_F1FL) != 0U)
+  else if ((STM32_READ_BIT(p_fdcanx->RXF1S, FDCAN_RXF1S_F1FL) != 0U) && (rx_location_idx == HAL_FDCAN_RX_FIFO_1))
   {
     /* Calculate Rx FIFO 1 element index */
     get_index = (STM32_READ_BIT(p_fdcanx->RXF1S, FDCAN_RXF1S_F1GI) >> FDCAN_RXF1S_F1GI_Pos);
