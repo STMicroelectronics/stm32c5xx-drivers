@@ -4314,7 +4314,7 @@ static uint32_t RCC_GetDividerValue(uint32_t divider)
 {
   uint32_t value;
 
-  if ((divider == LL_RCC_PSIK_DIV_1) || (divider == LL_RCC_HSIK_DIV_1))
+  if ((divider == 0U) || (divider == LL_RCC_PSIK_DIV_1) || (divider == LL_RCC_HSIK_DIV_1))
   {
     value = 10UL;
   }
