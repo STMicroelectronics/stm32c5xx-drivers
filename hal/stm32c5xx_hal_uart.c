@@ -8780,6 +8780,7 @@ static void UART_RxISR_8BIT_FIFOEN(hal_uart_handle_t *huart)
 #else
         HAL_UART_RxCpltCallback(huart, huart->rx_xfer_size, HAL_UART_RX_EVENT_TC);
 #endif /* USE_HAL_UART_REGISTER_CALLBACKS */
+        break;
       }
     }
 
@@ -8914,6 +8915,7 @@ static void UART_RxISR_16BIT_FIFOEN(hal_uart_handle_t *huart)
 #else
         HAL_UART_RxCpltCallback(huart, huart->rx_xfer_size, HAL_UART_RX_EVENT_TC);
 #endif /* USE_HAL_UART_REGISTER_CALLBACKS */
+        break;
       }
     }
     /* When remaining number of bytes to receive is less than the RX FIFO
